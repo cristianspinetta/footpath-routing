@@ -9,6 +9,15 @@ import scala.collection.mutable
 import scala.util.{ Failure, Try }
 import scala.reflect.runtime.universe._
 
+/**
+ * @see https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
+ * @param heuristic
+ * @param gMap
+ * @param startVertex
+ * @param targetVertex
+ * @param tag
+ * @tparam V
+ */
 case class AStar[V <: Vertex](heuristic: Heuristic[V])(gMap: GraphContainer[V], startVertex: V, targetVertex: V)(implicit tag: TypeTag[V]) extends LazyLogging with MeterSupport {
 
   //  // priority queue orders by highest value, so cost is negated.
