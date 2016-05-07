@@ -11,239 +11,262 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
   "The A* Algorithm with the trivial F Heuristic { Y = 0, ∀ X ∈ ℝ }" when {
 
-    val aStarWithTrivialHeuristic = AStar[GraphVertex](TrivialHeuristic()) _
+    val aStarWithTrivialHeuristic = AStar[GraphNode](TrivialHeuristic()) _
 
     "it runs on the Graph A" should {
       "resolve correctly the path between 1 and 4" in {
-        val graph: GraphContainer[GraphVertex] = abstractGraphPrototype
+        val graph: GraphContainer[GraphNode] = abstractGraphPrototype
 
-        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
-        val target: GraphVertex = graph.vertices.find(_.id == 4L).get
+        val source: GraphNode = graph.nodes.find(_.id == 1L).get
+        val target: GraphNode = graph.nodes.find(_.id == 4L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
         val result = aStar.search
 
-        val expectedEdges = buildEdges(1, List(2, 3, 4))
+        val expectedPath: List[Long] = List(1, 2, 3, 4)
 
         result.isSuccess should be(true)
 
-        result.foreach(r ⇒
-          withClue(pathFailureMessage(r, expectedEdges)) {
-            r should be(expectedEdges)
-          })
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
       }
 
       "resolve correctly the path between 1 and 18" in {
-        val graph: GraphContainer[GraphVertex] = abstractGraphPrototype
+        val graph: GraphContainer[GraphNode] = abstractGraphPrototype
 
-        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
-        val target: GraphVertex = graph.vertices.find(_.id == 18L).get
+        val source: GraphNode = graph.nodes.find(_.id == 1L).get
+        val target: GraphNode = graph.nodes.find(_.id == 18L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
         val result: Try[List[Edge]] = aStar.search
 
-        val expectedEdges = buildEdges(1, List(6, 5, 11, 10, 13, 18))
+        val expectedPath: List[Long] = List(1, 6, 5, 11, 10, 13, 18)
 
         result.isSuccess should be(true)
 
-        result.foreach(r ⇒
-          withClue(pathFailureMessage(r, expectedEdges)) {
-            r should be(expectedEdges)
-          })
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
       }
 
       "resolve correctly the path between 1 and 19" in {
-        val graph: GraphContainer[GraphVertex] = abstractGraphPrototype
+        val graph: GraphContainer[GraphNode] = abstractGraphPrototype
 
-        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
-        val target: GraphVertex = graph.vertices.find(_.id == 19L).get
+        val source: GraphNode = graph.nodes.find(_.id == 1L).get
+        val target: GraphNode = graph.nodes.find(_.id == 19L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
         val result: Try[List[Edge]] = aStar.search
 
-        val expectedEdges = buildEdges(1, List(6, 5, 11, 10, 13, 18, 19))
+        val expectedPath: List[Long] = List(1, 6, 5, 11, 10, 13, 18, 19)
 
         result.isSuccess should be(true)
 
-        result.foreach(r ⇒
-          withClue(pathFailureMessage(r, expectedEdges)) {
-            r should be(expectedEdges)
-          })
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
       }
     }
 
     "it runs on the Graph A without edge 10-13" should {
 
-      val graph: GraphContainer[GraphVertex] = abstractGraphPrototype.copy(vertices =
-        abstractGraphPrototype.vertices.map {
-          case vertex @ GraphVertex(10, edges) ⇒ GraphVertex.removeEdge(vertex, 13)
-          case vertex                          ⇒ vertex
+      val graph: GraphContainer[GraphNode] = abstractGraphPrototype.copy(nodes =
+        abstractGraphPrototype.nodes.map {
+          case node @ GraphNode(10, edges) ⇒ GraphNode.removeEdge(node, 13)
+          case node                        ⇒ node
         })
 
       "resolve correctly the path between 1 and 18" in {
-        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
-        val target: GraphVertex = graph.vertices.find(_.id == 18L).get
+        val source: GraphNode = graph.nodes.find(_.id == 1L).get
+        val target: GraphNode = graph.nodes.find(_.id == 18L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
         val result = aStar.search
 
-        val expectedEdges = buildEdges(1, List(2, 3, 4, 8, 9, 14, 18))
+        val expectedPath: List[Long] = List(1, 2, 3, 4, 8, 9, 14, 18)
 
         result.isSuccess should be(true)
 
-        result.foreach(r ⇒
-          withClue(pathFailureMessage(r, expectedEdges)) {
-            r should be(expectedEdges)
-          })
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
       }
 
       "resolve correctly the path between 1 and 19" in {
-        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
-        val target: GraphVertex = graph.vertices.find(_.id == 19L).get
+        val source: GraphNode = graph.nodes.find(_.id == 1L).get
+        val target: GraphNode = graph.nodes.find(_.id == 19L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
         val result = aStar.search
 
-        val expectedEdges = buildEdges(1, List(2, 3, 4, 8, 9, 14, 18, 19))
+        val expectedPath: List[Long] = List(1, 2, 3, 4, 8, 9, 14, 18, 19)
 
         result.isSuccess should be(true)
 
-        result.foreach(r ⇒
-          withClue(pathFailureMessage(r, expectedEdges)) {
-            r should be(expectedEdges)
-          })
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
       }
     }
 
     "it runs on the Graph A neither with edge 10-13 nor 14-18" should {
 
-      val graph: GraphContainer[GraphVertex] = abstractGraphPrototype.copy(vertices =
-        abstractGraphPrototype.vertices.map {
-          case vertex @ GraphVertex(10, edges) ⇒ GraphVertex.removeEdge(vertex, 13)
-          case vertex @ GraphVertex(14, edges) ⇒ GraphVertex.removeEdge(vertex, 18)
-          case vertex                          ⇒ vertex
+      val graph: GraphContainer[GraphNode] = abstractGraphPrototype.copy(nodes =
+        abstractGraphPrototype.nodes.map {
+          case node @ GraphNode(10, edges) ⇒ GraphNode.removeEdge(node, 13)
+          case node @ GraphNode(14, edges) ⇒ GraphNode.removeEdge(node, 18)
+          case node                        ⇒ node
         })
 
       "resolve correctly the path between 1 and 18" in {
-        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
-        val target: GraphVertex = graph.vertices.find(_.id == 18L).get
+        val source: GraphNode = graph.nodes.find(_.id == 1L).get
+        val target: GraphNode = graph.nodes.find(_.id == 18L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
         val result = aStar.search
 
-        val expectedEdges = buildEdges(1, List(6, 5, 11, 10, 12, 15, 16, 17, 19, 18))
+        val expectedPath: List[Long] = List(1, 6, 5, 11, 10, 12, 15, 16, 17, 19, 18)
 
         result.isSuccess should be(true)
 
-        result.foreach(r ⇒
-          withClue(pathFailureMessage(r, expectedEdges)) {
-            r should be(expectedEdges)
-          })
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
       }
 
       "resolve correctly the path between 1 and 19" in {
-        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
-        val target: GraphVertex = graph.vertices.find(_.id == 19L).get
+        val source: GraphNode = graph.nodes.find(_.id == 1L).get
+        val target: GraphNode = graph.nodes.find(_.id == 19L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
         val result = aStar.search
 
-        val expectedEdges = buildEdges(1, List(6, 5, 11, 10, 12, 15, 16, 17, 19))
+        val expectedPath: List[Long] = List(1, 6, 5, 11, 10, 12, 15, 16, 17, 19)
 
         result.isSuccess should be(true)
 
-        result.foreach(r ⇒
-          withClue(pathFailureMessage(r, expectedEdges)) {
-            r should be(expectedEdges)
-          })
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
       }
     }
+  }
+
+  private def edgesToIds(edges: List[Edge]): List[Long] = {
+    edges.headOption.map(_.nodeStart).toList ::: edges.map(_.nodeEnd)
   }
 
   "The A* Algorithm with the Geographical Heuristic Function" when {
 
     "it runs on the Graph A" should {
       "resolve correctly the path between 1 and 4" in {
-        val graph: GraphContainer[GeoVertex] = geoGraphPrototype
+        val graph: GraphContainer[GeoNode] = geoGraphPrototype
 
-        val source: GeoVertex = graph.vertices.find(_.id == 1L).get
-        val target: GeoVertex = graph.vertices.find(_.id == 4L).get
+        val source: GeoNode = graph.nodes.find(_.id == 1L).get
+        val target: GeoNode = graph.nodes.find(_.id == 4L).get
 
-        val aStar = AStar[GeoVertex](GeoHeuristic(source))(graph, source, target)
+        val aStar = AStar[GeoNode](GeoHeuristic(source))(graph, source, target)
 
         val result = aStar.search
 
-        val expectedEdges = buildEdges(1, List(2, 3, 4))
+        val expectedPath: List[Long] = List(1, 2, 4)
 
         result.isSuccess should be(true)
 
-        result.foreach(r ⇒
-          withClue(pathFailureMessage(r, expectedEdges)) {
-            r should be(expectedEdges)
-          })
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
       }
 
-      "resolve correctly the path between 1 and 18" in {
-        val graph: GraphContainer[GeoVertex] = geoGraphPrototype
+      "resolve correctly the path between 1 and 13" in {
+        val graph: GraphContainer[GeoNode] = geoGraphPrototype
 
-        val source: GeoVertex = graph.vertices.find(_.id == 1L).get
-        val target: GeoVertex = graph.vertices.find(_.id == 18L).get
+        val source: GeoNode = graph.nodes.find(_.id == 1L).get
+        val target: GeoNode = graph.nodes.find(_.id == 13L).get
 
-        val aStar = AStar[GeoVertex](GeoHeuristic(source))(graph, source, target)
+        val aStar = AStar[GeoNode](GeoHeuristic(source))(graph, source, target)
 
         val result: Try[List[Edge]] = aStar.search
 
-        val expectedEdges = buildEdges(1, List(6, 5, 11, 10, 13, 18))
+        val expectedPath: List[Long] = List(1, 2, 4, 7, 8, 9, 14, 13)
 
         result.isSuccess should be(true)
 
-        result.foreach(r ⇒
-          withClue(pathFailureMessage(r, expectedEdges)) {
-            r should be(expectedEdges)
-          })
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
       }
 
-      "resolve correctly the path between 1 and 19" in {
-        val graph: GraphContainer[GeoVertex] = geoGraphPrototype
+      "resolve correctly the path between 1 and 12" in {
+        val graph: GraphContainer[GeoNode] = geoGraphPrototype
 
-        val source: GeoVertex = graph.vertices.find(_.id == 1L).get
-        val target: GeoVertex = graph.vertices.find(_.id == 19L).get
+        val source: GeoNode = graph.nodes.find(_.id == 1L).get
+        val target: GeoNode = graph.nodes.find(_.id == 12L).get
 
-        val aStar = AStar[GeoVertex](GeoHeuristic(source))(graph, source, target)
+        val aStar = AStar[GeoNode](GeoHeuristic(source))(graph, source, target)
 
         val result: Try[List[Edge]] = aStar.search
 
-        val expectedEdges = buildEdges(1, List(6, 5, 11, 10, 13, 18, 19))
+        val expectedPath: List[Long] = List(1, 6, 5, 11, 12)
 
         result.isSuccess should be(true)
 
-        result.foreach(r ⇒
-          withClue(pathFailureMessage(r, expectedEdges)) {
-            r should be(expectedEdges)
-          })
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
       }
     }
   }
 
-  private def buildEdges(startVertexId: Long, edgeIds: List[Long]): List[Edge] = edgeIds
-    .foldLeft((startVertexId, List.empty[Edge])) {
-      case ((cameFrom, partialEdges), nextVertex) ⇒
-        (nextVertex, partialEdges :+ Edge(cameFrom, nextVertex))
-    }._2
-
-  private def pathFailureMessage(result: List[Edge], expectedEdges: List[Edge]): String = {
-    s"The expected edges: ${printReadableEdges(expectedEdges)}. The result: ${printReadableEdges(result)}"
-  }
-
-  private def assertionEdges(result: List[Edge], expectedEdges: List[Edge]): Unit = {
-    assert(expectedEdges == result,
-      s"The expected edges: ${printReadableEdges(expectedEdges)}. The result: ${printReadableEdges(result)}")
+  private def pathFailureMessage(result: List[Long], expectedPath: List[Long]): String = {
+    s"The expected edges: ${expectedPath mkString " -> "}. The result: ${result mkString " -> "}"
   }
 }

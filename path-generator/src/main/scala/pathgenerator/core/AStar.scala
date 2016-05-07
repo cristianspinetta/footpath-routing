@@ -4,6 +4,7 @@ import pathgenerator.graph._
 import base.MeterSupport
 import com.typesafe.scalalogging.LazyLogging
 
+import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.util.{ Failure, Try }
@@ -13,12 +14,12 @@ import scala.reflect.runtime.universe._
  * @see https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
  * @param heuristic
  * @param gMap
- * @param startVertex
- * @param targetVertex
+ * @param startNode
+ * @param targetNode
  * @param tag
- * @tparam V
+ * @tparam N
  */
-case class AStar[V <: Vertex](heuristic: Heuristic[V])(gMap: GraphContainer[V], startVertex: V, targetVertex: V)(implicit tag: TypeTag[V]) extends LazyLogging with MeterSupport {
+case class AStar[N <: Node](heuristic: Heuristic[N])(gMap: GraphContainer[N], startNode: N, targetNode: N)(implicit tag: TypeTag[N]) extends LazyLogging with MeterSupport {
 
   //  // priority queue orders by highest value, so cost is negated.
   //  val ordering = Ordering.by[MetaInformedState, Int] {
@@ -27,29 +28,29 @@ case class AStar[V <: Vertex](heuristic: Heuristic[V])(gMap: GraphContainer[V], 
   //  }
   //
   //  // The set of tentative nodes to be evaluated, initially containing the start node
-  //  private val _opens = mutable.PriorityQueue[MetaInformedState](MetaInformedState(startVertex, 0, 0))(ordering)
+  //  private val _opens = mutable.PriorityQueue[MetaInformedState](MetaInformedState(startNode, 0, 0))(ordering)
 
   // The set of tentative nodes to be evaluated, initially containing the start node
-  private var _opens: List[V] = List(startVertex) // FIXME change by Queue
+  private var _opens: List[N] = List(startNode) // FIXME change by Queue
 
   // The set of nodes already evaluated.
-  private val _closed = mutable.Set[V]()
+  private val _closed = mutable.Set[N]()
 
   // The map of navigated nodes.
   // For each node, which node it can most efficiently be reached from.
   // If a node can be reached from many nodes, cameFrom will eventually contain the
   // most efficient previous step.
-  private val _cameFrom: mutable.Map[V, V] = TrieMap.empty
+  private val _cameFrom: mutable.Map[N, N] = TrieMap.empty
 
   // For each node, the cost of getting from the start node to that node.
   // The cost of going from start to start is zero.
-  private val gScore: mutable.Map[Long, Double] = TrieMap(startVertex.id -> 0D)
+  private val gScore: mutable.Map[Long, Double] = TrieMap(startNode.id -> 0D)
     .withDefaultValue(Double.MaxValue)
 
   // For each node, the total cost of getting from the start node to the goal
   // by passing by that node. That value is partly known, partly heuristic.
   // For the first node, that value is completely heuristic.
-  private val fScore: mutable.Map[Long, Double] = TrieMap(startVertex.id -> heuristic(startVertex))
+  private val fScore: mutable.Map[Long, Double] = TrieMap(startNode.id -> heuristic(startNode))
     .withDefaultValue(Double.MaxValue)
 
   def search: Try[List[Edge]] = withTimeLoggingInMicro({
@@ -57,14 +58,15 @@ case class AStar[V <: Vertex](heuristic: Heuristic[V])(gMap: GraphContainer[V], 
       loop(1)
     } recoverWith {
       case ex: Throwable ⇒
-        logger.error(s"Failure trying to find the short path at ${targetVertex.id}", ex)
+        logger.error(s"Failure trying to find the short path at ${targetNode.id}", ex)
         logCurrentState(0)
         Failure(ex)
     }
   }, { timing: Long ⇒
-    logger.info(s"Found short path from ${startVertex.id} to ${targetVertex.id} in $timing µs.")
+    logger.info(s"Found short path from ${startNode.id} to ${targetNode.id} in $timing µs.")
   })
 
+  @tailrec
   private def loop(nroLoop: Int): List[Edge] = {
 
     logCurrentState(nroLoop)
@@ -74,15 +76,15 @@ case class AStar[V <: Vertex](heuristic: Heuristic[V])(gMap: GraphContainer[V], 
       _opens = _opens.sortWith { (v1, v2) ⇒ fScore(v1.id).compareTo(fScore(v2.id)) < 0 }
       val current = _opens.head
 
-      logger.debug(s"visit vertex ${current.id}")
+      logger.debug(s"visit node ${current.id}")
 
-      if (current == targetVertex)
-        reconstructPath(_cameFrom, targetVertex)
+      if (current == targetNode)
+        reconstructPath(_cameFrom, targetNode)
       else {
         _opens = _opens.tail
         _closed.add(current)
 
-        val ns: List[V] = current.neighbours(gMap)
+        val ns: List[N] = current.neighbours(gMap)
 
         ns foreach eachNeighbour(current)
 
@@ -92,7 +94,7 @@ case class AStar[V <: Vertex](heuristic: Heuristic[V])(gMap: GraphContainer[V], 
     }
   }
 
-  private def eachNeighbour(current: V)(neighbour: V): Unit = {
+  private def eachNeighbour(current: N)(neighbour: N): Unit = {
 
     if (_closed.contains(neighbour)) {
       // Ignore the neighbor which is already evaluated.
@@ -114,16 +116,16 @@ case class AStar[V <: Vertex](heuristic: Heuristic[V])(gMap: GraphContainer[V], 
     }
   }
 
-  private def reconstructPath(_cameFrom: mutable.Map[V, V], targetVertex: V)(implicit tag: TypeTag[V]): List[Edge] = {
-    var current = targetVertex
+  private def reconstructPath(_cameFrom: mutable.Map[N, N], targetNode: N)(implicit tag: TypeTag[N]): List[Edge] = {
+    var current = targetNode
     var totalPath = List(current)
     while (_cameFrom.contains(current)) {
       current = _cameFrom(current)
       totalPath = totalPath.:+(current)
     }
     totalPath.tail.foldLeft((List.empty[Edge], totalPath.head)) {
-      case ((listEdges, beforeVertex), current: V) if typeOf[V] <:< typeOf[Vertex] ⇒
-        (current.getEdgesFor(beforeVertex.id).toList ::: listEdges, current)
+      case ((listEdges, beforeNode), current: N) ⇒
+        (current.getEdgesFor(beforeNode.id).toList ::: listEdges, current)
     }._1
   }
 

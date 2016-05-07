@@ -1,11 +1,11 @@
 package pathgenerator.actors
 
 import akka.actor.{ Actor, Props }
-import pathgenerator.graph.Vertex
+import pathgenerator.graph.Node
 
 object AStarDispatcher {
 
-  case class AStarRequest(vertexStart: Vertex, vertexTarget: Vertex)
+  case class AStarRequest(nodeStart: Node, nodeTarget: Node)
 
   def props = Props(classOf[AStarDispatcher])
 }
@@ -16,6 +16,6 @@ class AStarDispatcher extends Actor {
   override def receive: Receive = handleRequest
 
   def handleRequest: Receive = {
-    case AStarRequest(vertexStart, vertexTarget) ⇒
+    case AStarRequest(nodeStart, nodeTarget) ⇒
   }
 }

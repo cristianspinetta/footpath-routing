@@ -23,7 +23,7 @@ import scalariform.formatter.preferences._
 object Settings {
 
   val JavaVersion = "1.8"
-  val ScalaVersion = "2.11.7"
+  val ScalaVersion = "2.11.8"
 
   lazy val basicSettings: Seq[Setting[_]] = Defaults.defaultSettings ++ Seq(
     scalaVersion := ScalaVersion,
