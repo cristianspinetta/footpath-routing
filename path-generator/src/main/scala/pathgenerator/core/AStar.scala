@@ -1,8 +1,7 @@
 package pathgenerator.core
 
 import pathgenerator.graph._
-import base.MeterSupport
-import com.typesafe.scalalogging.LazyLogging
+import base.{ LazyLoggerSupport, MeterSupport }
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -19,7 +18,7 @@ import scala.reflect.runtime.universe._
  * @param tag
  * @tparam N
  */
-case class AStar[N <: Node](heuristic: Heuristic[N])(gMap: GraphContainer[N], startNode: N, targetNode: N)(implicit tag: TypeTag[N]) extends LazyLogging with MeterSupport {
+case class AStar[N <: Node](heuristic: Heuristic[N])(gMap: GraphContainer[N], startNode: N, targetNode: N)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
 
   /**
    * The nodes already evaluated.
@@ -131,16 +130,14 @@ case class AStar[N <: Node](heuristic: Heuristic[N])(gMap: GraphContainer[N], st
   }
 
   private def logCurrentState(nroLoop: Int): Unit = {
-    if (logger.underlying.isDebugEnabled()) { // TODO change this logger by a Lazy-Evaluation Logger.
-      logger.debug(s"-----------------------------------")
-      logger.debug(s"Initialize loop #$nroLoop")
-      logger.debug(s"-----------------------------------")
-      logger.debug(s"opens: ${_opensQueue.map(_.id) mkString ", "}")
-      logger.debug(s"closed: ${_closed.map(_.id) mkString ", "}")
-      logger.debug(s"cameFrom: ${_cameFrom.map(tuple ⇒ (tuple._1.id, tuple._2.id)) mkString ", "}")
-      logger.debug(s"G Score: ${gScore mkString " -> "}")
-      logger.debug(s"Heuristic - F Score: ${fScore mkString " -> "}")
-    }
+    logger.debug(s"-----------------------------------")
+    logger.debug(s"Initialize loop #$nroLoop")
+    logger.debug(s"-----------------------------------")
+    logger.debug(s"opens: ${_opensQueue.map(_.id) mkString ", "}")
+    logger.debug(s"closed: ${_closed.map(_.id) mkString ", "}")
+    logger.debug(s"cameFrom: ${_cameFrom.map(tuple ⇒ (tuple._1.id, tuple._2.id)) mkString ", "}")
+    logger.debug(s"G Score: ${gScore mkString " -> "}")
+    logger.debug(s"Heuristic - F Score: ${fScore mkString " -> "}")
   }
 
 }
