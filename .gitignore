@@ -73,5 +73,5 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 .worksheet
-worksheet.sc
+/path-generator/src/main/scala/*.sc
 

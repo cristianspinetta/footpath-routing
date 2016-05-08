@@ -21,37 +21,40 @@ import scala.reflect.runtime.universe._
  */
 case class AStar[N <: Node](heuristic: Heuristic[N])(gMap: GraphContainer[N], startNode: N, targetNode: N)(implicit tag: TypeTag[N]) extends LazyLogging with MeterSupport {
 
-  //  // priority queue orders by highest value, so cost is negated.
-  //  val ordering = Ordering.by[MetaInformedState, Int] {
-  //    case MetaInformedState(_, cost, estFurtherCost) ⇒ -(cost + estFurtherCost).toInt
-  //    case _ ⇒ 0
-  //  }
-  //
-  //  // The set of tentative nodes to be evaluated, initially containing the start node
-  //  private val _opens = mutable.PriorityQueue[MetaInformedState](MetaInformedState(startNode, 0, 0))(ordering)
-
-  // The set of tentative nodes to be evaluated, initially containing the start node
-  private var _opens: List[N] = List(startNode) // FIXME change by Queue
-
-  // The set of nodes already evaluated.
+  /**
+   * The nodes already evaluated.
+   */
   private val _closed = mutable.Set[N]()
 
-  // The map of navigated nodes.
-  // For each node, which node it can most efficiently be reached from.
-  // If a node can be reached from many nodes, cameFrom will eventually contain the
-  // most efficient previous step.
+  /**
+   * The map of navigated nodes.
+   * For each node, which node it can most efficiently be reached from.
+   * If a node can be reached from many nodes, cameFrom will eventually contain the
+   * most efficient previous step.
+   */
   private val _cameFrom: mutable.Map[N, N] = TrieMap.empty
 
-  // For each node, the cost of getting from the start node to that node.
-  // The cost of going from start to start is zero.
+  /**
+   * For each node, the cost of getting from the start node to that node.
+   * The cost of going from start to start is zero.
+   */
   private val gScore: mutable.Map[Long, Double] = TrieMap(startNode.id -> 0D)
     .withDefaultValue(Double.MaxValue)
 
-  // For each node, the total cost of getting from the start node to the goal
-  // by passing by that node. That value is partly known, partly heuristic.
-  // For the first node, that value is completely heuristic.
+  /**
+   * For each node, the total cost of getting from the start node to the goal
+   * by passing by that node. That value is partly known, partly heuristic.
+   * For the first node, that value is completely heuristic.
+   */
   private val fScore: mutable.Map[Long, Double] = TrieMap(startNode.id -> heuristic(startNode))
     .withDefaultValue(Double.MaxValue)
+
+  /**
+   * Tentative nodes to be evaluated, initially containing the start node
+   */
+  private val _opensQueue: mutable.PriorityQueue[N] = mutable.PriorityQueue(startNode)(Ordering.by[N, Double] { node: N ⇒
+    -fScore(node.id)
+  })
 
   def search: Try[List[Edge]] = withTimeLoggingInMicro({
     Try {
@@ -71,24 +74,22 @@ case class AStar[N <: Node](heuristic: Heuristic[N])(gMap: GraphContainer[N], st
 
     logCurrentState(nroLoop)
 
-    if (_opens isEmpty) Nil
+    if (_opensQueue isEmpty) Nil
     else {
-      _opens = _opens.sortWith { (v1, v2) ⇒ fScore(v1.id).compareTo(fScore(v2.id)) < 0 }
-      val current = _opens.head
+      val current = _opensQueue.dequeue
 
       logger.debug(s"visit node ${current.id}")
 
       if (current == targetNode)
         reconstructPath(_cameFrom, targetNode)
       else {
-        _opens = _opens.tail
         _closed.add(current)
 
         val ns: List[N] = current.neighbours(gMap)
 
         ns foreach eachNeighbour(current)
 
-        if (_opens.nonEmpty) loop(nroLoop + 1)
+        if (_opensQueue nonEmpty) loop(nroLoop + 1)
         else throw new RuntimeException("failure!!")
       }
     }
@@ -104,12 +105,12 @@ case class AStar[N <: Node](heuristic: Heuristic[N])(gMap: GraphContainer[N], st
       // The distance from start to a neighbor
       val tentativeGScore = gScore(current.id) + fromCurrentToNeighbour
 
-      if (!_opens.contains(neighbour)) { // Discover a new node
-        _opens = _opens.+:(neighbour)
+      if (!_opensQueue.exists(_.id == neighbour.id)) { // Discover a new node
         // This path is the best until now. Record it!
         _cameFrom += (neighbour -> current)
         gScore += (neighbour.id -> tentativeGScore)
         fScore += (neighbour.id -> (tentativeGScore + heuristic(neighbour)))
+        _opensQueue enqueue neighbour // must enqueue after the neighbour is added to fScore
       } else if (tentativeGScore >= gScore(neighbour.id)) {
         // This is not a better path.
       }
@@ -130,14 +131,16 @@ case class AStar[N <: Node](heuristic: Heuristic[N])(gMap: GraphContainer[N], st
   }
 
   private def logCurrentState(nroLoop: Int): Unit = {
-    logger.debug(s"-----------------------------------")
-    logger.debug(s"Initialize loop #$nroLoop")
-    logger.debug(s"-----------------------------------")
-    logger.debug(s"opens: ${_opens.map(_.id) mkString ", "}")
-    logger.debug(s"closed: ${_closed.map(_.id) mkString ", "}")
-    logger.debug(s"cameFrom: ${_cameFrom.map(tuple ⇒ (tuple._1.id, tuple._2.id)) mkString ", "}")
-    logger.debug(s"G Score: ${gScore mkString " -> "}")
-    logger.debug(s"Heuristic - F Score: ${fScore mkString " -> "}")
+    if (logger.underlying.isDebugEnabled()) { // TODO change this logger by a Lazy-Evaluation Logger.
+      logger.debug(s"-----------------------------------")
+      logger.debug(s"Initialize loop #$nroLoop")
+      logger.debug(s"-----------------------------------")
+      logger.debug(s"opens: ${_opensQueue.map(_.id) mkString ", "}")
+      logger.debug(s"closed: ${_closed.map(_.id) mkString ", "}")
+      logger.debug(s"cameFrom: ${_cameFrom.map(tuple ⇒ (tuple._1.id, tuple._2.id)) mkString ", "}")
+      logger.debug(s"G Score: ${gScore mkString " -> "}")
+      logger.debug(s"Heuristic - F Score: ${fScore mkString " -> "}")
+    }
   }
 
 }
