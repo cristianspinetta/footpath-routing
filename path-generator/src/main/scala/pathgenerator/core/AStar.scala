@@ -11,12 +11,12 @@ import scala.reflect.runtime.universe._
 
 /**
  * @see https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
- * @param heuristic
- * @param gMap
- * @param startNode
- * @param targetNode
- * @param tag
- * @tparam N
+ * @param heuristic: Heuristic Function
+ * @param gMap: Graph accessing
+ * @param startNode: origin node
+ * @param targetNode: target node
+ * @param tag: implicit TypeTag supplied by Scala Compiler
+ * @tparam N: Node Type with which it works
  */
 case class AStar[N <: Node](heuristic: Heuristic[N])(gMap: GraphContainer[N], startNode: N, targetNode: N)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
 
