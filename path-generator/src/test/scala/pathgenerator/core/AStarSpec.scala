@@ -186,6 +186,21 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         }
       }
     }
+
+    "it runs on Grid Graph with 20000 nodes" should {
+      "resolve correctly the path between 1 and 16888" in {
+        val graph: GraphContainer[GraphNode] = createGridGraphPrototype(100, 200)
+
+        val source: GraphNode = graph.nodes.find(_.id == 1L).get
+        val target: GraphNode = graph.nodes.find(_.id == 16888L).get
+
+        val aStar = aStarWithTrivialHeuristic(graph, source, target)
+
+        val result = aStar.search
+
+        result.isSuccess should be(true)
+      }
+    }
   }
 
   private def edgesToIds(edges: List[Edge]): List[Long] = {

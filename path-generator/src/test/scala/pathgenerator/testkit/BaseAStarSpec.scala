@@ -41,4 +41,45 @@ trait BaseAStarSpec {
     13L -> (List(14L, 10L), Coordinate(4, 13)),
     14L -> (List(9L, 13L), Coordinate(4, 10))))
 
+  def createGridGraphPrototype(rows: Int, columns: Int): GraphContainer[GraphNode] = {
+
+    var nodes = scala.collection.mutable.ListBuffer.empty[GraphNode]
+    var nodeNumber = 1
+
+    for (row ← 1 to rows; column ← 1 to columns) {
+      var neighbours = scala.collection.mutable.ListBuffer.empty[Int]
+
+      val columnMod = column % columns
+      if (columnMod == 1) {
+        // First column
+        neighbours += (nodeNumber + 1)
+      } else if (columnMod == 0) {
+        // Last column
+        neighbours += (nodeNumber - 1)
+      } else {
+        // Between the fist and last column
+        neighbours += (nodeNumber + 1)
+        neighbours += (nodeNumber - 1)
+      }
+
+      val rowMod = row % rows;
+      if (rowMod == 1) {
+        // First row
+        neighbours += (nodeNumber + columns)
+      } else if (rowMod == 0) {
+        // Last row
+        neighbours += (nodeNumber - columns)
+      } else {
+        // Between first and last row
+        neighbours += (nodeNumber + columns)
+        neighbours += (nodeNumber - columns)
+      }
+
+      nodes += GraphNode.createWithEdges(nodeNumber, neighbours.toList)
+      nodeNumber += 1
+    }
+
+    GraphContainer(nodes.toList)
+  }
+
 }
