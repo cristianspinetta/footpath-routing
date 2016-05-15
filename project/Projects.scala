@@ -9,7 +9,7 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(noPublishing: _*)
-    .aggregate(pathGenerator)
+    .aggregate(pathGenerator, mapGenerator)
 
   lazy val pathGenerator = Project("path-generator",file("path-generator"))
     .settings(basicSettings: _*)
@@ -17,6 +17,15 @@ object Projects extends Build {
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j, akkaTestKit,
         scalaReflect) ++
+      test(scalatest, mockito))
+    .settings(noPublishing: _*)
+
+  lazy val mapGenerator = Project("map-generator",file("map-generator"))
+    .settings(basicSettings: _*)
+    .settings(formatSettings: _*)
+    .settings(libraryDependencies ++=
+      compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j, akkaTestKit,
+        jodaTime, scalaReflect, scalaXml) ++
       test(scalatest, mockito))
     .settings(noPublishing: _*)
 

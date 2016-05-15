@@ -17,8 +17,10 @@ object Dependencies extends Version {
   val akkaActor         = "com.typesafe.akka"         %%  "akka-actor"            % AkkaVersion
   val akkaSlf4j         = "com.typesafe.akka"         %%  "akka-slf4j"            % AkkaVersion
   val akkaTestKit       = "com.typesafe.akka"         %%  "akka-testkit"          % AkkaVersion
+  val jodaTime          = "joda-time"                 %   "joda-time"             % "2.9.3"
 
   val scalaReflect      = "org.scala-lang"            %   "scala-reflect"         % ScalaVersion
+  val scalaXml          = "org.scala-lang.modules"    %%  "scala-xml"             % "1.0.5"
 
 
   def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
