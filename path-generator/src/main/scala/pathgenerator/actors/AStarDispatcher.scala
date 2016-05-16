@@ -1,11 +1,11 @@
 package pathgenerator.actors
 
 import akka.actor.{ Actor, Props }
-import pathgenerator.graph.Node
+import pathgenerator.graph.Vertex
 
 object AStarDispatcher {
 
-  case class AStarRequest(nodeStart: Node, nodeTarget: Node)
+  case class AStarRequest(nodeStart: Vertex, nodeTarget: Vertex)
 
   def props = Props(classOf[AStarDispatcher])
 }

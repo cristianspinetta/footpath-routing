@@ -1,13 +1,13 @@
 package pathgenerator.core
 
-import pathgenerator.graph.{ Edge, GraphContainer, Node }
+import pathgenerator.graph.{ Edge, GraphContainer, Vertex }
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 
-class AStarAlternative[V <: Node](gMap: GraphContainer[V], startNode: Node, targetNode: Node,
-    estFurtherCostFunc: Node ⇒ Int) {
+class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: Vertex, targetNode: Vertex,
+                                    estFurtherCostFunc: Vertex ⇒ Int) {
 
   // priority queue orders by highest value, so cost is negated.
   val ordering = Ordering.by[MetaInformedState, Int] {
@@ -15,19 +15,19 @@ class AStarAlternative[V <: Node](gMap: GraphContainer[V], startNode: Node, targ
     case _ ⇒ 0
   }
 
-  // The set of tentative nodes to be evaluated, initially containing the start node
+  // The set of tentative vertices to be evaluated, initially containing the start vertex
   private val _opens = mutable.PriorityQueue[MetaInformedState](MetaInformedState(startNode, 0, 0))(ordering)
 
-  // The set of nodes already evaluated.
-  private val _visited = mutable.Set[Node]()
+  // The set of vertices already evaluated.
+  private val _visited = mutable.Set[Vertex]()
 
-  // The map of navigated nodes.
-  private val _cameFrom: TrieMap[Node, Node] = TrieMap.empty
+  // The map of navigated vertices.
+  private val _cameFrom: TrieMap[Vertex, Vertex] = TrieMap.empty
 
   def search: List[Edge] = loop(1, None)
 
   @tailrec
-  private def loop(loopCount: Int, fromNode: Option[Node]): List[Edge] = {
+  private def loop(loopCount: Int, fromNode: Option[Vertex]): List[Edge] = {
     if (_opens isEmpty) Nil
     else {
       val current = _opens.dequeue()
@@ -41,7 +41,7 @@ class AStarAlternative[V <: Node](gMap: GraphContainer[V], startNode: Node, targ
     }
   }
 
-  private def enqueueNeighbours(node: Node, cost: Long) {
+  private def enqueueNeighbours(node: Vertex, cost: Long) {
     val neighbours = node neighbours gMap
     val nonVisitedNeighbours = neighbours filter (v ⇒ !_visited.contains(v))
     _visited ++= nonVisitedNeighbours
@@ -51,7 +51,7 @@ class AStarAlternative[V <: Node](gMap: GraphContainer[V], startNode: Node, targ
   }
 
   // recursive function
-  private def reconstructPath(cameFrom: TrieMap[Node, Node], current: Node): List[Edge] = {
+  private def reconstructPath(cameFrom: TrieMap[Vertex, Vertex], current: Vertex): List[Edge] = {
     cameFrom.get(current) match {
       case Some(nodeFrom) ⇒
         reconstructPath(cameFrom - current, nodeFrom) ++ nodeFrom.getEdgesFor(current.id).toList
@@ -61,4 +61,4 @@ class AStarAlternative[V <: Node](gMap: GraphContainer[V], startNode: Node, targ
 
 }
 
-case class MetaInformedState(node: Node, cost: Long, estFurtherCost: Long)
+case class MetaInformedState(node: Vertex, cost: Long, estFurtherCost: Long)

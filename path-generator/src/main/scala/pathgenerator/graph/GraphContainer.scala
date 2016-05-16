@@ -1,18 +1,18 @@
 package pathgenerator.graph
 
-case class GraphContainer[N <: Node](nodes: List[N]) {
+case class GraphContainer[N <: Vertex](vertices: List[N]) {
 
-  def findNode(id: Long): Option[N] = nodes.find(_.id == id) // TODO: replace by a DB query
+  def findVertex(id: Long): Option[N] = vertices.find(_.id == id) // TODO: replace by a DB query
 
 }
 
 object GraphContainer {
 
-  def createGeoNodes(nodeData: Map[Long, (List[Long], Coordinate)]): GraphContainer[GeoNode] = {
+  def createGeoNodes(nodeData: Map[Long, (List[Long], Coordinate)]): GraphContainer[GeoVertex] = {
 
-    val nodes: List[GeoNode] = nodeData.toList map {
+    val nodes: List[GeoVertex] = nodeData.toList map {
       case (nodeId, (edgeIds, nodeCoordinate)) ⇒
-        GeoNode(nodeId,
+        new GeoVertex(nodeId,
           edgeIds.map(neighbourId ⇒ GeoEdge(nodeId, neighbourId, nodeCoordinate.distanceTo(nodeData(neighbourId)._2))),
           nodeCoordinate)
     }

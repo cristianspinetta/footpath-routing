@@ -17,16 +17,17 @@ object Projects extends Build {
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j, akkaTestKit,
         scalaReflect) ++
-      test(scalatest, mockito))
+        test(scalatest, mockito))
     .settings(noPublishing: _*)
 
   lazy val mapGenerator = Project("map-generator",file("map-generator"))
+    .dependsOn(pathGenerator)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j, akkaTestKit,
         jodaTime, scalaReflect, scalaXml) ++
-      test(scalatest, mockito))
+        test(scalatest, mockito))
     .settings(noPublishing: _*)
 
   val noPublishing = Seq(publish := (), publishLocal := (), publishArtifact := false)

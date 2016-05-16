@@ -1,13 +1,13 @@
 package mapgenerator.source.osm
 
-import org.scalatest.{ FlatSpec, Matchers }
+import org.scalatest.{FlatSpec, Matchers}
 
-class OSMLoaderByXmlSpec extends FlatSpec with Matchers {
+class OSMLoaderByXmlSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
   "A complete OSM file" should "be parsed correctly" in {
-    val xmlParser: OSMLoaderByXml = OSMLoaderByXml("/home/cristian/Documents/Development/footpath-routing/map.osm")
+    val xmlParser: OSMLoaderByXml = OSMLoaderByXml(osmURL)
 
-    val nodes: Seq[Node] = xmlParser.loadNodes
+    val nodes: Seq[OSMNode] = xmlParser.loadNodes
     val ways: Seq[Way] = xmlParser.loadWays
     val relations: Seq[Relation] = xmlParser.loadRelations
 

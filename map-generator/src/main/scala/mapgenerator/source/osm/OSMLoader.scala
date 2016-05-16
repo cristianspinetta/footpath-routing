@@ -2,21 +2,20 @@ package mapgenerator.source.osm
 
 import org.joda.time.DateTime
 
-import scala.xml.{ Elem, XML }
+import java.net.URL
+import scala.xml.{Elem, XML}
 
 trait OSMLoader {
-  def loadNodes: Seq[Node]
+  def loadNodes: Seq[OSMNode]
   def loadWays: Seq[Way]
   def loadRelations: Seq[Relation]
 }
 
-case class OSMLoaderByXml(filePath: String) extends OSMLoader {
+class OSMLoaderByXml(osm: Elem) extends OSMLoader {
 
-  val osm: Elem = XML.load("/home/cristian/Documents/Development/footpath-routing/map.osm")
-
-  override def loadNodes: Seq[Node] = (osm \ "node").map {
+  override def loadNodes: Seq[OSMNode] = (osm \ "node").map {
     case n ⇒
-      Node(
+      OSMNode(
         lon = (n \ "@lon").text.toDouble,
         lat = (n \ "@lat").text.toDouble,
         uid = (n \ "@uid").text.toLong,
@@ -64,4 +63,11 @@ case class OSMLoaderByXml(filePath: String) extends OSMLoader {
         tags = (r \ "tag").map(tag ⇒
           (tag \ "@k").text -> (tag \ "@v").text).toMap)
   }
+}
+
+object OSMLoaderByXml {
+
+  def apply(url: URL): OSMLoaderByXml = new OSMLoaderByXml(XML.load(url.getPath))
+
+  def apply(systemFilePath: String): OSMLoaderByXml = new OSMLoaderByXml(XML.load(systemFilePath))
 }

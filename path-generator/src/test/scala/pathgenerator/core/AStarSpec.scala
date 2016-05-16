@@ -11,14 +11,14 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
   "The A* Algorithm with the trivial F Heuristic { Y = 0, ∀ X ∈ ℝ }" when {
 
-    val aStarWithTrivialHeuristic = AStar[GraphNode](TrivialHeuristic()) _
+    val aStarWithTrivialHeuristic = AStar[GraphVertex](TrivialHeuristic()) _
 
     "it runs on the Graph A" should {
       "resolve correctly the path between 1 and 4" in {
-        val graph: GraphContainer[GraphNode] = abstractGraphPrototype
+        val graph: GraphContainer[GraphVertex] = abstractGraphPrototype
 
-        val source: GraphNode = graph.nodes.find(_.id == 1L).get
-        val target: GraphNode = graph.nodes.find(_.id == 4L).get
+        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
+        val target: GraphVertex = graph.vertices.find(_.id == 4L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
@@ -38,10 +38,10 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 18" in {
-        val graph: GraphContainer[GraphNode] = abstractGraphPrototype
+        val graph: GraphContainer[GraphVertex] = abstractGraphPrototype
 
-        val source: GraphNode = graph.nodes.find(_.id == 1L).get
-        val target: GraphNode = graph.nodes.find(_.id == 18L).get
+        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
+        val target: GraphVertex = graph.vertices.find(_.id == 18L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
@@ -61,10 +61,10 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 19" in {
-        val graph: GraphContainer[GraphNode] = abstractGraphPrototype
+        val graph: GraphContainer[GraphVertex] = abstractGraphPrototype
 
-        val source: GraphNode = graph.nodes.find(_.id == 1L).get
-        val target: GraphNode = graph.nodes.find(_.id == 19L).get
+        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
+        val target: GraphVertex = graph.vertices.find(_.id == 19L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
@@ -86,15 +86,15 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
     "it runs on the Graph A without edge 10-13" should {
 
-      val graph: GraphContainer[GraphNode] = abstractGraphPrototype.copy(nodes =
-        abstractGraphPrototype.nodes.map {
-          case node @ GraphNode(10, edges) ⇒ GraphNode.removeEdge(node, 13)
+      val graph: GraphContainer[GraphVertex] = abstractGraphPrototype.copy(vertices =
+        abstractGraphPrototype.vertices.map {
+          case node @ GraphVertex(10, edges) ⇒ GraphVertex.removeEdge(node, 13)
           case node                        ⇒ node
         })
 
       "resolve correctly the path between 1 and 18" in {
-        val source: GraphNode = graph.nodes.find(_.id == 1L).get
-        val target: GraphNode = graph.nodes.find(_.id == 18L).get
+        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
+        val target: GraphVertex = graph.vertices.find(_.id == 18L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
@@ -114,8 +114,8 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 19" in {
-        val source: GraphNode = graph.nodes.find(_.id == 1L).get
-        val target: GraphNode = graph.nodes.find(_.id == 19L).get
+        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
+        val target: GraphVertex = graph.vertices.find(_.id == 19L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
@@ -137,16 +137,16 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
     "it runs on the Graph A neither with edge 10-13 nor 14-18" should {
 
-      val graph: GraphContainer[GraphNode] = abstractGraphPrototype.copy(nodes =
-        abstractGraphPrototype.nodes.map {
-          case node @ GraphNode(10, edges) ⇒ GraphNode.removeEdge(node, 13)
-          case node @ GraphNode(14, edges) ⇒ GraphNode.removeEdge(node, 18)
+      val graph: GraphContainer[GraphVertex] = abstractGraphPrototype.copy(vertices =
+        abstractGraphPrototype.vertices.map {
+          case node @ GraphVertex(10, edges) ⇒ GraphVertex.removeEdge(node, 13)
+          case node @ GraphVertex(14, edges) ⇒ GraphVertex.removeEdge(node, 18)
           case node                        ⇒ node
         })
 
       "resolve correctly the path between 1 and 18" in {
-        val source: GraphNode = graph.nodes.find(_.id == 1L).get
-        val target: GraphNode = graph.nodes.find(_.id == 18L).get
+        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
+        val target: GraphVertex = graph.vertices.find(_.id == 18L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
@@ -166,8 +166,8 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 19" in {
-        val source: GraphNode = graph.nodes.find(_.id == 1L).get
-        val target: GraphNode = graph.nodes.find(_.id == 19L).get
+        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
+        val target: GraphVertex = graph.vertices.find(_.id == 19L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
@@ -187,12 +187,12 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
     }
 
-    "it runs on Grid Graph with 20000 nodes" should {
+    "it runs on Grid Graph with 20000 vertices" should {
       "resolve correctly the path between 1 and 16888" in {
-        val graph: GraphContainer[GraphNode] = createGridGraphPrototype(100, 200)
+        val graph: GraphContainer[GraphVertex] = createGridGraphPrototype(100, 200)
 
-        val source: GraphNode = graph.nodes.find(_.id == 1L).get
-        val target: GraphNode = graph.nodes.find(_.id == 16888L).get
+        val source: GraphVertex = graph.vertices.find(_.id == 1L).get
+        val target: GraphVertex = graph.vertices.find(_.id == 16888L).get
 
         val aStar = aStarWithTrivialHeuristic(graph, source, target)
 
@@ -204,19 +204,19 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
   }
 
   private def edgesToIds(edges: List[Edge]): List[Long] = {
-    edges.headOption.map(_.nodeStart).toList ::: edges.map(_.nodeEnd)
+    edges.headOption.map(_.vertexStart).toList ::: edges.map(_.vertexEnd)
   }
 
   "The A* Algorithm with the Geographical Heuristic Function" when {
 
     "it runs on the Graph A" should {
       "resolve correctly the path between 1 and 4" in {
-        val graph: GraphContainer[GeoNode] = geoGraphPrototype
+        val graph: GraphContainer[GeoVertex] = geoGraphPrototype
 
-        val source: GeoNode = graph.nodes.find(_.id == 1L).get
-        val target: GeoNode = graph.nodes.find(_.id == 4L).get
+        val source: GeoVertex = graph.vertices.find(_.id == 1L).get
+        val target: GeoVertex = graph.vertices.find(_.id == 4L).get
 
-        val aStar = AStar[GeoNode](GeoHeuristic(source))(graph, source, target)
+        val aStar = AStar[GeoVertex](GeoHeuristic(source))(graph, source, target)
 
         val result = aStar.search
 
@@ -234,12 +234,12 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 13" in {
-        val graph: GraphContainer[GeoNode] = geoGraphPrototype
+        val graph: GraphContainer[GeoVertex] = geoGraphPrototype
 
-        val source: GeoNode = graph.nodes.find(_.id == 1L).get
-        val target: GeoNode = graph.nodes.find(_.id == 13L).get
+        val source: GeoVertex = graph.vertices.find(_.id == 1L).get
+        val target: GeoVertex = graph.vertices.find(_.id == 13L).get
 
-        val aStar = AStar[GeoNode](GeoHeuristic(source))(graph, source, target)
+        val aStar = AStar[GeoVertex](GeoHeuristic(source))(graph, source, target)
 
         val result: Try[List[Edge]] = aStar.search
 
@@ -257,12 +257,12 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 12" in {
-        val graph: GraphContainer[GeoNode] = geoGraphPrototype
+        val graph: GraphContainer[GeoVertex] = geoGraphPrototype
 
-        val source: GeoNode = graph.nodes.find(_.id == 1L).get
-        val target: GeoNode = graph.nodes.find(_.id == 12L).get
+        val source: GeoVertex = graph.vertices.find(_.id == 1L).get
+        val target: GeoVertex = graph.vertices.find(_.id == 12L).get
 
-        val aStar = AStar[GeoNode](GeoHeuristic(source))(graph, source, target)
+        val aStar = AStar[GeoVertex](GeoHeuristic(source))(graph, source, target)
 
         val result: Try[List[Edge]] = aStar.search
 

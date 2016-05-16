@@ -1,31 +1,31 @@
 package pathgenerator.testkit
 
-import pathgenerator.graph.{ Coordinate, GeoNode, GraphContainer, GraphNode }
+import pathgenerator.graph.{ Coordinate, GeoVertex, GraphContainer, GraphVertex }
 
 trait BaseAStarSpec {
 
-  protected val abstractGraphPrototype: GraphContainer[GraphNode] = GraphContainer(List(
-    GraphNode.createWithEdges(1, List(2, 6)),
-    GraphNode.createWithEdges(2, List(1, 3)),
-    GraphNode.createWithEdges(3, List(2, 7, 4)),
-    GraphNode.createWithEdges(4, List(3, 8)),
-    GraphNode.createWithEdges(5, List(6, 11)),
-    GraphNode.createWithEdges(6, List(1, 5)),
-    GraphNode.createWithEdges(7, List(3)),
-    GraphNode.createWithEdges(8, List(4, 9)),
-    GraphNode.createWithEdges(9, List(8, 14)),
-    GraphNode.createWithEdges(10, List(11, 12, 13)),
-    GraphNode.createWithEdges(11, List(5, 10)),
-    GraphNode.createWithEdges(12, List(10, 15)),
-    GraphNode.createWithEdges(13, List(10, 18)),
-    GraphNode.createWithEdges(14, List(9, 18)),
-    GraphNode.createWithEdges(15, List(12, 16)),
-    GraphNode.createWithEdges(16, List(15, 17)),
-    GraphNode.createWithEdges(17, List(16, 19)),
-    GraphNode.createWithEdges(18, List(13, 14, 19)),
-    GraphNode.createWithEdges(19, List(17, 18))))
+  protected val abstractGraphPrototype: GraphContainer[GraphVertex] = GraphContainer(List(
+    GraphVertex.createWithEdges(1, List(2, 6)),
+    GraphVertex.createWithEdges(2, List(1, 3)),
+    GraphVertex.createWithEdges(3, List(2, 7, 4)),
+    GraphVertex.createWithEdges(4, List(3, 8)),
+    GraphVertex.createWithEdges(5, List(6, 11)),
+    GraphVertex.createWithEdges(6, List(1, 5)),
+    GraphVertex.createWithEdges(7, List(3)),
+    GraphVertex.createWithEdges(8, List(4, 9)),
+    GraphVertex.createWithEdges(9, List(8, 14)),
+    GraphVertex.createWithEdges(10, List(11, 12, 13)),
+    GraphVertex.createWithEdges(11, List(5, 10)),
+    GraphVertex.createWithEdges(12, List(10, 15)),
+    GraphVertex.createWithEdges(13, List(10, 18)),
+    GraphVertex.createWithEdges(14, List(9, 18)),
+    GraphVertex.createWithEdges(15, List(12, 16)),
+    GraphVertex.createWithEdges(16, List(15, 17)),
+    GraphVertex.createWithEdges(17, List(16, 19)),
+    GraphVertex.createWithEdges(18, List(13, 14, 19)),
+    GraphVertex.createWithEdges(19, List(17, 18))))
 
-  protected val geoGraphPrototype: GraphContainer[GeoNode] = GraphContainer.createGeoNodes(Map(
+  protected val geoGraphPrototype: GraphContainer[GeoVertex] = GraphContainer.createGeoNodes(Map(
     1L -> (List(2L, 6L), Coordinate(1, 1)),
     2L -> (List(1L, 3L, 4L), Coordinate(3, 1)),
     3L -> (List(2L), Coordinate(3, 4)),
@@ -41,9 +41,9 @@ trait BaseAStarSpec {
     13L -> (List(14L, 10L), Coordinate(4, 13)),
     14L -> (List(9L, 13L), Coordinate(4, 10))))
 
-  def createGridGraphPrototype(rows: Int, columns: Int): GraphContainer[GraphNode] = {
+  def createGridGraphPrototype(rows: Int, columns: Int): GraphContainer[GraphVertex] = {
 
-    var nodes = scala.collection.mutable.ListBuffer.empty[GraphNode]
+    var nodes = scala.collection.mutable.ListBuffer.empty[GraphVertex]
     var nodeNumber = 1
 
     for (row ← 1 to rows; column ← 1 to columns) {
@@ -75,7 +75,7 @@ trait BaseAStarSpec {
         neighbours += (nodeNumber - columns)
       }
 
-      nodes += GraphNode.createWithEdges(nodeNumber, neighbours.toList)
+      nodes += GraphVertex.createWithEdges(nodeNumber, neighbours.toList)
       nodeNumber += 1
     }
 
