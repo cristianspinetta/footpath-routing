@@ -26,7 +26,7 @@ object Projects extends Build {
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j, akkaTestKit,
-        jodaTime, scalaReflect, scalaXml) ++
+        jodaTime, scalaReflect, scalaXml, json4sJackson) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
 

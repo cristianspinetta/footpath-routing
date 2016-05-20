@@ -13,7 +13,7 @@ trait OSMLoader {
 
 class OSMLoaderByXml(osm: Elem) extends OSMLoader {
 
-  override def loadNodes: Seq[OSMNode] = (osm \ "node").map {
+  lazy val loadNodes: Seq[OSMNode] = (osm \ "node").map {
     case n ⇒
       OSMNode(
         lon = (n \ "@lon").text.toDouble,
@@ -29,7 +29,7 @@ class OSMLoaderByXml(osm: Elem) extends OSMLoader {
           (tag \ "@k").text -> (tag \ "@v").text).toMap)
   }
 
-  override def loadWays: Seq[Way] = (osm \ "way").map {
+  lazy val loadWays: Seq[Way] = (osm \ "way").map {
     case w ⇒
       Way(
         id = (w \ "@id").text.toLong,
@@ -45,7 +45,7 @@ class OSMLoaderByXml(osm: Elem) extends OSMLoader {
           (tag \ "@k").text -> (tag \ "@v").text).toMap)
   }
 
-  override def loadRelations: Seq[Relation] = (osm \ "relation").map {
+  lazy val loadRelations: Seq[Relation] = (osm \ "relation").map {
     case r ⇒
       Relation(
         id = (r \ "@id").text.toLong,

@@ -205,6 +205,17 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
       }
     }
     intersectionNodes.toList
+    // Functional way:
+//    val (_, intersectionNodesF) = ways
+//      .flatMap(_.nodeIds)
+//      .foldLeft((List.empty[Long], List.empty[Long])) { case ((possibleIntersectionNodes, accIntersectionNodes), nodeId) =>
+//        if (possibleIntersectionNodes.contains(nodeId))
+//          (possibleIntersectionNodes, nodeId :: accIntersectionNodes)
+//        else
+//          (nodeId :: possibleIntersectionNodes, accIntersectionNodes)
+//      }
+//
+//    intersectionNodesF
   }
 }
 
