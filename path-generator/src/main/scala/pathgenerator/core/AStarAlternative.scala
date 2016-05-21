@@ -7,7 +7,7 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 
 class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: Vertex, targetNode: Vertex,
-                                    estFurtherCostFunc: Vertex ⇒ Int) {
+    estFurtherCostFunc: Vertex ⇒ Int) {
 
   // priority queue orders by highest value, so cost is negated.
   val ordering = Ordering.by[MetaInformedState, Int] {

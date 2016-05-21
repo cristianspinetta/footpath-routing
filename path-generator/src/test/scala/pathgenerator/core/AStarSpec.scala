@@ -89,7 +89,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       val graph: GraphContainer[GraphVertex] = abstractGraphPrototype.copy(vertices =
         abstractGraphPrototype.vertices.map {
           case node @ GraphVertex(10, edges) ⇒ GraphVertex.removeEdge(node, 13)
-          case node                        ⇒ node
+          case node                          ⇒ node
         })
 
       "resolve correctly the path between 1 and 18" in {
@@ -141,7 +141,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         abstractGraphPrototype.vertices.map {
           case node @ GraphVertex(10, edges) ⇒ GraphVertex.removeEdge(node, 13)
           case node @ GraphVertex(14, edges) ⇒ GraphVertex.removeEdge(node, 18)
-          case node                        ⇒ node
+          case node                          ⇒ node
         })
 
       "resolve correctly the path between 1 and 18" in {

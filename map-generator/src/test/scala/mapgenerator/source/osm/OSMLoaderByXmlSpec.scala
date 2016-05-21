@@ -1,6 +1,6 @@
 package mapgenerator.source.osm
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{ FlatSpec, Matchers }
 
 class OSMLoaderByXmlSpec extends FlatSpec with BaseOSMSpec with Matchers {
 

@@ -3,7 +3,7 @@ package mapgenerator.source.osm
 import org.joda.time.DateTime
 
 import java.net.URL
-import scala.xml.{Elem, XML}
+import scala.xml.{ Elem, XML }
 
 trait OSMLoader {
   def loadNodes: Seq[OSMNode]
