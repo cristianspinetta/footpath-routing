@@ -6,81 +6,82 @@ import scala.collection.mutable.ListBuffer
 
 case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
 
-  private val intersectionNodes: List[Long] = getIntersections(ways)
+  private val streetWay: Seq[Way] = ways.filter(way => (isRoutableWay(way) || isParkAndRide(way) || isBikeParking(way)) && !isAreaWay(way))
+  private val intersectionNodes: List[Long] = getIntersections(streetWay)
   private val createdOsmVertex = ListBuffer.empty[OsmVertex]
 
   def createGraph: GraphContainer[OsmVertex] = {
-    for {
-      way ← ways if isRoutableWay(way)
-    } {
-      // TODO agregar properties utiles del way
-      // TODO agregar permisos
+    for (way ← streetWay) processStreetWay(way)
+    GraphContainer(createdOsmVertex.toList)
+  }
 
-      val wayNodes: List[Option[OSMNode]] = way.nodeIds.map(nodeId ⇒ nodes.find(node ⇒ node.id == nodeId))
-      if (wayNodes.forall(_.isDefined)) {
-        val wayUniqueNodes: List[OSMNode] = getUniqueNodes(wayNodes.map(_.get))
+  private def processStreetWay(way: Way): Unit = {
+    // TODO agregar properties utiles del way
+    // TODO agregar permisos
 
-        var startNode: Option[Long] = None
-        var osmStartNodeOpt: Option[OSMNode] = None
-        var segmentCoordinates: ListBuffer[Coordinate] = ListBuffer.empty
+    val wayNodes: List[Option[OSMNode]] = way.nodeIds.map(nodeId ⇒ nodes.find(node ⇒ node.id == nodeId))
+    if (wayNodes.forall(_.isDefined)) {
+      val wayUniqueNodes: List[OSMNode] = getUniqueNodes(wayNodes.map(_.get))
 
-        var startEndpointOpt: Option[OsmVertex] = None
-        var endEndpointOpt: Option[OsmVertex] = None
+      var startNode: Option[Long] = None
+      var osmStartNodeOpt: Option[OSMNode] = None
+      val segmentCoordinates: ListBuffer[Coordinate] = ListBuffer.empty
 
-        for {
-          (vector, index) ← wayUniqueNodes.sliding(2).toList.zipWithIndex
-        } {
+      var startEndpointOpt: Option[OsmVertex] = None
+      var endEndpointOpt: Option[OsmVertex] = None
 
-          val firstNode = vector.head
-          val secondNode = vector.tail.head
+      for {
+        (vector, index) ← wayUniqueNodes.sliding(2).toList.zipWithIndex
+      } {
 
-          osmStartNodeOpt = osmStartNodeOpt orElse Some(firstNode)
-          startNode = startNode orElse Some(firstNode.id)
+        val firstNode = vector.head
+        val secondNode = vector.tail.head
 
-          val osmStartNode: OSMNode = osmStartNodeOpt.get
+        osmStartNodeOpt = osmStartNodeOpt orElse Some(firstNode)
+        startNode = startNode orElse Some(firstNode.id)
 
-          val osmEndNode: OSMNode = secondNode
+        val osmStartNode: OSMNode = osmStartNodeOpt.get
 
-          if (segmentCoordinates.isEmpty) segmentCoordinates += Coordinate(osmStartNode.lat, osmStartNode.lon)
+        val osmEndNode: OSMNode = secondNode
 
-          segmentCoordinates += Coordinate(osmEndNode.lat, osmEndNode.lon)
+        if (segmentCoordinates.isEmpty) segmentCoordinates += Coordinate(osmStartNode.lat, osmStartNode.lon)
 
-          if (intersectionNodes.contains(osmEndNode.id) ||
-            wayUniqueNodes.take(index).contains(firstNode) || // TODO checkear porque parece que esto siempre da false dado que ya quitamos los repetidos antes
-            secondNode.tags.get("ele").isDefined ||
-            secondNode.isStop ||
-            secondNode.isBollard) {
-            // TODO Crear geometry (lista de coordenadas para este segmento)
-            segmentCoordinates.clear()
+        segmentCoordinates += Coordinate(osmEndNode.lat, osmEndNode.lon)
 
-            startEndpointOpt match {
-              case None ⇒
-                startEndpointOpt = Some(createGraphVertex(way, osmStartNode))
-              // TODO chequear si necesitamos elevation data (linea 628)
-              case Some(startEndpoint) ⇒
-                startEndpointOpt = endEndpointOpt
-            }
+        if (intersectionNodes.contains(osmEndNode.id) ||
+          wayUniqueNodes.take(index).contains(firstNode) ||
+          secondNode.tags.get("ele").isDefined ||
+          secondNode.isStop ||
+          secondNode.isBollard) {
+          // TODO Crear geometry (lista de coordenadas para este segmento)
+          segmentCoordinates.clear()
 
-            endEndpointOpt = Some(createGraphVertex(way, osmEndNode))
-
-            // TODO chequear si necesitamos elevation data (linea 640)
-
-            val (frontEdge, backEdge) = createEdgesForStreet(startEndpointOpt.get, endEndpointOpt.get, way, osmStartNode, osmEndNode)
-
-            addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge)
-            addEdgeToCreatedVertex(startEndpointOpt.get, backEdge)
-
-            addEdgeToCreatedVertex(endEndpointOpt.get, frontEdge)
-            addEdgeToCreatedVertex(endEndpointOpt.get, backEdge)
-
-            startNode = Some(secondNode.id)
-            osmStartNodeOpt = Some(secondNode)
-
+          startEndpointOpt match {
+            case None ⇒
+              startEndpointOpt = Some(createGraphVertex(way, osmStartNode))
+            // TODO chequear si necesitamos elevation data (linea 628)
+            case Some(startEndpoint) ⇒
+              startEndpointOpt = endEndpointOpt
           }
+
+          endEndpointOpt = Some(createGraphVertex(way, osmEndNode))
+
+          // TODO chequear si necesitamos elevation data (linea 640)
+
+          val (frontEdge, backEdge) = createEdgesForStreet(startEndpointOpt.get, endEndpointOpt.get, way, osmStartNode, osmEndNode)
+
+          addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge)
+          addEdgeToCreatedVertex(startEndpointOpt.get, backEdge)
+
+          addEdgeToCreatedVertex(endEndpointOpt.get, frontEdge)
+          addEdgeToCreatedVertex(endEndpointOpt.get, backEdge)
+
+          startNode = Some(secondNode.id)
+          osmStartNodeOpt = Some(secondNode)
+
         }
       }
     }
-    GraphContainer(createdOsmVertex.toList)
   }
 
   private def addEdgeToCreatedVertex(osmVertex: OsmVertex, osmEdge: OsmStreetEdge): Unit = {
@@ -212,13 +213,14 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
   private def getIntersections(ways: Seq[Way]): List[Long] = {
     var possibleIntersectionNodes = ListBuffer.empty[Long]
     var intersectionNodes = ListBuffer.empty[Long]
-    ways foreach { way ⇒
-      way.nodeIds foreach { nodeId ⇒
+    for {
+      way <- ways
+      nodeId <- way.nodeIds
+    } {
         if (possibleIntersectionNodes.contains(nodeId))
           intersectionNodes += nodeId
         else
           possibleIntersectionNodes += nodeId
-      }
     }
     intersectionNodes.toList
     // Functional way:
@@ -232,6 +234,21 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
     //          }
     //
     //        intersectionNodesF
+  }
+
+  private def isParkAndRide(way: Way): Boolean = {
+    val parkingType: Option[String] = way.tags.get("parking")
+    val parkAndRide: Option[String] = way.tags.get("park_ride")
+    way.tags.get("amenity").contains("parking") && (parkingType.contains("park_and_ride") || !parkAndRide.contains("no"))
+  }
+
+  private def isBikeParking(way: Way): Boolean = {
+    val access: Option[String] = way.tags.get("access")
+    way.tags.get("amenity").contains("bicycle_parking") && !access.contains("private") && !access.contains("no")
+  }
+
+  private def isAreaWay(way: Way): Boolean = {
+    (way.tags.get("area").contains("yes") || way.tags.get("amenity").contains("parking") || way.tags.get("amenity").contains("bicycle_parking")) && way.nodeIds.size > 2
   }
 }
 
