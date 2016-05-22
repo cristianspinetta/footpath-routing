@@ -23,7 +23,7 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
     graphJsonParser.vertices.size should be(intersectionVertexCount)
 
-    graph.vertices.size should be >= 900
+    graph.vertices.size should be >= 1060
 
     val graphVertices: Seq[OsmVertex] = graph.vertices.toIndexedSeq
     val otpVertices: ListBuffer[OTPVertex] = ListBuffer(graphJsonParser.vertices: _*)

@@ -6,7 +6,7 @@ import scala.collection.mutable.ListBuffer
 
 case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
 
-  private val streetWay: Seq[Way] = ways.filter(way => (isRoutableWay(way) || isParkAndRide(way) || isBikeParking(way)) && !isAreaWay(way))
+  private val streetWay: Seq[Way] = ways.filter(way ⇒ (isRoutableWay(way) || isParkAndRide(way) || isBikeParking(way)) && !isAreaWay(way))
   private val intersectionNodes: List[Long] = getIntersections(streetWay)
   private val createdOsmVertex = ListBuffer.empty[OsmVertex]
 
@@ -30,9 +30,9 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
       var startEndpointOpt: Option[OsmVertex] = None
       var endEndpointOpt: Option[OsmVertex] = None
 
-      for {
-        (vector, index) ← wayUniqueNodes.sliding(2).toList.zipWithIndex
-      } {
+      val coupleWays: List[List[OSMNode]] = wayUniqueNodes.sliding(2).toList
+
+      for ((vector, index) ← coupleWays.zipWithIndex) {
 
         val firstNode = vector.head
         val secondNode = vector.tail.head
@@ -49,6 +49,7 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
         segmentCoordinates += Coordinate(osmEndNode.lat, osmEndNode.lon)
 
         if (intersectionNodes.contains(osmEndNode.id) ||
+          coupleWays.size == index + 1 || // Last couple of ways
           wayUniqueNodes.take(index).contains(firstNode) ||
           secondNode.tags.get("ele").isDefined ||
           secondNode.isStop ||
@@ -214,13 +215,13 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
     var possibleIntersectionNodes = ListBuffer.empty[Long]
     var intersectionNodes = ListBuffer.empty[Long]
     for {
-      way <- ways
-      nodeId <- way.nodeIds
+      way ← ways
+      nodeId ← way.nodeIds
     } {
-        if (possibleIntersectionNodes.contains(nodeId))
-          intersectionNodes += nodeId
-        else
-          possibleIntersectionNodes += nodeId
+      if (possibleIntersectionNodes.contains(nodeId))
+        intersectionNodes += nodeId
+      else
+        possibleIntersectionNodes += nodeId
     }
     intersectionNodes.toList
     // Functional way:
