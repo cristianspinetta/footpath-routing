@@ -1,5 +1,6 @@
 package mapgenerator.source.osm
 
+import mapgenerator.source.osm.graph.OsmVertex
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
 import org.scalatest.{ FlatSpec, Matchers }

@@ -1,5 +1,6 @@
 package mapgenerator.source.osm
 
+import mapgenerator.source.osm.graph._
 import pathgenerator.graph._
 
 import scala.collection.mutable.ListBuffer
@@ -149,8 +150,7 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
               TransitStopStreetVertex(node.id, Nil, Coordinate(node.lat, node.lon)) // TODO chequear loas demas datos que le agregan (linea 1192 de OSMModule)
             case node if node.isBollard ⇒
               BarrierVertex(node.id, Nil, Coordinate(node.lat, node.lon)) // TODO chequear los permisos que le agregan (linea 1199)
-            case node ⇒
-              new OsmVertex(node.id, Nil, Coordinate(node.lat, node.lon))
+            case node ⇒ OsmVertex(way, node)
           }
 
           createdOsmVertex += vertex
@@ -252,12 +252,3 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
     (way.tags.get("area").contains("yes") || way.tags.get("amenity").contains("parking") || way.tags.get("amenity").contains("bicycle_parking")) && way.nodeIds.size > 2
   }
 }
-
-class OsmVertex(override val id: Long, override val edges: List[OsmStreetEdge], override val coordinate: Coordinate) extends GeoVertex(id, edges, coordinate)
-
-case class TransitStopStreetVertex(override val id: Long, override val edges: List[OsmStreetEdge], override val coordinate: Coordinate) extends OsmVertex(id, edges, coordinate)
-case class ExitVertex(override val id: Long, override val edges: List[OsmStreetEdge], override val coordinate: Coordinate, exitName: String) extends OsmVertex(id, edges, coordinate)
-case class BarrierVertex(override val id: Long, override val edges: List[OsmStreetEdge], override val coordinate: Coordinate) extends OsmVertex(id, edges, coordinate)
-
-case class OsmStreetEdge(osmVertexStart: OsmVertex, osmVertexEnd: OsmVertex, override val distance: Double)
-  extends GeoEdge(osmVertexStart.id, osmVertexEnd.id, distance, directed = true)
