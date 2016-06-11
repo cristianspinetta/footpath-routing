@@ -1,3 +1,4 @@
+import Dependencies.{compile => _, test => _, _}
 import sbt._
 import sbt.Keys._
 
@@ -9,7 +10,7 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(noPublishing: _*)
-    .aggregate(pathGenerator, mapGenerator)
+    .aggregate(pathGenerator, mapGenerator, navigationApi)
 
   lazy val pathGenerator = Project("path-generator",file("path-generator"))
     .settings(basicSettings: _*)
@@ -27,6 +28,16 @@ object Projects extends Build {
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j, akkaTestKit,
         jodaTime, scalaReflect, scalaXml, json4sJackson) ++
+        test(scalatest, mockito))
+    .settings(noPublishing: _*)
+
+  lazy val navigationApi = Project("navigation-api",file("navigation-api"))
+    .dependsOn(pathGenerator)
+    .settings(basicSettings: _*)
+    .settings(formatSettings: _*)
+    .settings(libraryDependencies ++=
+      compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental,
+        akkaHttpSprayJsonExperimental, akkaHttpTestKit) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
 
