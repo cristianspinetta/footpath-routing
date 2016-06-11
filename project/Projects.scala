@@ -32,7 +32,7 @@ object Projects extends Build {
     .settings(noPublishing: _*)
 
   lazy val navigationApi = Project("navigation-api",file("navigation-api"))
-    .dependsOn(pathGenerator)
+    .dependsOn(pathGenerator, mapGenerator)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=

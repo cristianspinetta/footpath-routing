@@ -38,8 +38,8 @@ object GeoVertex {
 }
 
 case class Coordinate(latitude: Double, longitude: Double) {
-  val _latitudeInRadians: Double = latitude.toRadians
-  val _longitudeInRadians: Double = longitude.toRadians
+  private val _latitudeInRadians: Double = latitude.toRadians
+  private val _longitudeInRadians: Double = longitude.toRadians
 
   def distanceTo(coordinate: Coordinate): Double = {
     sqrt(pow(_latitudeInRadians - coordinate.latitude.toRadians, 2) +

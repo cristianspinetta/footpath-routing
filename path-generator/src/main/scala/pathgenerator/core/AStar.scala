@@ -18,7 +18,7 @@ import scala.reflect.runtime.universe._
  * @param tag: implicit TypeTag supplied by Scala Compiler
  * @tparam N: Vertex Type with which it works
  */
-case class AStar[N <: Vertex](heuristic: Heuristic[N])(gMap: GraphContainer[N], startVertex: N, targetVertex: N)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
+case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContainer[N], startVertex: N, targetVertex: N)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
 
   /**
    * The vertices already evaluated.
@@ -79,7 +79,7 @@ case class AStar[N <: Vertex](heuristic: Heuristic[N])(gMap: GraphContainer[N], 
 
       logger.debug(s"visit vertex ${current.id}")
 
-      if (current == targetVertex)
+      if (current.id == targetVertex.id)
         reconstructPath(_cameFrom, targetVertex)
       else {
         _closed.add(current)

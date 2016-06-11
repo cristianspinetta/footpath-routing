@@ -8,15 +8,20 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.Materializer
 import conf.EnvConfig
+import module.RoutingModule
 import spray.json.DefaultJsonProtocol
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.{ ExecutionContextExecutor, Future }
 import scala.util.Random
+import scala.util.{ Success ⇒ TSuccess, Failure ⇒ TFailure }
 
 case class RoutingRequest(from: Double, to: Double)
-case class RoutingResponse(path: List[Double])
+case class RoutingResponse(path: List[Coordinate])
+
+case class Coordinate(latitude: Double, longitude: Double)
 
 trait Protocols extends DefaultJsonProtocol {
+  implicit val coordinateFormat = jsonFormat2(Coordinate.apply)
   implicit val RoutingRequestFormat = jsonFormat2(RoutingRequest.apply)
   implicit val RoutingResponseFormat = jsonFormat1(RoutingResponse.apply)
 }
@@ -29,14 +34,19 @@ trait DirectionService extends Protocols with EnvConfig {
   val logger: LoggingAdapter
 
   def fetchDirections(routingRequest: RoutingRequest): Future[Either[String, RoutingResponse]] = {
-    Future.successful(Right(RoutingResponse(List(Random.nextDouble()))))
+    Future.successful {
+      RoutingModule.routing(routingRequest.from.toInt, routingRequest.to.toInt) match {
+        case TSuccess(list)           ⇒ Right(RoutingResponse(list.map(coor => Coordinate(coor.latitude, coor.longitude))))
+        case TFailure(exc: Throwable) ⇒ Left(exc.getMessage)
+      }
+    }
   }
 
   val routes = logRequestResult("routing-request") {
     path("directions") {
       get {
         parameters('from.as[Double], 'to.as[Double]).as(RoutingRequest) { routingRequest ⇒
-          val response: Future[ToResponseMarshallable] = fetchDirections(RoutingRequest(12, 60)).map {
+          val response: Future[ToResponseMarshallable] = fetchDirections(routingRequest).map {
             case Right(routingResponse) ⇒ routingResponse
             case Left(errorMessage)     ⇒ BadRequest -> errorMessage
           }
