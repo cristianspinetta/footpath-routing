@@ -9,27 +9,20 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream.Materializer
 import conf.EnvConfig
 import module.RoutingModule
-import spray.json.DefaultJsonProtocol
+import pathgenerator.graph.Coordinate
 
-import scala.concurrent.{ ExecutionContextExecutor, Future }
-import scala.util.Random
-import scala.util.{ Success ⇒ TSuccess, Failure ⇒ TFailure }
+import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.{Failure => TFailure, Success => TSuccess}
 
 case class RoutingRequest(from: Double, to: Double)
 case class RoutingResponse(path: List[Coordinate])
 
-case class Coordinate(latitude: Double, longitude: Double)
-
-trait Protocols extends DefaultJsonProtocol {
-  implicit val coordinateFormat = jsonFormat2(Coordinate.apply)
-  implicit val RoutingRequestFormat = jsonFormat2(RoutingRequest.apply)
-  implicit val RoutingResponseFormat = jsonFormat1(RoutingResponse.apply)
-}
-
-trait DirectionService extends Protocols with EnvConfig {
+trait DirectionService extends EnvConfig {
   implicit val system: ActorSystem
   implicit def executor: ExecutionContextExecutor
   implicit val materializer: Materializer
+
+  import Protocol._
 
   val logger: LoggingAdapter
 
