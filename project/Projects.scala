@@ -37,7 +37,7 @@ object Projects extends Build {
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental,
-        akkaHttpSprayJsonExperimental, akkaHttpTestKit) ++
+        akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
 

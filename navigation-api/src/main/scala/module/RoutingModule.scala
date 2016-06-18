@@ -16,7 +16,7 @@ trait RoutingModule {
   val osmModule: OSMModule = OSMModule(xmlParser.loadNodes, xmlParser.loadWays)
   val graph: GraphContainer[OsmVertex] = osmModule.createGraph
 
-  def routing(startVertexId: Int, endVertexId: Int): Try[List[Coordinate]] = {
+  def routing(startVertexId: Long, endVertexId: Long): Try[List[Coordinate]] = {
     val startVertex: OsmVertex = graph.findVertex(startVertexId.toLong).get
     val endVertex: OsmVertex = graph.findVertex(endVertexId.toLong).get
     val aStartFactory = AStar[OsmVertex, GeoHeuristic[OsmVertex]](GeoHeuristic(startVertex)) _
