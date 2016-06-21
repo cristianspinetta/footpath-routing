@@ -1,5 +1,6 @@
 package service
 
+import mapgenerator.source.osm.graph.Ramp
 import pathgenerator.graph.Coordinate
 import spray.json._
 
@@ -17,6 +18,8 @@ object Protocol extends DefaultJsonProtocol {
     }
   }
 
+  implicit val RampFormat = jsonFormat5(Ramp.apply)
   implicit val RoutingRequestFormat = jsonFormat2(RoutingRequest.apply)
   implicit val RoutingResponseFormat = jsonFormat1(RoutingResponse.apply)
+  implicit val RampResponseFormat = jsonFormat1(RampResponse.apply)
 }

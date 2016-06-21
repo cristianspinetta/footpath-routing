@@ -9,14 +9,16 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream.Materializer
 import ch.megard.akka.http.cors.CorsDirectives
 import conf.EnvConfig
+import mapgenerator.source.osm.graph.Ramp
 import module.RoutingModule
 import pathgenerator.graph.Coordinate
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.{Failure => TFailure, Success => TSuccess}
+import scala.concurrent.{ ExecutionContextExecutor, Future }
+import scala.util.{ Failure ⇒ TFailure, Success ⇒ TSuccess }
 
 case class RoutingRequest(from: Double, to: Double)
 case class RoutingResponse(path: List[Coordinate])
+case class RampResponse(ramps: Vector[Ramp])
 
 trait DirectionService extends EnvConfig {
   implicit val system: ActorSystem
@@ -36,8 +38,17 @@ trait DirectionService extends EnvConfig {
     }
   }
 
+  def fetchRamps: Future[Either[String, RampResponse]] = {
+    Future.successful {
+      RoutingModule.ramps match {
+        case TSuccess(list)           ⇒ Right(RampResponse(list))
+        case TFailure(exc: Throwable) ⇒ Left(exc.getMessage)
+      }
+    }
+  }
+
   val routes = CorsDirectives.cors() {
-      logRequestResult("routing-request") {
+    logRequestResult("routing-request") {
       path("directions") {
         get {
           parameters('from.as[Double], 'to.as[Double]).as(RoutingRequest) { routingRequest ⇒
@@ -48,7 +59,16 @@ trait DirectionService extends EnvConfig {
             complete(response)
           }
         }
-      }
+      } ~
+        path("ramps") {
+          get {
+            val response: Future[ToResponseMarshallable] = fetchRamps.map {
+              case Right(rampsResponse) ⇒ rampsResponse
+              case Left(errorMessage)   ⇒ BadRequest -> errorMessage
+            }
+            complete(response)
+          }
+        }
     }
   }
 

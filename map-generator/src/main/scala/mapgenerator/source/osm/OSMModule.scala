@@ -75,11 +75,11 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
           addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge)
           addEdgeToCreatedVertex(endEndpointOpt.get, backEdge)
 
-//          addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge)
-//          addEdgeToCreatedVertex(startEndpointOpt.get, backEdge)
-//
-//          addEdgeToCreatedVertex(endEndpointOpt.get, frontEdge)
-//          addEdgeToCreatedVertex(endEndpointOpt.get, backEdge)
+          //          addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge)
+          //          addEdgeToCreatedVertex(startEndpointOpt.get, backEdge)
+          //
+          //          addEdgeToCreatedVertex(endEndpointOpt.get, frontEdge)
+          //          addEdgeToCreatedVertex(endEndpointOpt.get, backEdge)
 
           startNode = Some(secondNode.id)
           osmStartNodeOpt = Some(secondNode)

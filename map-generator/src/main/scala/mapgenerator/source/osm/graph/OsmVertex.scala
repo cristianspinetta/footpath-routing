@@ -3,7 +3,9 @@ package mapgenerator.source.osm.graph
 import mapgenerator.source.osm.{ OSMNode, Way }
 import pathgenerator.graph.{ Coordinate, GeoEdge, GeoVertex }
 
-class OsmVertex(override val id: Long, override val edges: List[OsmStreetEdge], override val coordinate: Coordinate) extends GeoVertex(id, edges, coordinate)
+class OsmVertex(override val id: Long, override val edges: List[OsmStreetEdge], override val coordinate: Coordinate) extends GeoVertex(id, edges, coordinate) {
+  override def toString = s"OsmVertex($id, $edges, $coordinate)"
+}
 
 object OsmVertex {
   def apply(way: Way, node: OSMNode): OsmVertex = new OsmVertex(node.id, Nil, Coordinate(node.lat, node.lon))
