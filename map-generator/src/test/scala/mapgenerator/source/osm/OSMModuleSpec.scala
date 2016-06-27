@@ -1,9 +1,9 @@
 package mapgenerator.source.osm
 
-import mapgenerator.source.osm.graph.OsmVertex
+import mapgenerator.source.osm.graph.{OsmStreetEdge, OsmVertex}
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
-import org.scalatest.{ FlatSpec, Matchers }
+import org.scalatest.{FlatSpec, Matchers}
 import pathgenerator.graph.GraphContainer
 
 import scala.collection.mutable.ListBuffer
@@ -41,7 +41,18 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
         vertex.coordinate.longitude shouldBe otpVertex.x
         vertex.coordinate.latitude shouldBe otpVertex.y
       }
+
+      for {
+        edge ← otpVertex.outgoing ::: otpVertex.incoming
+      } {
+        withClue(s"Edge #${edge.id} with start vertex ${edge.startOsmNodeId} and end vertex ${edge.endOsmNodeId} not found in vertex #${graphVertices.indexOf(vertex)} ${write(vertex)}") {
+          val sameEdge = (e: OsmStreetEdge)  => (e.osmVertexStart.id == edge.startOsmNodeId && e.osmVertexEnd.id == edge.endOsmNodeId) || (e.osmVertexStart.id == edge.endOsmNodeId && e.osmVertexEnd.id == edge.startOsmNodeId)
+          vertex.edges.exists(sameEdge) should be (true)
+        }
+      }
+
       otpVertices.remove(vertexIndex)
     }
   }
+
 }
