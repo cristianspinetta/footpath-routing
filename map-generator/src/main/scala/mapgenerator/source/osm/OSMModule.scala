@@ -20,6 +20,10 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
     // TODO agregar properties utiles del way
     // TODO agregar permisos
 
+    if (way.id == 328402470) {
+      println("Way # 328402470")
+    }
+
     val wayNodes: List[Option[OSMNode]] = way.nodeIds.map(nodeId ⇒ nodes.find(node ⇒ node.id == nodeId))
     if (wayNodes.forall(_.isDefined)) {
       val wayUniqueNodes: List[OSMNode] = getUniqueNodes(wayNodes.map(_.get))
@@ -96,10 +100,10 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
     val foundOsmVertex: OsmVertex = createdOsmVertex(indexWhere)
 
     val updatedOsmVertex: OsmVertex = foundOsmVertex match {
-      case vertex: TransitStopStreetVertex ⇒ vertex.copy(edges = osmEdge :: osmVertex.edges)
-      case vertex: ExitVertex              ⇒ vertex.copy(edges = osmEdge :: osmVertex.edges)
-      case vertex: BarrierVertex           ⇒ vertex.copy(edges = osmEdge :: osmVertex.edges)
-      case vertex: OsmVertex               ⇒ new OsmVertex(vertex.id, osmEdge :: osmVertex.edges, vertex.coordinate)
+      case vertex: TransitStopStreetVertex ⇒ vertex.copy(edges = osmEdge :: foundOsmVertex.edges)
+      case vertex: ExitVertex              ⇒ vertex.copy(edges = osmEdge :: foundOsmVertex.edges)
+      case vertex: BarrierVertex           ⇒ vertex.copy(edges = osmEdge :: foundOsmVertex.edges)
+      case vertex: OsmVertex               ⇒ new OsmVertex(foundOsmVertex.id, osmEdge :: foundOsmVertex.edges, foundOsmVertex.coordinate)
     }
 
     createdOsmVertex.update(indexWhere, updatedOsmVertex)

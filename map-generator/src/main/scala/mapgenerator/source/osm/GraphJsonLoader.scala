@@ -22,7 +22,8 @@ object GraphJsonLoader {
 }
 
 case class OTPVertex(index: Long, label: String, name: String, x: Double, y: Double, trafficLight: Boolean,
-  freeFlowing: Boolean, nodeId: Long, incoming: List[OTPEdge], outgoing: List[OTPEdge])
+                     freeFlowing: Boolean, nodeId: Long, incomingStreetEdges: List[OTPEdge],
+                     outgoingStreetEdges: List[OTPEdge])
 
 case class OTPEdge(id: Long,
   bicycleSafetyFactor: Double,
