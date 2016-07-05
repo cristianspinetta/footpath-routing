@@ -3,16 +3,17 @@ package mapgenerator.source.osm
 import mapgenerator.source.osm.graph._
 import pathgenerator.graph._
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
 
-  private val streetWay: Seq[Way] = ways.filter(way ⇒ (isRoutableWay(way) || isParkAndRide(way) || isBikeParking(way)) && !isAreaWay(way))
-  private val intersectionNodes: List[Long] = getIntersections(streetWay)
+  private val (streetWays: List[Way], areaWays: List[Way]) = partitionWays
+  private val intersectionNodes: List[Long] = getIntersections(streetWays)
   private val createdOsmVertex = ListBuffer.empty[OsmVertex]
 
   def createGraph: GraphContainer[OsmVertex] = {
-    for (way ← streetWay) processStreetWay(way)
+    for (way ← streetWays) processStreetWay(way)
     GraphContainer(createdOsmVertex.toList)
   }
 
@@ -257,5 +258,24 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
 
   private def isAreaWay(way: Way): Boolean = {
     (way.tags.get("area").contains("yes") || way.tags.get("amenity").contains("parking") || way.tags.get("amenity").contains("bicycle_parking")) && way.nodeIds.size > 2
+  }
+
+  /**
+    * Parse all the ways and partition them between street and area ways
+    * @return (street way , area way)
+    */
+  private def partitionWays: (List[Way], List[Way]) = {
+
+    val streetWayBuilder: mutable.Builder[Way, List[Way]] = List.newBuilder[Way]
+    val areaWayBuilder: mutable.Builder[Way, List[Way]] = List.newBuilder[Way]
+
+    ways foreach { osmWay =>
+      if (isRoutableWay(osmWay) || isParkAndRide(osmWay) || isBikeParking(osmWay)) {
+        if (isAreaWay(osmWay)) areaWayBuilder += osmWay
+        else streetWayBuilder += osmWay
+      }
+    }
+    (streetWayBuilder.result(), areaWayBuilder.result())
+
   }
 }
