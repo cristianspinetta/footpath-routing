@@ -6,14 +6,15 @@ import mapgenerator.source.osm._
 import mapgenerator.source.osm.graph.{ OsmVertex, Ramp }
 import pathgenerator.core.AStar
 import pathgenerator.graph._
+import pathgenerator.utils.GraphUtils
 
-import scala.util.Try
+import scala.util.{ Success, Try }
 
 trait RoutingModule {
 
   val osmURL: URL = getClass.getResource("/map.osm")
-  val rampPath2014: String = "/home/cristian/Documents/Development/my-repositories/footpath-routing/map-generator/src/test/resources/rampas.csv"
-  val rampPath2011: String = "/home/cristian/Documents/Development/my-repositories/footpath-routing/map-generator/src/test/resources/rampas_2006_2011.csv"
+  val rampPath2014: String = getClass.getResource("/rampas.csv").getPath
+  val rampPath2011: String = getClass.getResource("/rampas_2006_2011.csv").getPath
   val xmlParser: OSMReaderByXml = OSMReaderByXml(osmURL)
   val rampParser: RampLoader = RampLoaderByCSV(Seq((rampPath2014, RampLoader2014), (rampPath2011, RampLoader2011)))
 
@@ -25,13 +26,11 @@ trait RoutingModule {
     val startVertex: OsmVertex = graph.findVertex(startVertexId.toLong).get
     val endVertex: OsmVertex = graph.findVertex(endVertexId.toLong).get
     val aStartFactory = AStar[OsmVertex, GeoHeuristic[OsmVertex]](GeoHeuristic(startVertex)) _
-
-    val map: Try[List[Coordinate]] = aStartFactory(graph, startVertex, endVertex).search.map(list ⇒ { // Try
-      list.map(edge ⇒ { // List
-        graph.findVertex(edge.vertexStart).get.coordinate
-      }).::(graph.findVertex(list.last.vertexEnd).get.coordinate)
-    })
-    map
+    val tryEdges: Try[List[Edge]] = aStartFactory(graph, startVertex, endVertex).search
+    tryEdges.map(edges ⇒ GraphUtils.edgesToIds(edges) map (vertexId ⇒ graph.findVertex(vertexId) match {
+      case Some(vertex) ⇒ vertex.coordinate
+      case None         ⇒ throw new RuntimeException(s"Vertex not found $vertexId")
+    }))
   }
 
   def ramps: Try[Vector[Ramp]] = Try(_ramps)

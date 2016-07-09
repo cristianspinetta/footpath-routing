@@ -203,10 +203,6 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
     }
   }
 
-  private def edgesToIds(edges: List[Edge]): List[Long] = {
-    edges.headOption.map(_.vertexStart).toList ::: edges.map(_.vertexEnd)
-  }
-
   "The A* Algorithm with the Geographical Heuristic Function" when {
 
     "it runs on the Graph A" should {

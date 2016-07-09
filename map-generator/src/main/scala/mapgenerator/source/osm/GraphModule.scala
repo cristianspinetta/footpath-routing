@@ -200,16 +200,17 @@ case class GraphModule(osmModule: OSMModule) {
         possibleIntersectionNodes += nodeId
     }
 
-    for {
-      area ← osmModule.walkableAreas ++ osmModule.parkAndRideAreas
-      outerRing ← area.outermostRings
-      node ← outerRing.nodes
-    } {
-      if (possibleIntersectionNodes.contains(node.id))
-        intersectionNodes += node.id
-      else
-        possibleIntersectionNodes += node.id
-    }
+    // FIXME genera nodos de wayArea demas
+    //    for {
+    //      area ← osmModule.walkableAreas ++ osmModule.parkAndRideAreas
+    //      outerRing ← area.outermostRings
+    //      node ← outerRing.nodes
+    //    } {
+    //      if (possibleIntersectionNodes.contains(node.id))
+    //        intersectionNodes += node.id
+    //      else
+    //        possibleIntersectionNodes += node.id
+    //    }
 
     intersectionNodes.toSet
   }

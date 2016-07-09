@@ -4,8 +4,9 @@ import mapgenerator.source.osm.graph.{ OsmStreetEdge, OsmVertex }
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
 import org.scalatest.{ FlatSpec, Matchers }
-import pathgenerator.graph.GraphContainer
+import pathgenerator.graph.{ GeoVertex, GraphContainer }
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 
 class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
@@ -78,6 +79,69 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
       otpVertices.remove(vertexIndex)
     }
     println(s"Failed edges: $edgeFailed")
+  }
+
+  "With all OSM elements" should "create a connected graph" in {
+    withClue("Connected created graph") {
+      isGraphConnected(graph) shouldBe true
+    }
+  }
+
+  private def findNeighbours[T <: GeoVertex](start: T, graph: GraphContainer[T], accum: Vector[T]): Vector[T] = {
+    if (accum.contains(start))
+      accum
+    else {
+      val neighbours = start.neighbours(graph) //.filter(n ⇒ !accum.contains(n))
+
+      if (neighbours.isEmpty)
+        Vector(start) ++ accum
+      else
+        neighbours.toVector.flatMap((v: T) ⇒ findNeighbours(v, graph, Vector(start) ++ accum))
+    }
+  }
+
+  private def findNeighbours3[T <: GeoVertex](start: T, graph: GraphContainer[T]): List[T] = {
+    def childrenNotVisited(vertex: T, visited: List[T]) =
+      vertex.neighbours(graph) filter (x ⇒ !visited.contains(x)) toSet
+
+    @annotation.tailrec
+    def loop(stack: Set[T], visited: List[T]): List[T] = {
+      if (stack isEmpty) visited
+      else loop(childrenNotVisited(stack.head, visited) ++ stack.tail,
+        stack.head :: visited)
+    }
+    loop(Set(start), Nil) reverse
+  }
+
+  private def findNeighbours2[T <: GeoVertex](start: T, graph: GraphContainer[T], accum: Vector[T]): Vector[T] = {
+    if (accum.contains(start))
+      accum
+    else {
+      val neighbours = start.neighbours(graph) //.filter(n ⇒ !accum.contains(n))
+
+      if (neighbours.isEmpty)
+        Vector(start) ++ accum
+      else {
+
+        @tailrec
+        def rec(funcList: Vector[() ⇒ Vector[T]], elements: List[T]): Vector[T] = elements match {
+          case head :: xs ⇒
+            val newFunc: () ⇒ Vector[T] = () ⇒ findNeighbours2(head, graph, Vector(start) ++ accum)
+            rec(funcList ++ Vector(newFunc), xs)
+          case _ ⇒
+            funcList.flatMap(f ⇒ f())
+        }
+
+        rec(Vector.empty, neighbours)
+
+        //neighbours.toVector.flatMap((v: T) ⇒ findNeighbours(v, graph, Vector(start) ++ accum))
+      }
+    }
+  }
+
+  private def isGraphConnected[T <: GeoVertex](graph: GraphContainer[T]): Boolean = {
+    val neighbours = findNeighbours3(graph.vertices.head, graph)
+    graph.vertices forall (v ⇒ neighbours contains v)
   }
 
 }
