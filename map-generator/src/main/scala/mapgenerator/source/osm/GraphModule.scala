@@ -8,7 +8,7 @@ import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
 case class GraphModule(osmModule: OSMModule) {
 
-  private val intersectionNodes: Vector[Long] = getIntersections
+  private val intersectionNodes: Set[Long] = getIntersections
   private val createdOsmVertex = ListBuffer.empty[OsmVertex]
 
   def createGraph: GraphContainer[OsmVertex] = {
@@ -19,10 +19,6 @@ case class GraphModule(osmModule: OSMModule) {
   private def processStreetWay(way: Way): Unit = {
     // TODO agregar properties utiles del way
     // TODO agregar permisos
-
-    if (way.id == 328402470) {
-      println("Way # 328402470")
-    }
 
     val wayNodes: List[Option[OSMNode]] = way.nodeIds.map(nodeId ⇒ osmModule.otherNodes.find(node ⇒ node.id == nodeId))
     if (wayNodes.forall(_.isDefined)) {
@@ -191,7 +187,7 @@ case class GraphModule(osmModule: OSMModule) {
     }
   }
 
-  private def getIntersections: Vector[Long] = {
+  private def getIntersections: Set[Long] = {
     var possibleIntersectionNodes = ArrayBuffer.empty[Long]
     var intersectionNodes = ArrayBuffer.empty[Long]
     for {
@@ -204,17 +200,17 @@ case class GraphModule(osmModule: OSMModule) {
         possibleIntersectionNodes += nodeId
     }
 
-    //    for {
-    //      area ← osmModule.walkableAreas ++ osmModule.parkAndRideAreas
-    //      outerRing ← area.outermostRings
-    //      node ← outerRing.nodes
-    //    } {
-    //      if (possibleIntersectionNodes.contains(node.id))
-    //        intersectionNodes += node.id
-    //      else
-    //        possibleIntersectionNodes += node.id
-    //    }
+    for {
+      area ← osmModule.walkableAreas ++ osmModule.parkAndRideAreas
+      outerRing ← area.outermostRings
+      node ← outerRing.nodes
+    } {
+      if (possibleIntersectionNodes.contains(node.id))
+        intersectionNodes += node.id
+      else
+        possibleIntersectionNodes += node.id
+    }
 
-    intersectionNodes.toVector
+    intersectionNodes.toSet
   }
 }

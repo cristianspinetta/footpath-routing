@@ -32,8 +32,11 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
     singleAreaWays: Vector[Way]) = partitionWays
 
   // 3 Save nodes from ways
-  val nodesFromStreetWays: Vector[Long] = streetWays.flatMap(_.nodeIds.toVector).toVector
-  val nodesFromAreaWays: Vector[Long] = areaWays.flatMap(_.nodeIds)
+  // Nodes to keep from street ways
+  val nodesFromStreetWays: Set[Long] = streetWays.flatMap[Long, Set[Long]](keepNodesFromCorrectlyWay)(collection.breakOut)
+
+  // Nodes to keep from area ways
+  val nodesFromAreaWays: Set[Long] = areaWays.flatMap[Long, Set[Long]](keepNodesFromCorrectlyWay)(collection.breakOut)
 
   // 4 Save other nodes
   val bikeRentalNodes: List[OSMNode] = nodes.filter(_.isBikeRental).toList
@@ -194,6 +197,7 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
         areaWay.nodeIds.forall(nodeId ⇒ otherNodeIds.contains(nodeId))
     } {
       createArea(areaWay, Vector(areaWay), Vector(), otherNodes)
+      processedAreas += areaWay
     }
   }
 
@@ -263,6 +267,11 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
       println(s"getPermissionsForEntity finaliza con partialPermission en null ... que raro!!!")
       defPermission
     }
+  }
+
+  private def keepNodesFromCorrectlyWay(way: Way): Vector[Long] = {
+    if (way.nodeIds.size > 1) way.nodeIds.toVector
+    else Vector.empty
   }
 
 }
