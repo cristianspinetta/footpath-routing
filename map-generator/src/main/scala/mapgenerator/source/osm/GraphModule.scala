@@ -75,12 +75,6 @@ case class GraphModule(osmModule: OSMModule) {
           addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge)
           addEdgeToCreatedVertex(endEndpointOpt.get, backEdge)
 
-          //          addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge)
-          //          addEdgeToCreatedVertex(startEndpointOpt.get, backEdge)
-          //
-          //          addEdgeToCreatedVertex(endEndpointOpt.get, frontEdge)
-          //          addEdgeToCreatedVertex(endEndpointOpt.get, backEdge)
-
           startNode = Some(secondNode.id)
           osmStartNodeOpt = Some(secondNode)
 
@@ -90,6 +84,8 @@ case class GraphModule(osmModule: OSMModule) {
   }
 
   private def addEdgeToCreatedVertex(osmVertex: OsmVertex, osmEdge: OsmStreetEdge): Unit = {
+
+    assert(osmEdge.osmVertexStart == osmVertex, "The startVertex of the edge must be the Vertex that it belong to.")
 
     val indexWhere: Int = createdOsmVertex.indexWhere(vertex ⇒ vertex.id == osmVertex.id)
 
@@ -188,8 +184,8 @@ case class GraphModule(osmModule: OSMModule) {
   }
 
   private def getIntersections: Set[Long] = {
-    var possibleIntersectionNodes = ArrayBuffer.empty[Long]
-    var intersectionNodes = ArrayBuffer.empty[Long]
+    val possibleIntersectionNodes = ArrayBuffer.empty[Long]
+    val intersectionNodes = ArrayBuffer.empty[Long]
     for {
       way ← osmModule.streetWays
       nodeId ← way.nodeIds
@@ -200,17 +196,16 @@ case class GraphModule(osmModule: OSMModule) {
         possibleIntersectionNodes += nodeId
     }
 
-    // FIXME genera nodos de wayArea demas
-    //    for {
-    //      area ← osmModule.walkableAreas ++ osmModule.parkAndRideAreas
-    //      outerRing ← area.outermostRings
-    //      node ← outerRing.nodes
-    //    } {
-    //      if (possibleIntersectionNodes.contains(node.id))
-    //        intersectionNodes += node.id
-    //      else
-    //        possibleIntersectionNodes += node.id
-    //    }
+    for {
+      area ← osmModule.walkableAreas ++ osmModule.parkAndRideAreas
+      outerRing ← area.outermostRings
+      node ← outerRing.nodes
+    } {
+      if (possibleIntersectionNodes.contains(node.id))
+        intersectionNodes += node.id
+      else
+        possibleIntersectionNodes += node.id
+    }
 
     intersectionNodes.toSet
   }

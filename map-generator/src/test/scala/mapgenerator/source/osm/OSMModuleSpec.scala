@@ -6,8 +6,7 @@ import org.json4s.jackson.Serialization.write
 import org.scalatest.{ FlatSpec, Matchers }
 import pathgenerator.graph.{ GeoVertex, GraphContainer }
 
-import scala.annotation.tailrec
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
 class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
@@ -23,15 +22,26 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
   val otpVertices: ListBuffer[OTPVertex] = ListBuffer(graphJsonParser.vertices: _*)
 
+  /**
+   * Missing Edge. Difference is OwnEdges - OTPEdges
+   *
+   * @param veretxId
+   * @param ownEdges
+   * @param otpEdges
+   */
+  case class MissingEdgesReport(veretxId: Long, ownEdges: List[OsmStreetEdge], otpEdges: List[OTPEdge]) {
+    val difference: Int = ownEdges.size - otpEdges.size
+  }
+
   "With all OSM elements" should "create a graph correctly" in {
 
     graphJsonParser.vertices.size should be(intersectionVertexCount)
 
-    graph.vertices.size should be >= 1060
+    graph.vertices.size should be(otpVertices.size)
 
     val graphSum = graph.vertices.map(_.edges.size).sum
 
-    val otpSum = otpVertices.toList.map(_.outgoingStreetEdges.size).sum
+    val otpSum = otpVertices.map(_.outgoingStreetEdges.size).sum
 
     println(s"Graph Sum: $graphSum. OTP Sum: $otpSum.")
 
@@ -39,7 +49,8 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
     val edgesReport = StringBuilder.newBuilder
 
-    var edgeFailed = 1
+    var edgeFailed = 0
+    val missingEdges: ArrayBuffer[MissingEdgesReport] = ArrayBuffer.empty
 
     for {
       vertex ← graphVertices
@@ -54,11 +65,15 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
         vertex.coordinate.latitude shouldBe otpVertex.y
       }
 
+      if (vertex.edges.size != otpVertex.outgoingStreetEdges.size) missingEdges +=
+        MissingEdgesReport(vertex.id, vertex.edges, otpVertex.outgoingStreetEdges)
+
       for {
-        edge ← otpVertex.outgoingStreetEdges ::: otpVertex.incomingStreetEdges
+        edge ← otpVertex.outgoingStreetEdges
       } {
 
-        val sameEdge = (e: OsmStreetEdge) ⇒ (e.osmVertexStart.id == edge.startOsmNodeId && e.osmVertexEnd.id == edge.endOsmNodeId) || (e.osmVertexStart.id == edge.endOsmNodeId && e.osmVertexEnd.id == edge.startOsmNodeId)
+        def sameEdge(e: OsmStreetEdge): Boolean = e.osmVertexStart.id == edge.startOsmNodeId && e.osmVertexEnd.id == edge.endOsmNodeId
+
         if (!vertex.edges.exists(sameEdge)) {
 
           val report = s"Edge #${edge.id} with start vertex ${edge.startOsmNodeId} and end vertex ${edge.endOsmNodeId}" +
@@ -79,6 +94,7 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
       otpVertices.remove(vertexIndex)
     }
     println(s"Failed edges: $edgeFailed")
+    println(s"Some missing edges on ${missingEdges.size} vertices: \n${missingEdges.map(mE ⇒ mE.veretxId.toString + " : " + mE.difference) mkString ", "}\n")
   }
 
   "With all OSM elements" should "create a connected graph" in {
@@ -87,20 +103,7 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
     }
   }
 
-  private def findNeighbours[T <: GeoVertex](start: T, graph: GraphContainer[T], accum: Vector[T]): Vector[T] = {
-    if (accum.contains(start))
-      accum
-    else {
-      val neighbours = start.neighbours(graph) //.filter(n ⇒ !accum.contains(n))
-
-      if (neighbours.isEmpty)
-        Vector(start) ++ accum
-      else
-        neighbours.toVector.flatMap((v: T) ⇒ findNeighbours(v, graph, Vector(start) ++ accum))
-    }
-  }
-
-  private def findNeighbours3[T <: GeoVertex](start: T, graph: GraphContainer[T]): List[T] = {
+  private def findNeighbours[T <: GeoVertex](start: T, graph: GraphContainer[T]): List[T] = {
     def childrenNotVisited(vertex: T, visited: List[T]) =
       vertex.neighbours(graph) filter (x ⇒ !visited.contains(x)) toSet
 
@@ -113,34 +116,8 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
     loop(Set(start), Nil) reverse
   }
 
-  private def findNeighbours2[T <: GeoVertex](start: T, graph: GraphContainer[T], accum: Vector[T]): Vector[T] = {
-    if (accum.contains(start))
-      accum
-    else {
-      val neighbours = start.neighbours(graph) //.filter(n ⇒ !accum.contains(n))
-
-      if (neighbours.isEmpty)
-        Vector(start) ++ accum
-      else {
-
-        @tailrec
-        def rec(funcList: Vector[() ⇒ Vector[T]], elements: List[T]): Vector[T] = elements match {
-          case head :: xs ⇒
-            val newFunc: () ⇒ Vector[T] = () ⇒ findNeighbours2(head, graph, Vector(start) ++ accum)
-            rec(funcList ++ Vector(newFunc), xs)
-          case _ ⇒
-            funcList.flatMap(f ⇒ f())
-        }
-
-        rec(Vector.empty, neighbours)
-
-        //neighbours.toVector.flatMap((v: T) ⇒ findNeighbours(v, graph, Vector(start) ++ accum))
-      }
-    }
-  }
-
   private def isGraphConnected[T <: GeoVertex](graph: GraphContainer[T]): Boolean = {
-    val neighbours = findNeighbours3(graph.vertices.head, graph)
+    val neighbours = findNeighbours(graph.vertices.head, graph)
     graph.vertices forall (v ⇒ neighbours contains v)
   }
 

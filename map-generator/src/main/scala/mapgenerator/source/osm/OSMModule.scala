@@ -126,10 +126,6 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
     for ((id, relation) ← relationById) {
       val tags = relation.tags
 
-      if (id == 4547633) {
-        println("es este relation!!")
-      }
-
       val thisAreaWays: Map[Long, Way] = relation.members.flatMap(member ⇒ areaWays.find(_.id == member.ref).map(way ⇒ member.ref -> way).toList).toMap
 
       if (thisAreaWays.size == relation.members.size &&
