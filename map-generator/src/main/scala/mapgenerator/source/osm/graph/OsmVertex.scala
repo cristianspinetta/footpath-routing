@@ -1,6 +1,6 @@
 package mapgenerator.source.osm.graph
 
-import mapgenerator.source.osm.{ OSMNode, Way }
+import mapgenerator.source.osm.model.{ OSMNode, Way }
 import pathgenerator.graph.{ Coordinate, GeoEdge, GeoVertex }
 
 class OsmVertex(override val id: Long, override val edges: List[OsmStreetEdge], override val coordinate: Coordinate) extends GeoVertex(id, edges, coordinate) {

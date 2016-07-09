@@ -1,281 +1,272 @@
 package mapgenerator.source.osm
 
-import mapgenerator.source.osm.graph._
-import pathgenerator.graph._
+import enums.StreetTraversalPermission
+import mapgenerator.source.osm.model._
 
+import scala.collection.immutable.ListSet
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
-case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way]) {
+case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relation]) {
 
-  private val (streetWays: List[Way], areaWays: List[Way]) = partitionWays
-  private val intersectionNodes: List[Long] = getIntersections(streetWays)
-  private val createdOsmVertex = ListBuffer.empty[OsmVertex]
+  type AreasByNodeId = mutable.ListMap[Long, mutable.Set[Way]] with mutable.MultiMap[Long, Way]
 
-  def createGraph: GraphContainer[OsmVertex] = {
-    for (way ← streetWays) processStreetWay(way)
-    GraphContainer(createdOsmVertex.toList)
-  }
+  val areaWayIds: ArrayBuffer[Long] = ArrayBuffer.empty
+  val relationById: mutable.ListMap[Long, Relation] = mutable.ListMap.empty
 
-  private def processStreetWay(way: Way): Unit = {
-    // TODO agregar properties utiles del way
-    // TODO agregar permisos
+  val areasByNodeId: AreasByNodeId = new mutable.ListMap[Long, mutable.Set[Way]] with mutable.MultiMap[Long, Way]
 
-    if (way.id == 328402470) {
-      println("Way # 328402470")
-    }
+  var walkableAreas: ArrayBuffer[Area] = ArrayBuffer.empty
+  var parkAndRideAreas: ArrayBuffer[Area] = ArrayBuffer.empty
+  var bikeParkingAreas: ArrayBuffer[Area] = ArrayBuffer.empty
 
-    val wayNodes: List[Option[OSMNode]] = way.nodeIds.map(nodeId ⇒ nodes.find(node ⇒ node.id == nodeId))
-    if (wayNodes.forall(_.isDefined)) {
-      val wayUniqueNodes: List[OSMNode] = getUniqueNodes(wayNodes.map(_.get))
+  val processedAreas: mutable.HashSet[OSMElement] = mutable.HashSet.empty
 
-      var startNode: Option[Long] = None
-      var osmStartNodeOpt: Option[OSMNode] = None
-      val segmentCoordinates: ListBuffer[Coordinate] = ListBuffer.empty
+  // 1 Create relations
+  createRelations()
 
-      var startEndpointOpt: Option[OsmVertex] = None
-      var endEndpointOpt: Option[OsmVertex] = None
+  // 2 Create Ways
+  val (
+    streetWays: mutable.ArrayBuffer[Way],
+    areaWays: Vector[Way],
+    singleAreaWays: Vector[Way]) = partitionWays
 
-      val coupleWays: List[List[OSMNode]] = wayUniqueNodes.sliding(2).toList
+  // 3 Save nodes from ways
+  val nodesFromStreetWays: Vector[Long] = streetWays.flatMap(_.nodeIds.toVector).toVector
+  val nodesFromAreaWays: Vector[Long] = areaWays.flatMap(_.nodeIds)
 
-      for ((vector, index) ← coupleWays.zipWithIndex) {
+  // 4 Save other nodes
+  val bikeRentalNodes: List[OSMNode] = nodes.filter(_.isBikeRental).toList
+  val bikeParkingNodes: List[OSMNode] = nodes.filter(node ⇒ node.isBikeParking) toList
+  val otherNodes: ListSet[OSMNode] = ListSet(nodes.filter(node ⇒
+    nodesFromStreetWays.contains(node.id) || nodesFromAreaWays.contains(node.id) || node.isStop): _*)
 
-        val firstNode = vector.head
-        val secondNode = vector.tail.head
+  val otherNodeIds: Set[Long] = otherNodes.map(_.id)
 
-        osmStartNodeOpt = osmStartNodeOpt orElse Some(firstNode)
-        startNode = startNode orElse Some(firstNode.id)
+  // 5 Create Area Ways
+  processMultipolygonRelations()
+  processSingleWayAreas()
 
-        val osmStartNode: OSMNode = osmStartNodeOpt.get
+  //************************* 1. get relations
 
-        val osmEndNode: OSMNode = secondNode
+  private def createRelations(): Unit = {
 
-        if (segmentCoordinates.isEmpty) segmentCoordinates += Coordinate(osmStartNode.lat, osmStartNode.lon)
+    relations.foreach { relation ⇒
+      val tags: Map[String, String] = relation.tags
+      if (tags.get("type").contains("multipolygon") &&
+        (relation.isOsmEntityRoutable || relation.isParkAndRide)) {
 
-        segmentCoordinates += Coordinate(osmEndNode.lat, osmEndNode.lon)
+        // OSM MultiPolygons are ferociously complicated, and in fact cannot be processed
+        // without reference to the ways that compose them. Accordingly, we will merely
+        // mark the ways for preservation here, and deal with the details once we have
+        // the ways loaded.
+        if (relation.isRoutableWay || relation.isParkAndRide) {
 
-        if (intersectionNodes.contains(osmEndNode.id) ||
-          coupleWays.size == index + 1 || // Last couple of ways
-          wayUniqueNodes.take(index).contains(firstNode) ||
-          secondNode.tags.get("ele").isDefined ||
-          secondNode.isStop ||
-          secondNode.isBollard) {
-          // TODO Crear geometry (lista de coordenadas para este segmento)
-          segmentCoordinates.clear()
-
-          startEndpointOpt match {
-            case None ⇒
-              startEndpointOpt = Some(createGraphVertex(way, osmStartNode))
-            // TODO chequear si necesitamos elevation data (linea 628)
-            case Some(startEndpoint) ⇒
-              startEndpointOpt = endEndpointOpt
+          for (member ← relation.members) {
+            areaWayIds += member.ref
           }
-
-          endEndpointOpt = Some(createGraphVertex(way, osmEndNode))
-
-          // TODO chequear si necesitamos elevation data (linea 640)
-
-          val (frontEdge, backEdge) = createEdgesForStreet(startEndpointOpt.get, endEndpointOpt.get, way, osmStartNode, osmEndNode)
-
-          addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge)
-          addEdgeToCreatedVertex(endEndpointOpt.get, backEdge)
-
-          //          addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge)
-          //          addEdgeToCreatedVertex(startEndpointOpt.get, backEdge)
-          //
-          //          addEdgeToCreatedVertex(endEndpointOpt.get, frontEdge)
-          //          addEdgeToCreatedVertex(endEndpointOpt.get, backEdge)
-
-          startNode = Some(secondNode.id)
-          osmStartNodeOpt = Some(secondNode)
-
+          //          applyLevelsForWay(relation)
+          relationById += ((relation.id, relation))
         }
+      } else if (tags.get("type").contains("restriction") ||
+        (tags.get("type").contains("route") && tags.get("route").contains("road")) ||
+        (tags.get("type").contains("multipolygon") && relation.isOsmEntityRoutable) ||
+        tags.get("type").contains("level_map") ||
+        (tags.get("type").contains("public_transport") && tags.get("public_transport").contains("stop_area"))) {
+
+        relationById += ((relation.id, relation))
       }
-    }
-  }
 
-  private def addEdgeToCreatedVertex(osmVertex: OsmVertex, osmEdge: OsmStreetEdge): Unit = {
-
-    val indexWhere: Int = createdOsmVertex.indexWhere(vertex ⇒ vertex.id == osmVertex.id)
-
-    val foundOsmVertex: OsmVertex = createdOsmVertex(indexWhere)
-
-    val updatedOsmVertex: OsmVertex = foundOsmVertex match {
-      case vertex: TransitStopStreetVertex ⇒ vertex.copy(edges = osmEdge :: foundOsmVertex.edges)
-      case vertex: ExitVertex              ⇒ vertex.copy(edges = osmEdge :: foundOsmVertex.edges)
-      case vertex: BarrierVertex           ⇒ vertex.copy(edges = osmEdge :: foundOsmVertex.edges)
-      case vertex: OsmVertex               ⇒ new OsmVertex(foundOsmVertex.id, osmEdge :: foundOsmVertex.edges, foundOsmVertex.coordinate)
     }
 
-    createdOsmVertex.update(indexWhere, updatedOsmVertex)
-
   }
 
-  private def createEdgesForStreet(startEndpoint: OsmVertex, endEndpoint: OsmVertex, way: Way, osmStartNode: OSMNode, osmEndNode: OSMNode): (OsmStreetEdge, OsmStreetEdge) = {
-    // TODO implementar permissions.allowsNothing (se usa en linea 1006)
-    // TODO LineString backGeometry (linea 1010)
-    // TODO implementar: "double length = this.getGeometryLengthMeters(geometry);" (linea 1012)
-    // TODO implementar: "P2<StreetTraversalPermission> permissionPair = OSMFilter.getPermissions(permissions, way);" (linea 1014)
-
-    // TODO if (permissionsFront.allowsAnything()) {
-    val front = createOsmStreetEdge(startEndpoint, endEndpoint, way)
-    // TODO if (permissionsBack.allowsAnything()) {
-    val back = createOsmStreetEdge(endEndpoint, startEndpoint, way)
-
-    // TODO revisar el shareData() y el way.isRoundabout() (linea 1028 y 1032)
-
-    (front, back)
-
-  }
-
-  private def createOsmStreetEdge(startEndpoint: OsmVertex, endEndpoint: OsmVertex, way: Way): OsmStreetEdge = {
-    // TODO crear label y name (linea 1046)
-    // TODO crear length a partir del recorrido de los coordinate (1053)
-
-    // TODO revisar implementacion de cls (linea 1078)}
-    // TODO revisar wheelChairAccesible (linea 1087)
-    // TODO revisar slope override (linea 1092)
-    // TODO revisar todos los datos extra que hay del way, por ejemplo la "car speed"
-
-    OsmStreetEdge(startEndpoint, endEndpoint, 10)
-
-    // TODO revisar el resto de las cosas de este metodo (linea 1092 en adelante)
-  }
-
-  private def createGraphVertex(way: Way, osmStartNode: OSMNode): OsmVertex = {
-    if (osmStartNode.isMultiLevel) {
-      // TODO
-      ???
-    } else {
-      createdOsmVertex.find(_.id == osmStartNode.id) match {
-        case None ⇒
-          // TODO implementar el label
-
-          val vertex: OsmVertex = osmStartNode match {
-            case node if node.tags.get("highway").contains("motorway_junction") && node.tags.get("ref").isDefined ⇒
-              ExitVertex(node.id, Nil, Coordinate(node.lat, node.lon), node.tags("ref"))
-            case node if node.isStop && node.tags.get("ref").isDefined ⇒
-              TransitStopStreetVertex(node.id, Nil, Coordinate(node.lat, node.lon)) // TODO chequear loas demas datos que le agregan (linea 1192 de OSMModule)
-            case node if node.isBollard ⇒
-              BarrierVertex(node.id, Nil, Coordinate(node.lat, node.lon)) // TODO chequear los permisos que le agregan (linea 1199)
-            case node ⇒ OsmVertex(way, node)
-          }
-
-          createdOsmVertex += vertex
-          vertex
-        case Some(vertex) ⇒ vertex
-      }
-    }
-  }
-
-  private def isRoutableWay(way: Way): Boolean = {
-    val tags: Map[String, String] = way.tags
-    val highwayOpt: Option[String] = tags.get("highway")
-
-    // is OSM Entity Routable?
-    val osmRoutable = tags.contains("highway") ||
-      ((tags.get("public_transport").contains("platform") || tags.get("railway").contains("platform")) &&
-        !tags.get("usage").contains("tourism"))
-
-    val routableHighway: Boolean = !highwayOpt.contains("conveyer") &&
-      !highwayOpt.contains("proposed") &&
-      !highwayOpt.contains("construction") &&
-      !highwayOpt.contains("raceway") &&
-      !highwayOpt.contains("unbuilt")
-
-    val isGeneralAccessDenied: Boolean = tags.get("access").contains("no") || tags.get("access").contains("license")
-
-    val isMotorcarExplicitlyAllowed: Boolean = tags.get("motorcar").exists(m ⇒ List("yes", "1", "true", "designated", "official", "permissive", "unknown").contains(m))
-    val isBicycleExplicitlyAllowed: Boolean = tags.get("bicycle").exists(m ⇒ List("yes", "1", "true", "designated", "official", "permissive", "unknown").contains(m))
-    val isPedestrianExplicitlyAllowed: Boolean = tags.get("foot").exists(m ⇒ List("yes", "1", "true", "designated", "official", "permissive", "unknown").contains(m))
-    val isMotorVehicleExplicitlyAllowed: Boolean = tags.get("motor_vehicle").exists(m ⇒ List("yes", "1", "true", "designated", "official", "permissive", "unknown").contains(m))
-
-    osmRoutable &&
-      routableHighway &&
-      (!isGeneralAccessDenied || (isMotorcarExplicitlyAllowed || isBicycleExplicitlyAllowed || isPedestrianExplicitlyAllowed || isMotorVehicleExplicitlyAllowed))
-  }
-
-  // TODO analizar bien si necesitamos este metodo, y para que se usa
-  private def getUniqueNodes(nodes: List[OSMNode]): List[OSMNode] = {
-    var lastNodeId: Option[Long] = None
-    var lastLat: Option[Double] = None
-    var lastLon: Option[Double] = None
-    var lastLevel: Option[String] = None
-    nodes flatMap { node ⇒
-      val level: Option[String] = node.tags.get("level")
-      val levelsDiffer: Boolean = level != lastLevel
-      val result = if (!lastNodeId.contains(node.id) &&
-        (!lastLat.contains(node.lat) || !lastLon.contains(node.lon) || levelsDiffer))
-        List(node)
-      else
-        Nil
-
-      lastNodeId = Some(node.id)
-      lastLat = Some(node.lat)
-      lastLon = Some(node.lon)
-      lastLevel = level
-
-      result
-    }
-  }
-
-  private def getIntersections(ways: Seq[Way]): List[Long] = {
-    var possibleIntersectionNodes = ListBuffer.empty[Long]
-    var intersectionNodes = ListBuffer.empty[Long]
-    for {
-      way ← ways
-      nodeId ← way.nodeIds
-    } {
-      if (possibleIntersectionNodes.contains(nodeId))
-        intersectionNodes += nodeId
-      else
-        possibleIntersectionNodes += nodeId
-    }
-    intersectionNodes.toList
-    // Functional way:
-    //        val (_, intersectionNodesF) = ways
-    //          .flatMap(_.nodeIds)
-    //          .foldLeft((List.empty[Long], List.empty[Long])) { case ((possibleIntersectionNodes, accIntersectionNodes), nodeId) =>
-    //            if (possibleIntersectionNodes.contains(nodeId))
-    //              (possibleIntersectionNodes, nodeId :: accIntersectionNodes)
-    //            else
-    //              (nodeId :: possibleIntersectionNodes, accIntersectionNodes)
-    //          }
-    //
-    //        intersectionNodesF
-  }
-
-  private def isParkAndRide(way: Way): Boolean = {
-    val parkingType: Option[String] = way.tags.get("parking")
-    val parkAndRide: Option[String] = way.tags.get("park_ride")
-    way.tags.get("amenity").contains("parking") && (parkingType.contains("park_and_ride") || !parkAndRide.contains("no"))
-  }
-
-  private def isBikeParking(way: Way): Boolean = {
-    val access: Option[String] = way.tags.get("access")
-    way.tags.get("amenity").contains("bicycle_parking") && !access.contains("private") && !access.contains("no")
-  }
-
-  private def isAreaWay(way: Way): Boolean = {
-    (way.tags.get("area").contains("yes") || way.tags.get("amenity").contains("parking") || way.tags.get("amenity").contains("bicycle_parking")) && way.nodeIds.size > 2
-  }
+  //************************* 2. get ways
 
   /**
-    * Parse all the ways and partition them between street and area ways
-    * @return (street way , area way)
-    */
-  private def partitionWays: (List[Way], List[Way]) = {
+   * Parse all the ways and partition them between street and area ways
+   *
+   * @return (street way , area way)
+   */
+  private def partitionWays: (mutable.ArrayBuffer[Way], Vector[Way], Vector[Way]) = {
 
-    val streetWayBuilder: mutable.Builder[Way, List[Way]] = List.newBuilder[Way]
-    val areaWayBuilder: mutable.Builder[Way, List[Way]] = List.newBuilder[Way]
+    val streetWayBuilder: mutable.Builder[Way, mutable.ArrayBuffer[Way]] = mutable.ArrayBuffer.newBuilder[Way]
+    val areaWayBuilder = Vector.newBuilder[Way]
 
-    ways foreach { osmWay =>
-      if (isRoutableWay(osmWay) || isParkAndRide(osmWay) || isBikeParking(osmWay)) {
-        if (isAreaWay(osmWay)) areaWayBuilder += osmWay
-        else streetWayBuilder += osmWay
+    val singleWayAreasBuilder = Vector.newBuilder[Way]
+
+    ways foreach { osmWay ⇒
+
+      if (areaWayIds.contains(osmWay.id))
+        areaWayBuilder += osmWay
+
+      if (osmWay.isRoutableWay || osmWay.isParkAndRide || osmWay.isBikeParking) {
+        if (osmWay.isAreaWay) {
+
+          if (!areaWayIds.contains(osmWay.id)) { // if areaWayIds doesn't contain its, it's not part of a relation
+            singleWayAreasBuilder += osmWay
+            areaWayBuilder += osmWay
+            areaWayIds += osmWay.id
+            for (nodeId ← osmWay.nodeIds) {
+              areasByNodeId addBinding (nodeId, osmWay)
+            }
+          }
+        } else streetWayBuilder += osmWay
       }
     }
-    (streetWayBuilder.result(), areaWayBuilder.result())
+    (streetWayBuilder.result(), areaWayBuilder.result(), singleWayAreasBuilder.result())
 
   }
+
+  private def processMultipolygonRelations(): Unit = {
+    // RELATION //todo: labels is not supported
+    for ((id, relation) ← relationById) {
+      val tags = relation.tags
+
+      if (id == 4547633) {
+        println("es este relation!!")
+      }
+
+      val thisAreaWays: Map[Long, Way] = relation.members.flatMap(member ⇒ areaWays.find(_.id == member.ref).map(way ⇒ member.ref -> way).toList).toMap
+
+      if (thisAreaWays.size == relation.members.size &&
+        !processedAreas.contains(relation) &&
+        (tags.get("type").contains("multipolygon") &&
+          (relation.isOsmEntityRoutable || relation.isParkAndRide)) &&
+          relation.members.forall(member ⇒
+            thisAreaWays(member.ref).nodeIds.forall(otherNodeIds.contains))) {
+
+        val innerWays: mutable.Builder[Way, Vector[Way]] = Vector.newBuilder[Way]
+        val outerWays: mutable.Builder[Way, Vector[Way]] = Vector.newBuilder[Way]
+
+        for (member ← relation.members) {
+
+          val role: String = member.role
+
+          val way = thisAreaWays(member.ref)
+
+          for (nodeId ← way.nodeIds) {
+            areasByNodeId addBinding (nodeId, way)
+          }
+
+          if (role == "inner") {
+            innerWays += way
+          } else if (role == "outer") {
+            outerWays += way
+          } else {
+            println("Unexpected role " + role + " in multipolygon")
+          }
+
+        }
+        processedAreas += relation
+        createArea(relation, outerWays.result(), innerWays.result(), otherNodes)
+        for (member ← relation.members) {
+          if ("way" == member.`type`) {
+            val streetWayIndex: Int = streetWays.indexWhere(_.id == member.ref)
+
+            if (streetWayIndex >= 0) {
+              val streetWay: Way = streetWays(streetWayIndex)
+              for (
+                tag ← List("highway", "name", "ref") if relation.tags.contains(tag) && !streetWay.tags.contains(tag)
+              ) {
+                val streetWay: Way = streetWays(streetWayIndex)
+                val newStreetWay = streetWay.copy(tags = tags + (tag -> relation.tags(tag)))
+                streetWays.update(streetWayIndex, newStreetWay)
+              }
+              if (relation.tags.get("railway").contains("platform") && !streetWay.tags.contains("railway")) {
+                streetWays.update(streetWayIndex, streetWay.copy(tags = tags + ("railway" -> relation.tags("railway"))))
+              }
+              if (relation.tags.get("public_transport").contains("platform") && !streetWay.tags.contains("public_transport")) {
+                streetWays.update(streetWayIndex, streetWay.copy(tags = tags + ("public_transport" -> relation.tags("public_transport"))))
+              }
+            }
+          }
+        }
+      }
+
+    }
+  }
+
+  private def processSingleWayAreas(): Unit = {
+    for {
+      areaWay ← singleAreaWays
+      if !processedAreas.contains(areaWay) &&
+        areaWay.nodeIds.forall(nodeId ⇒ otherNodeIds.contains(nodeId))
+    } {
+      createArea(areaWay, Vector(areaWay), Vector(), otherNodes)
+    }
+  }
+
+  private def createArea(osmElement: OSMElement, outerWays: Vector[Way],
+    innerWays: Vector[Way], otherNodes: ListSet[OSMNode]) = {
+
+    lazy val areaOpt = Area(osmElement, outerWays, innerWays, otherNodes)
+
+    val permissions = getPermissionsForEntity(osmElement, StreetTraversalPermission.PEDESTRIAN_AND_BICYCLE)
+
+    if (osmElement.isOsmEntityRoutable && permissions != StreetTraversalPermission.NONE) {
+      areaOpt.map(area ⇒ walkableAreas += area)
+    }
+
+    // Please note: the same area can be both car P+R AND bike park.
+    if (osmElement.isParkAndRide) {
+      areaOpt.map(area ⇒ parkAndRideAreas += area)
+    }
+    if (osmElement.isBikeParking) {
+      areaOpt.map(area ⇒ bikeParkingAreas += area)
+    }
+  }
+
+  private def getPermissionsForEntity(osmElement: OSMElement,
+    defPermission: StreetTraversalPermission): StreetTraversalPermission = {
+    var partialPermission: StreetTraversalPermission =
+      if (osmElement.isGeneralAccessDenied) {
+        var partialPerm = StreetTraversalPermission.NONE
+
+        if (osmElement.isMotorcarExplicitlyAllowed || osmElement.isMotorVehicleExplicitlyAllowed) {
+          partialPerm = partialPerm.add(StreetTraversalPermission.CAR)
+        }
+        if (osmElement.isBicycleExplicitlyAllowed) {
+          partialPerm = partialPerm.add(StreetTraversalPermission.BICYCLE)
+        }
+        if (osmElement.isPedestrianExplicitlyAllowed) {
+          partialPerm = partialPerm.add(StreetTraversalPermission.PEDESTRIAN)
+        }
+        partialPerm
+      } else {
+        defPermission
+      }
+
+    if (osmElement.isMotorcarExplicitlyDenied || osmElement.isMotorVehicleExplicitlyDenied) {
+      partialPermission = partialPermission.remove(StreetTraversalPermission.CAR)
+    } else if (osmElement.isMotorcarExplicitlyAllowed || osmElement.isMotorVehicleExplicitlyAllowed) {
+      partialPermission = partialPermission.add(StreetTraversalPermission.CAR)
+    }
+
+    if (osmElement.isBicycleExplicitlyDenied) {
+      partialPermission = partialPermission.remove(StreetTraversalPermission.BICYCLE)
+    } else if (osmElement.isBicycleExplicitlyAllowed) {
+      partialPermission = partialPermission.add(StreetTraversalPermission.BICYCLE)
+    }
+
+    if (osmElement.isPedestrianExplicitlyDenied) {
+      partialPermission = partialPermission.remove(StreetTraversalPermission.PEDESTRIAN)
+    } else if (osmElement.isPedestrianExplicitlyAllowed) {
+      partialPermission = partialPermission.add(StreetTraversalPermission.PEDESTRIAN)
+    }
+
+    if (osmElement.isUnderConstruction) {
+      partialPermission = StreetTraversalPermission.NONE
+    }
+
+    Option(partialPermission).getOrElse {
+      println(s"getPermissionsForEntity finaliza con partialPermission en null ... que raro!!!")
+      defPermission
+    }
+  }
+
+}
+
+object OSMModule {
+  def apply(reader: OSMReader): OSMModule = new OSMModule(reader.loadNodes, reader.loadWays, reader.loadRelations)
 }

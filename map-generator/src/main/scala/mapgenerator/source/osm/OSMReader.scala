@@ -1,17 +1,19 @@
 package mapgenerator.source.osm
 
+import java.net.URL
+
+import mapgenerator.source.osm.model._
 import org.joda.time.DateTime
 
-import java.net.URL
 import scala.xml.{ Elem, XML }
 
-trait OSMLoader {
+trait OSMReader {
   def loadNodes: Seq[OSMNode]
   def loadWays: Seq[Way]
   def loadRelations: Seq[Relation]
 }
 
-class OSMLoaderByXml(osm: Elem) extends OSMLoader {
+class OSMReaderByXml(osm: Elem) extends OSMReader {
 
   lazy val loadNodes: Seq[OSMNode] = (osm \ "node").map {
     case n ⇒
@@ -65,9 +67,9 @@ class OSMLoaderByXml(osm: Elem) extends OSMLoader {
   }
 }
 
-object OSMLoaderByXml {
+object OSMReaderByXml {
 
-  def apply(url: URL): OSMLoaderByXml = new OSMLoaderByXml(XML.load(url.getPath))
+  def apply(url: URL): OSMReaderByXml = new OSMReaderByXml(XML.load(url.getPath))
 
-  def apply(systemFilePath: String): OSMLoaderByXml = new OSMLoaderByXml(XML.load(systemFilePath))
+  def apply(systemFilePath: String): OSMReaderByXml = new OSMReaderByXml(XML.load(systemFilePath))
 }
