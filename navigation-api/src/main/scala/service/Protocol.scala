@@ -19,7 +19,7 @@ object Protocol extends DefaultJsonProtocol {
   }
 
   implicit val RampFormat = jsonFormat5(Ramp.apply)
-  implicit val RoutingRequestFormat = jsonFormat2(RoutingRequest.apply)
+  implicit val RoutingRequestFormat = jsonFormat4(RoutingRequest.apply)
   implicit val RoutingResponseFormat = jsonFormat1(RoutingResponse.apply)
   implicit val RampResponseFormat = jsonFormat1(RampResponse.apply)
 }

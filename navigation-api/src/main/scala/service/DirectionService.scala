@@ -16,7 +16,7 @@ import pathgenerator.graph.Coordinate
 import scala.concurrent.{ ExecutionContextExecutor, Future }
 import scala.util.{ Failure ⇒ TFailure, Success ⇒ TSuccess }
 
-case class RoutingRequest(from: Double, to: Double)
+case class RoutingRequest(fromLng: Double, fromLat: Double, toLng: Double, toLat: Double)
 case class RoutingResponse(path: List[Coordinate])
 case class RampResponse(ramps: Vector[Ramp])
 
@@ -31,7 +31,7 @@ trait DirectionService extends EnvConfig {
 
   def fetchDirections(routingRequest: RoutingRequest): Future[Either[String, RoutingResponse]] = {
     Future.successful {
-      RoutingModule.routing(routingRequest.from.toLong, routingRequest.to.toLong) match {
+      RoutingModule.routing(Coordinate(routingRequest.fromLat, routingRequest.fromLng), Coordinate(routingRequest.toLat, routingRequest.toLng)) match {
         case TSuccess(list)           ⇒ Right(RoutingResponse(list.map(coor ⇒ Coordinate(coor.latitude, coor.longitude))))
         case TFailure(exc: Throwable) ⇒ Left(exc.getMessage)
       }
@@ -51,7 +51,7 @@ trait DirectionService extends EnvConfig {
     logRequestResult("routing-request") {
       path("directions") {
         get {
-          parameters('from.as[Double], 'to.as[Double]).as(RoutingRequest) { routingRequest ⇒
+          parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double]).as(RoutingRequest) { routingRequest ⇒
             val response: Future[ToResponseMarshallable] = fetchDirections(routingRequest).map {
               case Right(routingResponse) ⇒ routingResponse
               case Left(errorMessage)     ⇒ BadRequest -> errorMessage

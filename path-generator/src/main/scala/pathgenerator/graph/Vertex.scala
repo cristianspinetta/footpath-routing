@@ -48,6 +48,7 @@ case class Coordinate(latitude: Double, longitude: Double) {
 
   /**
    * The distance between this point and the given one in meters.
+   *
    * @param to: point to where the distance is calculated.
    * @return the distance in meters.
    */
@@ -63,6 +64,7 @@ case class Coordinate(latitude: Double, longitude: Double) {
    * The angle from this point to the given one.
    * The latitude of this point is the adjacent side, the longitude of the given point
    * is the opposing side and the line from this point to the given one is the hypotenuse.
+   *
    * @param to: point to where the angle is calculated.
    * @return the angle in radians.
    */
@@ -94,6 +96,8 @@ case class Coordinate(latitude: Double, longitude: Double) {
         else arcTan // 1st quadrant
     }
   }
+
+  override def toString: String = s"Coordinate(Lat: $latitude, Lng: $longitude)"
 }
 
 object Coordinate {

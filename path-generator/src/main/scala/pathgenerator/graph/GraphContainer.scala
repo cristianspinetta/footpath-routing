@@ -24,4 +24,16 @@ object GraphContainer {
 
     new GraphContainer(nodes)
   }
+
+  def findClosestVertex[V <: GeoVertex](graph: GraphContainer[V], coordinate: Coordinate): Option[(V, Double)] = graph.vertices match {
+    case Nil ⇒ None
+    case list ⇒
+      val (closestVertex, distance) = list.tail.foldLeft((list.head, list.head.coordinate.distanceTo(coordinate))) {
+        case (before @ (partialClosest: V, distanceToBefore: Double), next: V) ⇒
+          val distanceToNext: Double = next.coordinate.distanceTo(coordinate)
+          if (distanceToNext < distanceToBefore) (next, distanceToNext)
+          else before
+      }
+      Some((closestVertex, distance))
+  }
 }
