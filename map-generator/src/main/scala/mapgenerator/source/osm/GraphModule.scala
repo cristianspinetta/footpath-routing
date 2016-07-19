@@ -1,10 +1,11 @@
 package mapgenerator.source.osm
 
+import enums.StreetTraversalPermission
 import mapgenerator.source.osm.graph._
 import mapgenerator.source.osm.model._
-import pathgenerator.graph.{ Coordinate, GraphContainer }
+import pathgenerator.graph.{Coordinate, GraphContainer}
 
-import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 case class GraphModule(osmModule: OSMModule) {
 
@@ -20,8 +21,10 @@ case class GraphModule(osmModule: OSMModule) {
     // TODO agregar properties utiles del way
     // TODO agregar permisos
 
+    val permissions: StreetTraversalPermission = OSMModule.getPermissionsForWay(way, StreetTraversalPermission.ALL)
+
     val wayNodes: List[Option[OSMNode]] = way.nodeIds.map(nodeId ⇒ osmModule.otherNodes.find(node ⇒ node.id == nodeId))
-    if (wayNodes.forall(_.isDefined)) {
+    if (way.isRoutableWay && !permissions.allowsNothing() && wayNodes.forall(_.isDefined)) {
       val wayUniqueNodes: List[OSMNode] = getUniqueNodes(wayNodes.map(_.get))
 
       var startNode: Option[Long] = None
@@ -70,10 +73,10 @@ case class GraphModule(osmModule: OSMModule) {
 
           // TODO chequear si necesitamos elevation data (linea 640)
 
-          val (frontEdge, backEdge) = createEdgesForStreet(startEndpointOpt.get, endEndpointOpt.get, way, osmStartNode, osmEndNode)
+          val (frontEdgeOpt, backEdgeOpt) = createEdgesForStreet(startEndpointOpt.get, endEndpointOpt.get, way, osmStartNode, osmEndNode, permissions)
 
-          addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge)
-          addEdgeToCreatedVertex(endEndpointOpt.get, backEdge)
+          frontEdgeOpt.foreach(frontEdge => addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge))
+          backEdgeOpt.foreach(backEdge => addEdgeToCreatedVertex(endEndpointOpt.get, backEdge))
 
           startNode = Some(secondNode.id)
           osmStartNodeOpt = Some(secondNode)
@@ -102,24 +105,32 @@ case class GraphModule(osmModule: OSMModule) {
 
   }
 
-  private def createEdgesForStreet(startEndpoint: OsmVertex, endEndpoint: OsmVertex, way: Way, osmStartNode: OSMNode, osmEndNode: OSMNode): (OsmStreetEdge, OsmStreetEdge) = {
+  private def createEdgesForStreet(startEndpoint: OsmVertex, endEndpoint: OsmVertex, way: Way, osmStartNode: OSMNode,
+                                   osmEndNode: OSMNode, permissions: StreetTraversalPermission): (Option[OsmStreetEdge], Option[OsmStreetEdge]) = {
     // TODO implementar permissions.allowsNothing (se usa en linea 1006)
     // TODO LineString backGeometry (linea 1010)
     // TODO implementar: "double length = this.getGeometryLengthMeters(geometry);" (linea 1012)
-    // TODO implementar: "P2<StreetTraversalPermission> permissionPair = OSMFilter.getPermissions(permissions, way);" (linea 1014)
 
-    // TODO if (permissionsFront.allowsAnything()) {
-    val front = createOsmStreetEdge(startEndpoint, endEndpoint, way)
-    // TODO if (permissionsBack.allowsAnything()) {
-    val back = createOsmStreetEdge(endEndpoint, startEndpoint, way)
+    val (permissionsFront, permissionsBack) = getPairPermissionsForWay(permissions, way)
+
+    val frontOpt =
+      if (permissionsFront.allowsAnything())
+        Some(createOsmStreetEdge(startEndpoint, endEndpoint, way, permissions))
+      else
+        None
+    val backOpt =
+      if (permissionsBack.allowsAnything())
+        Some(createOsmStreetEdge(endEndpoint, startEndpoint, way, permissions))
+      else
+        None
 
     // TODO revisar el shareData() y el way.isRoundabout() (linea 1028 y 1032)
 
-    (front, back)
-
+    (frontOpt, backOpt)
   }
 
-  private def createOsmStreetEdge(startEndpoint: OsmVertex, endEndpoint: OsmVertex, way: Way): OsmStreetEdge = {
+  private def createOsmStreetEdge(startEndpoint: OsmVertex, endEndpoint: OsmVertex, way: Way,
+                                  permissions: StreetTraversalPermission): OsmStreetEdge = {
     // TODO crear label y name (linea 1046)
     // TODO crear length a partir del recorrido de los coordinate (1053)
 
@@ -128,9 +139,58 @@ case class GraphModule(osmModule: OSMModule) {
     // TODO revisar slope override (linea 1092)
     // TODO revisar todos los datos extra que hay del way, por ejemplo la "car speed"
 
-    OsmStreetEdge(startEndpoint, endEndpoint, 10)
+    // TODO implementar "permissions: StreetTraversalPermission" para distinguir entre ida y vuelta
+
+    OsmStreetEdge(startEndpoint, endEndpoint, 10, way.id)
 
     // TODO revisar el resto de las cosas de este metodo (linea 1092 en adelante)
+  }
+
+  private def getPairPermissionsForWay(permissions: StreetTraversalPermission, way: Way): (StreetTraversalPermission, StreetTraversalPermission) = {
+    var permissionsFront: StreetTraversalPermission = permissions
+    var permissionsBack: StreetTraversalPermission = permissions
+
+    // Check driving direction restrictions.
+    if (way.isOneWayForwardDriving || way.isRoundabout) {
+      permissionsBack = permissionsBack.remove(StreetTraversalPermission.BICYCLE_AND_CAR)
+    }
+    if (way.isOneWayReverseDriving) {
+      permissionsFront = permissionsFront.remove(StreetTraversalPermission.BICYCLE_AND_CAR)
+    }
+
+    // Check bike direction restrictions.
+    if (way.isOneWayForwardBicycle) {
+      permissionsBack = permissionsBack.remove(StreetTraversalPermission.BICYCLE)
+    }
+    if (way.isOneWayReverseBicycle) {
+      permissionsFront = permissionsFront.remove(StreetTraversalPermission.BICYCLE)
+    }
+
+    // TODO(flamholz): figure out what this is for.
+    if (OSMElement.isTagFalse(way.tags, "oneway:bicycle") || OSMElement.isTagTrue(way.tags, "bicycle:backwards")) {
+      if (permissions.allows(StreetTraversalPermission.BICYCLE)) {
+        permissionsFront = permissionsFront.add(StreetTraversalPermission.BICYCLE)
+        permissionsBack = permissionsBack.add(StreetTraversalPermission.BICYCLE)
+      }
+    }
+
+    //This needs to be after adding permissions for oneway:bicycle=no
+    //removes bicycle permission when bicycles need to use sidepath
+    //TAG: bicycle:forward=use_sidepath
+    if (way.isForwardDirectionSidepath) {
+      permissionsFront = permissionsFront.remove(StreetTraversalPermission.BICYCLE)
+    }
+
+    //TAG bicycle:backward=use_sidepath
+    if (way.isReverseDirectionSidepath) {
+      permissionsBack = permissionsBack.remove(StreetTraversalPermission.BICYCLE)
+    }
+
+    if (way.isOpposableCycleway) {
+      permissionsBack = permissionsBack.add(StreetTraversalPermission.BICYCLE)
+    }
+
+    (permissionsFront, permissionsBack)
   }
 
   private def createGraphVertex(way: Way, osmStartNode: OSMNode): OsmVertex = {

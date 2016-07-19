@@ -5,7 +5,26 @@ import org.joda.time.DateTime
 case class Way(id: Long, visible: Boolean, version: Int, changeset: Long, timestamp: DateTime, user: String,
     uid: Long, nodeIds: List[Long], tags: Map[String, String]) extends OSMElement {
 
+  import OSMElement._
+
   lazy val isSteps: Boolean = tags.get("highway").contains("steps")
+
+  lazy val isRoundabout: Boolean = tags.get("junction").contains("roundabout")
+
+  lazy val isOneWayForwardDriving: Boolean = isTagTrue(tags, "oneway")
+  lazy val isOneWayReverseDriving: Boolean = tags.get("oneway").contains("-1")
+
+  lazy val isOneWayForwardBicycle: Boolean = isTagTrue(tags, "oneway:bicycle") || isTagFalse(tags, "bicycle:backwards")
+  lazy val isOneWayReverseBicycle: Boolean = tags.get("oneway:bicycle").contains("-1")
+
+  lazy val isForwardDirectionSidepath: Boolean = tags.get("bicycle:forward").contains("use_sidepath")
+  lazy val isReverseDirectionSidepath: Boolean = tags.get("bicycle:backward").contains("use_sidepath")
+
+  lazy val isOpposableCycleway: Boolean = {
+    tags.get("cycleway").exists(_.startsWith("opposite")) ||
+    tags.get("cycleway:left").exists(_.startsWith("opposite")) ||
+    tags.get("cycleway:right").exists(_.startsWith("opposite"))
+  }
 
   lazy val isAreaWay: Boolean = {
     (tags.get("area").contains("yes") ||

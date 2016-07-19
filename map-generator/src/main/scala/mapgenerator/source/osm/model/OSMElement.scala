@@ -23,6 +23,7 @@ trait OSMElement {
 
   lazy val isMotorcarExplicitlyAllowed: Boolean = tags.get("motorcar").exists(m ⇒ List("yes", "1", "true", "designated", "official", "permissive", "unknown").contains(m))
   lazy val isBicycleExplicitlyAllowed: Boolean = tags.get("bicycle").exists(m ⇒ List("yes", "1", "true", "designated", "official", "permissive", "unknown").contains(m))
+  lazy val isBicycleDismountForced: Boolean = tags.get("bicycle").contains("dismount") || tags.get("cycleway").contains("dismount")
   lazy val isPedestrianExplicitlyAllowed: Boolean = tags.get("foot").exists(m ⇒ List("yes", "1", "true", "designated", "official", "permissive", "unknown").contains(m))
   lazy val isMotorVehicleExplicitlyAllowed: Boolean = tags.get("motor_vehicle").exists(m ⇒ List("yes", "1", "true", "designated", "official", "permissive", "unknown").contains(m))
 
@@ -84,6 +85,15 @@ trait OSMElement {
         (!this.isGeneralAccessDenied || (this.isMotorcarExplicitlyAllowed || this.isBicycleExplicitlyAllowed || this.isPedestrianExplicitlyAllowed || this.isMotorVehicleExplicitlyAllowed))
     }
   }
+}
+
+object OSMElement {
+
+  def isTagTrue(tags: Map[String, String], tagName: String): Boolean =
+    tags.get(tagName).exists(m ⇒ m == "yes" || m == "1" || m == "true")
+
+  def isTagFalse(tags: Map[String, String], tagName: String): Boolean =
+    tags.get(tagName).exists(m ⇒ m == "no" || m == "0" || m == "false")
 }
 
 case class Member(`type`: String, ref: Long, role: String) // FIXME use Role and Type as Enum or object

@@ -9,6 +9,8 @@ import scala.collection.mutable.ArrayBuffer
 
 case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relation]) {
 
+  import OSMModule._
+
   type AreasByNodeId = mutable.ListMap[Long, mutable.Set[Way]] with mutable.MultiMap[Long, Way]
 
   val areaWayIds: ArrayBuffer[Long] = ArrayBuffer.empty
@@ -217,8 +219,39 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
     }
   }
 
-  private def getPermissionsForEntity(osmElement: OSMElement,
-    defPermission: StreetTraversalPermission): StreetTraversalPermission = {
+  private def keepNodesFromCorrectlyWay(way: Way): Vector[Long] = {
+    if (way.nodeIds.size > 1) way.nodeIds.toVector
+    else Vector.empty
+  }
+
+}
+
+object OSMModule {
+  def apply(reader: OSMReader): OSMModule = new OSMModule(reader.loadNodes, reader.loadWays, reader.loadRelations)
+
+  def getPermissionsForWay(way: Way, defPermission: StreetTraversalPermission): StreetTraversalPermission = {
+    var partialPermission: StreetTraversalPermission = getPermissionsForEntity(way, defPermission)
+
+    partialPermission = if (way.isPedestrianExplicitlyAllowed) {
+      partialPermission.add(StreetTraversalPermission.PEDESTRIAN)
+    } else if (way.isPedestrianExplicitlyDenied) {
+      partialPermission.remove(StreetTraversalPermission.PEDESTRIAN)
+    } else {
+      partialPermission
+    }
+
+    if (way.isBicycleExplicitlyAllowed && !way.isBicycleDismountForced) {
+      partialPermission = partialPermission.add(StreetTraversalPermission.BICYCLE)
+    }
+
+    if (way.isBicycleExplicitlyAllowed && !way.isBicycleDismountForced) {
+      println(s"DEBUG: Conflicting Bike Tags: bicycle = ${way.tags.get("bicycle")}, cycleway = ${way.tags.get("cycleway")}")
+    }
+    partialPermission
+  }
+
+  def getPermissionsForEntity(osmElement: OSMElement,
+                              defPermission: StreetTraversalPermission): StreetTraversalPermission = {
     var partialPermission: StreetTraversalPermission =
       if (osmElement.isGeneralAccessDenied) {
         var partialPerm = StreetTraversalPermission.NONE
@@ -264,14 +297,4 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
       defPermission
     }
   }
-
-  private def keepNodesFromCorrectlyWay(way: Way): Vector[Long] = {
-    if (way.nodeIds.size > 1) way.nodeIds.toVector
-    else Vector.empty
-  }
-
-}
-
-object OSMModule {
-  def apply(reader: OSMReader): OSMModule = new OSMModule(reader.loadNodes, reader.loadWays, reader.loadRelations)
 }

@@ -43,7 +43,7 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
     val otpSum = otpVertices.map(_.outgoingStreetEdges.size).sum
 
-    println(s"Graph Sum: $graphSum. OTP Sum: $otpSum.")
+    println(s"Number of Edges in Graph: $graphSum. In OTP: $otpSum.")
 
     val graphVertices: Seq[OsmVertex] = graph.vertices.toIndexedSeq
 
