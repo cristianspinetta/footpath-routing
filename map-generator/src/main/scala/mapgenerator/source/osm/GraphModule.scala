@@ -3,9 +3,9 @@ package mapgenerator.source.osm
 import enums.StreetTraversalPermission
 import mapgenerator.source.osm.graph._
 import mapgenerator.source.osm.model._
-import pathgenerator.graph.{Coordinate, GraphContainer}
+import pathgenerator.graph.{ Coordinate, GraphContainer }
 
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
 case class GraphModule(osmModule: OSMModule) {
 
@@ -75,8 +75,8 @@ case class GraphModule(osmModule: OSMModule) {
 
           val (frontEdgeOpt, backEdgeOpt) = createEdgesForStreet(startEndpointOpt.get, endEndpointOpt.get, way, osmStartNode, osmEndNode, permissions)
 
-          frontEdgeOpt.foreach(frontEdge => addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge))
-          backEdgeOpt.foreach(backEdge => addEdgeToCreatedVertex(endEndpointOpt.get, backEdge))
+          frontEdgeOpt.foreach(frontEdge ⇒ addEdgeToCreatedVertex(startEndpointOpt.get, frontEdge))
+          backEdgeOpt.foreach(backEdge ⇒ addEdgeToCreatedVertex(endEndpointOpt.get, backEdge))
 
           startNode = Some(secondNode.id)
           osmStartNodeOpt = Some(secondNode)
@@ -106,7 +106,7 @@ case class GraphModule(osmModule: OSMModule) {
   }
 
   private def createEdgesForStreet(startEndpoint: OsmVertex, endEndpoint: OsmVertex, way: Way, osmStartNode: OSMNode,
-                                   osmEndNode: OSMNode, permissions: StreetTraversalPermission): (Option[OsmStreetEdge], Option[OsmStreetEdge]) = {
+    osmEndNode: OSMNode, permissions: StreetTraversalPermission): (Option[OsmStreetEdge], Option[OsmStreetEdge]) = {
     // TODO implementar permissions.allowsNothing (se usa en linea 1006)
     // TODO LineString backGeometry (linea 1010)
     // TODO implementar: "double length = this.getGeometryLengthMeters(geometry);" (linea 1012)
@@ -130,7 +130,7 @@ case class GraphModule(osmModule: OSMModule) {
   }
 
   private def createOsmStreetEdge(startEndpoint: OsmVertex, endEndpoint: OsmVertex, way: Way,
-                                  permissions: StreetTraversalPermission): OsmStreetEdge = {
+    permissions: StreetTraversalPermission): OsmStreetEdge = {
     // TODO crear label y name (linea 1046)
     // TODO crear length a partir del recorrido de los coordinate (1053)
 

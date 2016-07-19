@@ -12,7 +12,8 @@ object Projects extends Build {
     .settings(noPublishing: _*)
     .aggregate(pathGenerator, mapGenerator, navigationApi)
 
-  lazy val pathGenerator = Project("path-generator",file("path-generator"))
+  lazy val pathGenerator = Project("path-generator", file("path-generator"))
+    .dependsOn(commonLibrary)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
@@ -21,8 +22,8 @@ object Projects extends Build {
         test(scalatest, mockito))
     .settings(noPublishing: _*)
 
-  lazy val mapGenerator = Project("map-generator",file("map-generator"))
-    .dependsOn(pathGenerator)
+  lazy val mapGenerator = Project("map-generator", file("map-generator"))
+    .dependsOn(pathGenerator, commonLibrary)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
@@ -31,13 +32,21 @@ object Projects extends Build {
         test(scalatest, mockito))
     .settings(noPublishing: _*)
 
-  lazy val navigationApi = Project("navigation-api",file("navigation-api"))
-    .dependsOn(pathGenerator, mapGenerator)
+  lazy val navigationApi = Project("navigation-api", file("navigation-api"))
+    .dependsOn(pathGenerator, mapGenerator, commonLibrary)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
-      compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental,
+      compile(typesafeConfig, slf4jApi, logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental,
         akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors) ++
+        test(scalatest, mockito))
+    .settings(noPublishing: _*)
+
+  lazy val commonLibrary = Project("common-library", file("common-library"))
+    .settings(basicSettings: _*)
+    .settings(formatSettings: _*)
+    .settings(libraryDependencies ++=
+      compile(typesafeConfig, logbackCore, logbackClassic) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
 

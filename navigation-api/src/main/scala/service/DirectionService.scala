@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.Materializer
 import ch.megard.akka.http.cors.CorsDirectives
-import conf.EnvConfig
+import conf.ApiEnvConfig
 import mapgenerator.source.osm.graph.Ramp
 import module.RoutingModule
 import pathgenerator.graph.Coordinate
@@ -20,7 +20,7 @@ case class RoutingRequest(fromLng: Double, fromLat: Double, toLng: Double, toLat
 case class RoutingResponse(path: List[Coordinate])
 case class RampResponse(ramps: Vector[Ramp])
 
-trait DirectionService extends EnvConfig {
+trait DirectionService extends ApiEnvConfig {
   implicit val system: ActorSystem
   implicit def executor: ExecutionContextExecutor
   implicit val materializer: Materializer

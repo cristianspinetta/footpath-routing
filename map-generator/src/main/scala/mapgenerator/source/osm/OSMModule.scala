@@ -251,7 +251,7 @@ object OSMModule {
   }
 
   def getPermissionsForEntity(osmElement: OSMElement,
-                              defPermission: StreetTraversalPermission): StreetTraversalPermission = {
+    defPermission: StreetTraversalPermission): StreetTraversalPermission = {
     var partialPermission: StreetTraversalPermission =
       if (osmElement.isGeneralAccessDenied) {
         var partialPerm = StreetTraversalPermission.NONE

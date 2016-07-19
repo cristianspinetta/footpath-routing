@@ -2,9 +2,11 @@ package mapgenerator.source.osm
 
 import java.net.URL
 
-trait BaseOSMSpec {
+import conf.MapTestConfig
 
-  val osmURL: URL = getClass.getResource("/map.osm")
-  val graphJsonURL: URL = getClass.getResource("/graph.json")
+trait BaseOSMSpec extends MapTestConfig {
+
+  val osmURL: URL = getClass.getResource(configuration.OSM.sourceFilePath)
+  val graphJsonURL: URL = getClass.getResource(configuration.OSM.otpFilePath)
 
 }

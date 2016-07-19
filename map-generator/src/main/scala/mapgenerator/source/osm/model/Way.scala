@@ -22,8 +22,8 @@ case class Way(id: Long, visible: Boolean, version: Int, changeset: Long, timest
 
   lazy val isOpposableCycleway: Boolean = {
     tags.get("cycleway").exists(_.startsWith("opposite")) ||
-    tags.get("cycleway:left").exists(_.startsWith("opposite")) ||
-    tags.get("cycleway:right").exists(_.startsWith("opposite"))
+      tags.get("cycleway:left").exists(_.startsWith("opposite")) ||
+      tags.get("cycleway:right").exists(_.startsWith("opposite"))
   }
 
   lazy val isAreaWay: Boolean = {

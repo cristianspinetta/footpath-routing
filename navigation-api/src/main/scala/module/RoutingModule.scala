@@ -3,6 +3,7 @@ package module
 import java.net.URL
 
 import base.LazyLoggerSupport
+import conf.ApiEnvConfig
 import mapgenerator.source.osm._
 import mapgenerator.source.osm.graph.{ OsmVertex, Ramp }
 import pathgenerator.core.AStar
@@ -11,11 +12,12 @@ import pathgenerator.utils.GraphUtils
 
 import scala.util.{ Failure, Try }
 
-trait RoutingModule extends LazyLoggerSupport {
+trait RoutingModule extends LazyLoggerSupport with ApiEnvConfig {
 
-  val osmURL: URL = getClass.getResource("/map.osm")
-  val rampPath2014: String = getClass.getResource("/rampas.csv").getPath
-  val rampPath2011: String = getClass.getResource("/rampas_2006_2011.csv").getPath
+  val osmURL: URL = getClass.getResource(configuration.OSM.sourceFilePath)
+  val rampPath2014: String = getClass.getResource(configuration.Ramp.sourceFile2014Path).getPath
+  val rampPath2011: String = getClass.getResource(configuration.Ramp.sourceFile2011Path).getPath
+
   val xmlParser: OSMReaderByXml = OSMReaderByXml(osmURL)
   val rampParser: RampLoader = RampLoaderByCSV(Seq((rampPath2014, RampLoader2014), (rampPath2011, RampLoader2011)))
 
