@@ -5,12 +5,15 @@ import mapgenerator.source.osm.graph._
 import mapgenerator.source.osm.model._
 import pathgenerator.graph.{ Coordinate, GraphContainer }
 
+import scala.collection.mutable
 import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
 case class GraphModule(osmModule: OSMModule) {
 
   private val intersectionNodes: Set[Long] = getIntersections
   private val createdOsmVertex = ListBuffer.empty[OsmVertex]
+
+  private val multiLevelNodes: mutable.HashMap[Long, Map[OSMLevel, OsmVertex]] = new mutable.HashMap[Long, Map[OSMLevel, OsmVertex]]
 
   def createGraph: GraphContainer[OsmVertex] = {
     for (way ← osmModule.streetWays) processStreetWay(way)
@@ -195,8 +198,7 @@ case class GraphModule(osmModule: OSMModule) {
 
   private def createGraphVertex(way: Way, osmStartNode: OSMNode): OsmVertex = {
     if (osmStartNode.isMultiLevel) {
-      // TODO
-      ???
+      recordLevel(way, osmStartNode)
     } else {
       createdOsmVertex.find(_.id == osmStartNode.id) match {
         case None ⇒
@@ -268,5 +270,20 @@ case class GraphModule(osmModule: OSMModule) {
     }
 
     intersectionNodes.toSet
+  }
+
+  private def recordLevel(way: Way, osmStartNode: OSMNode): OsmVertex = {
+    val level: OSMLevel = osmModule.wayLevels.getOrElse(way, OSMLevel.default)
+
+    val map: Map[OSMLevel, OsmVertex] = multiLevelNodes.getOrElse(osmStartNode.id, Map[OSMLevel, OsmVertex]())
+
+    map.getOrElse(level, {
+      val vertex = OsmVertex(way, osmStartNode)
+      createdOsmVertex += vertex
+
+      val finalMap = map + ((level, vertex))
+      multiLevelNodes += (osmStartNode.id -> finalMap)
+      vertex
+    })
   }
 }

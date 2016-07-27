@@ -6,6 +6,7 @@ import org.json4s.jackson.Serialization.write
 import org.scalatest.{ FlatSpec, Matchers }
 import pathgenerator.graph.{ GeoVertex, GraphContainer }
 
+import scala.annotation.tailrec
 import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
 class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
@@ -14,7 +15,7 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
   val xmlReader: OSMReaderByXml = OSMReaderByXml(osmURL)
   val graphJsonParser: GraphJsonLoader = GraphJsonLoader(graphJsonURL)
-  val intersectionVertexCount: Int = 1076
+  //  val intersectionVertexCount: Int = 1076
 
   val osmModule: OSMModule = OSMModule(xmlReader.loadNodes, xmlReader.loadWays, xmlReader.loadRelations)
   val graphModule: GraphModule = GraphModule(osmModule)
@@ -35,15 +36,9 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
   "With all OSM elements" should "create a graph correctly" in {
 
-    graphJsonParser.vertices.size should be(intersectionVertexCount)
+    //    graphJsonParser.vertices.size should be(intersectionVertexCount)
 
     graph.vertices.size should be(otpVertices.size)
-
-    val graphSum = graph.vertices.map(_.edges.size).sum
-
-    val otpSum = otpVertices.map(_.outgoingStreetEdges.size).sum
-
-    println(s"Number of Edges in Graph: $graphSum. In OTP: $otpSum.")
 
     val graphVertices: Seq[OsmVertex] = graph.vertices.toIndexedSeq
 
@@ -93,8 +88,14 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
       //      println(edgesReport.toString)
       otpVertices.remove(vertexIndex)
     }
-    println(s"Failed edges: $edgeFailed")
-    println(s"Some missing edges on ${missingEdges.size} vertices: \n${missingEdges.map(mE ⇒ mE.veretxId.toString + " : " + mE.difference) mkString ", "}\n")
+    if (edgeFailed > 0) {
+      val graphSum = graph.vertices.map(_.edges.size).sum
+      val otpSum = otpVertices.map(_.outgoingStreetEdges.size).sum
+
+      logger.warn(s"Number of Edges in Graph: $graphSum. In OTP: $otpSum.")
+      logger.warn(s"Failed edges: $edgeFailed")
+      logger.warn(s"Some missing edges on ${missingEdges.size} vertices: \n${missingEdges.map(mE ⇒ mE.veretxId.toString + " : " + mE.difference) mkString ", "}\n")
+    }
   }
 
   "With all OSM elements" should "create a connected graph" in {
@@ -107,7 +108,7 @@ class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
     def childrenNotVisited(vertex: T, visited: List[T]) =
       vertex.neighbours(graph) filter (x ⇒ !visited.contains(x)) toSet
 
-    @annotation.tailrec
+    @tailrec
     def loop(stack: Set[T], visited: List[T]): List[T] = {
       if (stack isEmpty) visited
       else loop(childrenNotVisited(stack.head, visited) ++ stack.tail,

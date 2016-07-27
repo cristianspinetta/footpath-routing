@@ -1,17 +1,21 @@
 package mapgenerator.source.osm
 
+import base.LazyLoggerSupport
 import enums.StreetTraversalPermission
 import mapgenerator.source.osm.model._
 
+import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.ListSet
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relation]) {
+case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relation]) extends LazyLoggerSupport {
 
   import OSMModule._
 
   type AreasByNodeId = mutable.ListMap[Long, mutable.Set[Way]] with mutable.MultiMap[Long, Way]
+
+  val noZeroLevels: Boolean = true
 
   val areaWayIds: ArrayBuffer[Long] = ArrayBuffer.empty
   val relationById: mutable.ListMap[Long, Relation] = mutable.ListMap.empty
@@ -23,6 +27,8 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
   var bikeParkingAreas: ArrayBuffer[Area] = ArrayBuffer.empty
 
   val processedAreas: mutable.HashSet[OSMElement] = mutable.HashSet.empty
+
+  val wayLevels: TrieMap[Way, OSMLevel] = new TrieMap[Way, OSMLevel]()
 
   // 1 Create relations
   createRelations()
@@ -52,6 +58,9 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
   processMultipolygonRelations()
   processSingleWayAreas()
 
+  // Post Load
+  postLoad()
+
   //************************* 1. get relations
 
   private def createRelations(): Unit = {
@@ -70,7 +79,7 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
           for (member ← relation.members) {
             areaWayIds += member.ref
           }
-          //          applyLevelsForWay(relation)
+          //          getLevelsForWay(relation)
           relationById += ((relation.id, relation))
         }
       } else if (tags.get("type").contains("restriction") ||
@@ -106,6 +115,9 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
         areaWayBuilder += osmWay
 
       if (osmWay.isRoutableWay || osmWay.isParkAndRide || osmWay.isBikeParking) {
+
+        wayLevels += ((osmWay, getLevelsForWay(osmWay)))
+
         if (osmWay.isAreaWay) {
 
           if (!areaWayIds.contains(osmWay.id)) { // if areaWayIds doesn't contain its, it's not part of a relation
@@ -121,6 +133,22 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
     }
     (streetWayBuilder.result(), areaWayBuilder.result(), singleWayAreasBuilder.result())
 
+  }
+
+  private def getLevelsForWay(way: Way): OSMLevel = {
+
+    val firstAttemptForLevel: Option[OSMLevel] = if (way.tags.contains("level")) {
+      val levelName = way.tags.getOrElse("level", "")
+      Some(OSMLevel.fromString(levelName, LEVEL_TAG, noZeroLevels))
+    } else if (way.tags.contains("layer")) {
+      val levelName = way.tags.getOrElse("layer", "")
+      Some(OSMLevel.fromString(levelName, LAYER_TAG, noZeroLevels))
+    } else None
+
+    firstAttemptForLevel match {
+      case Some(osmLevel) if osmLevel.reliable ⇒ osmLevel
+      case _                                   ⇒ OSMLevel.default
+    }
   }
 
   private def processMultipolygonRelations(): Unit = {
@@ -222,6 +250,27 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
   private def keepNodesFromCorrectlyWay(way: Way): Vector[Long] = {
     if (way.nodeIds.size > 1) way.nodeIds.toVector
     else Vector.empty
+  }
+
+  private def postLoad(): Unit = {
+    processRelations()
+  }
+
+  private def processRelations(): Unit = relationById foreach {
+    case (id, relation) ⇒
+      if (relation.tags.get("type").contains("restriction")) {
+        logger.warn(s"missing implementation processRelations() - $relation")
+        //      processRestriction(relation)
+      } else if (relation.tags.get("type").contains("level_map")) {
+        logger.warn(s"missing implementation processRelations() - $relation")
+        //      processLevelMap(relation)
+      } else if (relation.tags.get("type").contains("route")) {
+        logger.warn(s"missing implementation processRelations() - $relation")
+        //      processRoad(relation)
+      } else if (relation.tags.get("type").contains("public_transport")) {
+        logger.warn(s"missing implementation processRelations() - $relation")
+        //      processPublicTransportStopArea(relation)
+      }
   }
 
 }
