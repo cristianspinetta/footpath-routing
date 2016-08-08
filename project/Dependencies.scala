@@ -12,7 +12,8 @@ object Dependencies extends Version {
   val logbackCore                    = "ch.qos.logback"             %  "logback-core"                       % "1.1.3"
   val logbackClassic                 = "ch.qos.logback"             %  "logback-classic"                    % "1.1.3"
   val typesafeConfig                 = "com.typesafe"               %  "config"                             % "1.3.0"
-  val scalatest                      = "org.scalatest"             %%  "scalatest"                          % "2.2.6"
+  val scalatest                      = "org.scalatest"             %%  "scalatest"                          % "3.0.0"
+  val scalacheck                     = "org.scalacheck"            %%  "scalacheck"                         % "1.13.2"
   val mockito                        = "org.mockito"                %  "mockito-core"                       % "2.0.42-beta"
   val akkaActor                      = "com.typesafe.akka"         %%  "akka-actor"                         % AkkaVersion
   val akkaStream                     = "com.typesafe.akka"         %%  "akka-stream"                        % AkkaVersion

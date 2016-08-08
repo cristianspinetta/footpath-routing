@@ -29,7 +29,7 @@ object Projects extends Build {
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j, akkaTestKit,
         jodaTime, scalaReflect, scalaXml, json4sJackson) ++
-        test(scalatest, mockito))
+        test(scalatest, mockito, scalacheck))
     .settings(noPublishing: _*)
 
   lazy val navigationApi = Project("navigation-api", file("navigation-api"))

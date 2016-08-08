@@ -9,7 +9,7 @@ import pathgenerator.graph.{ GeoVertex, GraphContainer }
 import scala.annotation.tailrec
 import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
-class OSMModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
+class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
   implicit val formats = DefaultFormats
 
