@@ -12,9 +12,9 @@ class OSMLoaderByXmlSpec extends FlatSpec with BaseOSMSpec with Matchers {
     val ways: Seq[Way] = xmlParser.loadWays
     val relations: Seq[Relation] = xmlParser.loadRelations
 
-    nodes.size should be(9335)
-    ways.size should be(3194)
-    relations.size should be(384)
+    nodes.size should be(34718)
+    ways.size should be(13495)
+    relations.size should be(938)
   }
 
 }

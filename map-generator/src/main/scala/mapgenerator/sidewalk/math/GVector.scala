@@ -80,11 +80,7 @@ object VectorUtils {
     case (v1, v2) ⇒
       val line1 = Line.ByPairPoints(v1.source, v1.extreme)
       val line2 = Line.ByPairPoints(v2.source, v2.extreme)
-      Line.getIntersectionPoint(line1, line2).flatMap {
-        case point if v1.isDefined(point) && v2.isDefined(point) ⇒ Some(point)
-        case _ ⇒ None
-      }
-    case _ ⇒ None
+      Line.getIntersectionPoint(line1, line2)
   }
 
   def angleBetweenInAntiHourRotation(vector1: GVector, vector2: GVector): Double = {

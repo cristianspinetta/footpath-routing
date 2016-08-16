@@ -20,6 +20,11 @@ trait DoubleUtils {
       if (value < other || (value - other).abs < precision.value) true else false
     }
   }
+
+  implicit class DoubleReadable(value: Double) {
+
+    def readable: String = f"$value%1.2f"
+  }
 }
 
 object DoubleUtils extends DoubleUtils {

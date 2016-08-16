@@ -4,13 +4,13 @@ import base.{ IDGeneratorLong, LazyLoggerSupport, LogicError }
 import mapgenerator.sidewalk.SidewalkEdge.Side
 import mapgenerator.sidewalk.math._
 import pathgenerator.graph.{ Coordinate, GeoEdge, GeoVertex, GraphContainer }
-import scala.math._
 
 import scala.collection.mutable
+import utils.DoubleUtils._
+
+import scala.util.{ Failure, Success, Try }
 
 case class SidewalkModule(implicit graph: GraphContainer[GeoVertex]) extends LazyLoggerSupport {
-
-  import utils.DoubleUtils._
 
   type AdjacentSidewalkCreatorFunc = (Double, GeoVertex, GeoEdge, GeoEdge) ⇒ (SidewalkEdgeBuilder, SidewalkEdgeBuilder)
 
@@ -22,7 +22,7 @@ case class SidewalkModule(implicit graph: GraphContainer[GeoVertex]) extends Laz
     var verticesVisited = 0
     for (vertex ← graph.vertices) {
       verticesVisited += 1
-      logger.debug(s"Visiting vertex number $verticesVisited. Vertex: $vertex")
+      logger.debug(s"Visiting vertex id = ${vertex.id}, number = $verticesVisited. Vertex: $vertex")
       createSidewalkByStreetVertex(builder, vertex, createSideWalksIntersection)
     }
     builder.build
@@ -33,15 +33,17 @@ case class SidewalkModule(implicit graph: GraphContainer[GeoVertex]) extends Laz
     val distanceToStreet: Double = 1
     val sortedEdges: List[GeoEdge] = GeoVertex.sortEdgesByAngle(vertex)
 
-    for (geoEdges ← sortedEdges.sliding(2).toList) yield {
+    // FIXME falta cubrir el caso en que se tenga un vertice con una sola arista
+
+    for (geoEdges ← sortedEdges.sliding(2).toList :+ List(sortedEdges.last, sortedEdges.head)) yield {
       geoEdges match {
-        case firstEdge :: secondEdge :: Nil if VectorUtils.angleBetweenInAntiHourRotation(EdgeUtils.edgeToVector(firstEdge), EdgeUtils.edgeToVector(secondEdge)) ~<= (Pi / 2) ⇒ // FIXME debe soportar mas amplitud?
+        case firstEdge :: secondEdge :: Nil /*if VectorUtils.angleBetweenInAntiHourRotation(EdgeUtils.edgeToVector(firstEdge), EdgeUtils.edgeToVector(secondEdge)) ~<= (Pi / 2)*/ ⇒ // FIXME debe soportar mas amplitud?
           logger.debug(s"creating sidewalk corner between 2 blocks, for edges: FirstEdge: $firstEdge SecondEdge: $secondEdge")
           val (swFirstBuilder, swSecondBuilder) = createAdjacentSidewalk(distanceToStreet, vertex, firstEdge, secondEdge)
-          builder.addSideWalk(vertex.id, swFirstBuilder)
-          builder.addSideWalk(vertex.id, swSecondBuilder)
+          builder.addSideWalk(swFirstBuilder)
+          builder.addSideWalk(swSecondBuilder)
         case singleEdge :: Nil ⇒
-          ???
+          ??? // TODO
         case _ ⇒ throw LogicError("SidewalkModule.createSidewalkByStreetVertex", s"wrong logic, expect a list with one or two elements, but come: $geoEdges")
       }
     }
@@ -55,6 +57,7 @@ case class SidewalkModule(implicit graph: GraphContainer[GeoVertex]) extends Laz
         case None ⇒ throw LogicError("SidewalkModule.createSideWalksIntersection",
           s"It could not find an intersection point between the vectors. vectorFirstSidewalk: $vectorFirstSidewalk. vectorSecondSidewalk: $vectorSecondSidewalk")
       }
+      logger.debug(s"Create an intersected vertex ${vertex.id}")
       SidewalkVertexBuilder(Some(Coordinate(intersectionPoint.y, intersectionPoint.x)), vertex)
     }
 
@@ -83,36 +86,47 @@ case class SidewalkModule(implicit graph: GraphContainer[GeoVertex]) extends Laz
     val sidewalkEdgeBuilderFirst = SidewalkEdgeBuilder(intersectedVertex, vertexEndFirst, firstEdge, vectorFirstSidewalk, side1)
     val sidewalkEdgeBuilderSecond = SidewalkEdgeBuilder(intersectedVertex, vertexEndSecond, secondEdge, vectorSecondSidewalk, side2)
 
+    logger.debug(s"Create sideWalks for a corner (${sidewalkEdgeBuilderFirst.sidewalkKey}, ${sidewalkEdgeBuilderSecond.sidewalkKey}). First: ${sidewalkEdgeBuilderFirst.readable}. Second: ${sidewalkEdgeBuilderSecond.readable}")
+
     (sidewalkEdgeBuilderFirst, sidewalkEdgeBuilderSecond)
   }
 }
 
-case class SideWalkBuilder(implicit graph: GraphContainer[GeoVertex], idGenerator: SidewalkVertexIDGenerator) {
+case class SideWalkBuilder(implicit graph: GraphContainer[GeoVertex], idGenerator: SidewalkVertexIDGenerator) extends LazyLoggerSupport {
 
   type SidewalkIdentity = (Long, GeoEdge, Boolean) // (street vertex id, street edge object, is at north)
 
-  private val _sidewalkOnCornerByStreetVertexId = new /*TrieMap*/ mutable.ListMap[Long, mutable.Set[SidewalkEdgeBuilder]] with mutable.MultiMap[Long, SidewalkEdgeBuilder]
+  private val _sidewalkOnCornerByStreetVertexId = new /*TrieMap*/ mutable.ListMap[String, mutable.Set[SidewalkEdgeBuilder]] with mutable.MultiMap[String, SidewalkEdgeBuilder]
 
-  def addSideWalk(streetVertexId: Long, sidewalkEdgeBuilder: SidewalkEdgeBuilder): Unit = {
-    val oldSidewalkEdgeBuilderOpt: Option[SidewalkEdgeBuilder] = getSidewalkEdgeBuilder(streetVertexId, sidewalkEdgeBuilder.streetEdgeBelongTo)
+  def addSideWalk(sidewalkEdgeBuilder: SidewalkEdgeBuilder): Unit = {
+    val oldSidewalkEdgeBuilderOpt: Option[SidewalkEdgeBuilder] = getSidewalkEdgeBuilderFromMap(sidewalkEdgeBuilder)
 
     oldSidewalkEdgeBuilderOpt match {
       case Some(oldSWEdgeBuilder) ⇒
+        logger.debug(s"Update a Sidewalk Edge Builder: ${oldSWEdgeBuilder.readable}")
+
         val newSWEdgeBuilder = oldSWEdgeBuilder.copy(
           from = oldSWEdgeBuilder.from.copy(
-            coordinate = oldSWEdgeBuilder.from.coordinate orElse sidewalkEdgeBuilder.from.coordinate),
+            coordinate =
+              oldSWEdgeBuilder.from.coordinate orElse
+                sidewalkEdgeBuilder.getExtremeByOwnerVertexId(oldSWEdgeBuilder.from.streetVertexBelongTo.id).flatMap(_.coordinate)),
           to = oldSWEdgeBuilder.to.copy(
-            coordinate = oldSWEdgeBuilder.to.coordinate orElse sidewalkEdgeBuilder.to.coordinate))
-        _sidewalkOnCornerByStreetVertexId removeBinding (streetVertexId, oldSWEdgeBuilder)
-        _sidewalkOnCornerByStreetVertexId addBinding (streetVertexId, newSWEdgeBuilder)
-      case None ⇒ _sidewalkOnCornerByStreetVertexId addBinding (streetVertexId, sidewalkEdgeBuilder)
+            coordinate =
+              oldSWEdgeBuilder.to.coordinate orElse
+                sidewalkEdgeBuilder.getExtremeByOwnerVertexId(oldSWEdgeBuilder.to.streetVertexBelongTo.id).flatMap(_.coordinate)))
+        logger.debug(s"Updated Sidewalk Edge Builder: ${newSWEdgeBuilder.readable}")
+        _sidewalkOnCornerByStreetVertexId removeBinding (sidewalkEdgeBuilder.sidewalkKey, oldSWEdgeBuilder)
+        _sidewalkOnCornerByStreetVertexId addBinding (sidewalkEdgeBuilder.sidewalkKey, newSWEdgeBuilder)
+      case None ⇒
+        logger.debug(s"Add a new Sidewalk Edge Builder: ${sidewalkEdgeBuilder.readable}")
+        _sidewalkOnCornerByStreetVertexId addBinding (sidewalkEdgeBuilder.sidewalkKey, sidewalkEdgeBuilder)
     }
   }
 
-  def getSidewalkEdgeBuilder(streetVertexId: Long, edge: GeoEdge): Option[SidewalkEdgeBuilder] = {
+  def getSidewalkEdgeBuilderFromMap(sidewalkEdgeBuilder: SidewalkEdgeBuilder): Option[SidewalkEdgeBuilder] = {
     _sidewalkOnCornerByStreetVertexId
-      .get(streetVertexId)
-      .flatMap(set ⇒ set.find(builder ⇒ builder.streetEdgeBelongTo.equalDirection(edge)))
+      .get(sidewalkEdgeBuilder.sidewalkKey)
+      .flatMap(set ⇒ set.find(builder ⇒ builder.streetEdgeBelongTo.equalDirection(sidewalkEdgeBuilder.streetEdgeBelongTo)))
   }
 
   def build: Set[SidewalkEdge] = {
@@ -132,9 +146,11 @@ case class SidewalkVertex(id: Long, coordinate: Coordinate, streetVertexBelongTo
 case class SidewalkVertexBuilder(coordinate: Option[Coordinate], streetVertexBelongTo: GeoVertex) {
 
   def build(implicit idGenerator: SidewalkVertexIDGenerator): SidewalkVertex = {
-    assert(coordinate.isDefined, "coordinate must be define to create a Sidewalk Vertex")
+    assert(coordinate.isDefined, s"coordinate must be define to create a Sidewalk Vertex. Element: $this")
     SidewalkVertex(idGenerator.newID, coordinate.get, streetVertexBelongTo)
   }
+
+  def readable: String = s"SidewalkVertexBuilder(coordinate = (lng: ${coordinate.map(_.longitude.readable).getOrElse("-")}, lat: ${coordinate.map(_.latitude.readable).getOrElse("-")}), vertex belong to = ${streetVertexBelongTo.id})"
 }
 
 case class SidewalkEdge(from: SidewalkVertex, to: SidewalkVertex, streetVertexBelongTo: GeoEdge, side: Side)
@@ -152,9 +168,31 @@ object SidewalkEdge {
 }
 
 case class SidewalkEdgeBuilder(from: SidewalkVertexBuilder, to: SidewalkVertexBuilder,
-    streetEdgeBelongTo: GeoEdge, segment: GVector, side: Side)(implicit idGenerator: SidewalkVertexIDGenerator) {
+    streetEdgeBelongTo: GeoEdge, segment: GVector, side: Side)(implicit idGenerator: SidewalkVertexIDGenerator) extends LazyLoggerSupport {
 
-  def build: SidewalkEdge = SidewalkEdge(from.build, to.build, streetEdgeBelongTo, side)
+  val sidewalkKey: String = {
+    val vertexFromId: Long = from.streetVertexBelongTo.id
+    val vertexToId: Long = to.streetVertexBelongTo.id
+    val idPart = if (vertexFromId > vertexToId) s"$vertexToId-$vertexFromId" else s"$vertexFromId-$vertexToId"
+    s"$idPart-$side"
+  }
+
+  def build: SidewalkEdge = Try(SidewalkEdge(from.build, to.build, streetEdgeBelongTo, side)) match {
+    case Success(x) ⇒ x
+    case Failure(exc) ⇒
+      logger.debug(s"Failed trying to build a sidewalk edge: $readable")
+      throw exc
+  }
+
+  def getExtremeByOwnerVertexId(vertexId: Long): Option[SidewalkVertexBuilder] = {
+    if (from.streetVertexBelongTo.id == vertexId) Some(from)
+    else if (to.streetVertexBelongTo.id == vertexId) Some(to)
+    else None
+  }
+
+  def readable: String = s"SidewalkEdgeBuilder(key = $sidewalkKey, from = ${this.from.readable}, to = ${to.readable}, " +
+    s"street edge belong to = (start = ${streetEdgeBelongTo.vertexStart}, end = ${streetEdgeBelongTo.vertexEnd}), " +
+    s"segment = -, side: $side)"
 }
 
 object EdgeUtils {

@@ -12,7 +12,7 @@ class SidewalkModuleSpec extends FlatSpec with Matchers {
     4L -> (List(1L, 5L, 7L), Coordinate(-10, 0)),
     5L -> (List(2L, 3L, 4L, 6L, 8L, 9L), Coordinate(-10, 10)),
     6L -> (List(3L, 5L, 9L), Coordinate(-10, 20)),
-    7L -> (List(4L, 5L, 8L), Coordinate(-20, 0)),
+    7L -> (List(4L, 8L), Coordinate(-20, 0)),
     8L -> (List(5L, 7L, 9L), Coordinate(-20, 10)),
     9L -> (List(5L, 6L, 8L), Coordinate(-20, 20))))
 
@@ -22,7 +22,7 @@ class SidewalkModuleSpec extends FlatSpec with Matchers {
 
     val sideWalks: Set[SidewalkEdge] = sidewalkModule.createSideWalks
 
-    sideWalks should be(28)
+    sideWalks.size should be(28)
 
   }
 }
