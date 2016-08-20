@@ -1,5 +1,7 @@
 package pathgenerator.graph
 
+import mapdomain.graph.{ GeoVertex, Vertex }
+
 trait Heuristic[V <: Vertex] {
   def apply(node: V): Double
 }

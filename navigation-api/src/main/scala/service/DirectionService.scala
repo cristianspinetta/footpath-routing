@@ -9,9 +9,9 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream.Materializer
 import ch.megard.akka.http.cors.CorsDirectives
 import conf.ApiEnvConfig
-import mapgenerator.source.osm.graph.Ramp
+import mapdomain.graph.Coordinate
+import mapdomain.sidewalk.Ramp
 import module.RoutingModule
-import pathgenerator.graph.Coordinate
 
 import scala.concurrent.{ ExecutionContextExecutor, Future }
 import scala.util.{ Failure ⇒ TFailure, Success ⇒ TSuccess }

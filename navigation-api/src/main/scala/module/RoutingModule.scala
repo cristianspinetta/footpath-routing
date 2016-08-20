@@ -4,11 +4,13 @@ import java.net.URL
 
 import base.LazyLoggerSupport
 import conf.ApiEnvConfig
+import mapdomain.graph.{ Coordinate, Edge, GraphContainer }
+import mapdomain.sidewalk.Ramp
+import mapdomain.street.OsmVertex
 import mapgenerator.source.osm._
-import mapgenerator.source.osm.graph.{ OsmVertex, Ramp }
 import pathgenerator.core.AStar
 import pathgenerator.graph._
-import pathgenerator.utils.GraphUtils
+import mapdomain.utils.GraphUtils
 
 import scala.util.{ Failure, Try }
 

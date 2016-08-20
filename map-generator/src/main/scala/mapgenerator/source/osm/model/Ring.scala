@@ -1,7 +1,7 @@
 package mapgenerator.source.osm.model
 
-import mapgenerator.source.osm.graph.Polygon
-import pathgenerator.graph.Coordinate
+import mapdomain.graph.Coordinate
+import mapdomain.math.Polygon
 
 import scala.collection.immutable.ListSet
 import scala.collection.mutable.ArrayBuffer

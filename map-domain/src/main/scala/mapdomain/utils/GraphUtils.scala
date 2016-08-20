@@ -1,6 +1,6 @@
-package pathgenerator.utils
+package mapdomain.utils
 
-import pathgenerator.graph.Edge
+import mapdomain.graph.Edge
 
 trait GraphUtils {
 

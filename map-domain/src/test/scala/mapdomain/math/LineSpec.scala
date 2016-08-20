@@ -1,4 +1,4 @@
-package mapgenerator.sidewalk.math
+package mapdomain.math
 
 import org.scalatest._
 import utils.DoubleUtils

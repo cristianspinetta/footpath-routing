@@ -1,6 +1,6 @@
-package mapgenerator.source.osm.graph
+package mapdomain.math
 
-import pathgenerator.graph.Coordinate
+import mapdomain.graph.Coordinate
 
 case class Polygon(vertices: Vector[Coordinate]) {
   def hasPointInside(polygon: Polygon): Boolean =

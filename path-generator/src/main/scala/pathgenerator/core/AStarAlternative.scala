@@ -1,6 +1,6 @@
 package pathgenerator.core
 
-import pathgenerator.graph.{ Edge, GraphContainer, Vertex }
+import mapdomain.graph.{ Edge, GraphContainer, Vertex }
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap

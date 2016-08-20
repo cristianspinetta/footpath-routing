@@ -1,9 +1,9 @@
 package mapgenerator.source.osm
 
 import enums.StreetTraversalPermission
-import mapgenerator.source.osm.graph._
+import mapdomain.graph.{ Coordinate, GraphContainer }
+import mapdomain.street._
 import mapgenerator.source.osm.model._
-import pathgenerator.graph.{ Coordinate, GraphContainer }
 
 import scala.collection.mutable
 import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
@@ -211,7 +211,7 @@ case class GraphModule(osmModule: OSMModule) {
               TransitStopStreetVertex(node.id, Nil, Coordinate(node.lat, node.lon)) // TODO chequear loas demas datos que le agregan (linea 1192 de OSMModule)
             case node if node.isBollard ⇒
               BarrierVertex(node.id, Nil, Coordinate(node.lat, node.lon)) // TODO chequear los permisos que le agregan (linea 1199)
-            case node ⇒ OsmVertex(way, node)
+            case node ⇒ Way.createOSMVertex(way, node)
           }
 
           createdOsmVertex += vertex
@@ -278,7 +278,7 @@ case class GraphModule(osmModule: OSMModule) {
     val map: Map[OSMLevel, OsmVertex] = multiLevelNodes.getOrElse(osmStartNode.id, Map[OSMLevel, OsmVertex]())
 
     map.getOrElse(level, {
-      val vertex = OsmVertex(way, osmStartNode)
+      val vertex = Way.createOSMVertex(way, osmStartNode)
       createdOsmVertex += vertex
 
       val finalMap = map + ((level, vertex))

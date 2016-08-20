@@ -1,6 +1,6 @@
 package pathgenerator.testkit
 
-import pathgenerator.graph.{ Coordinate, GeoVertex, GraphContainer, GraphVertex }
+import mapdomain.graph.{ Coordinate, GeoVertex, GraphContainer, GraphVertex }
 
 trait BaseAStarSpec {
 

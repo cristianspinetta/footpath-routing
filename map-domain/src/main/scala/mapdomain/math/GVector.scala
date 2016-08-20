@@ -1,4 +1,4 @@
-package mapgenerator.sidewalk.math
+package mapdomain.math
 
 import scala.math._
 import utils.DoubleUtils._
@@ -37,7 +37,7 @@ case class GVector(source: Point, extreme: Point) {
 
 object VectorUtils {
 
-  import PointUtils._
+  import mapdomain.utils.PointUtils._
 
   def createParallelVector(vector: GVector, distance: Double, antiHourRotation: Boolean): GVector = (vector.quadrant, antiHourRotation) match {
     case (Quad1, true) ⇒

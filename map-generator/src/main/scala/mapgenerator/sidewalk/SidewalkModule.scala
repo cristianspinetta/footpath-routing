@@ -1,13 +1,14 @@
 package mapgenerator.sidewalk
 
 import base.{ IDGeneratorLong, LazyLoggerSupport, LogicError }
-import mapgenerator.sidewalk.SidewalkEdge.Side
-import mapgenerator.sidewalk.math._
-import pathgenerator.graph.{ Coordinate, GeoEdge, GeoVertex, GraphContainer }
-
-import scala.collection.mutable
+import mapdomain.graph.{ Coordinate, GeoEdge, GeoVertex, GraphContainer }
+import mapdomain.math.{ GVector, VectorUtils }
+import mapdomain.sidewalk.{ SidewalkEdge, SidewalkVertex }
+import mapdomain.sidewalk.SidewalkEdge.Side
+import mapdomain.utils.EdgeUtils
 import utils.DoubleUtils._
 
+import scala.collection.mutable
 import scala.util.{ Failure, Success, Try }
 
 case class SidewalkModule(implicit graph: GraphContainer[GeoVertex]) extends LazyLoggerSupport {
@@ -141,8 +142,6 @@ case class SideWalkBuilder(implicit graph: GraphContainer[GeoVertex], idGenerato
 
 case class SidewalkVertexIDGenerator() extends IDGeneratorLong
 
-case class SidewalkVertex(id: Long, coordinate: Coordinate, streetVertexBelongTo: GeoVertex)
-
 case class SidewalkVertexBuilder(coordinate: Option[Coordinate], streetVertexBelongTo: GeoVertex) {
 
   def build(implicit idGenerator: SidewalkVertexIDGenerator): SidewalkVertex = {
@@ -151,20 +150,6 @@ case class SidewalkVertexBuilder(coordinate: Option[Coordinate], streetVertexBel
   }
 
   def readable: String = s"SidewalkVertexBuilder(coordinate = (lng: ${coordinate.map(_.longitude.readable).getOrElse("-")}, lat: ${coordinate.map(_.latitude.readable).getOrElse("-")}), vertex belong to = ${streetVertexBelongTo.id})"
-}
-
-case class SidewalkEdge(from: SidewalkVertex, to: SidewalkVertex, streetEdgeBelongTo: GeoEdge, side: Side)
-
-object SidewalkEdge {
-
-  def sideByEdges(streetLine: Line, sidewalkLine: Line): Side = {
-    if (Line.compareParallelsByAltitude(streetLine, sidewalkLine) == 1) SouthSide
-    else NorthSide
-  }
-
-  trait Side
-  case object NorthSide extends Side
-  case object SouthSide extends Side
 }
 
 case class SidewalkEdgeBuilder(from: SidewalkVertexBuilder, to: SidewalkVertexBuilder,
@@ -193,27 +178,4 @@ case class SidewalkEdgeBuilder(from: SidewalkVertexBuilder, to: SidewalkVertexBu
   def readable: String = s"SidewalkEdgeBuilder(key = $sidewalkKey, from = ${this.from.readable}, to = ${to.readable}, " +
     s"street edge belong to = (start = ${streetEdgeBelongTo.vertexStart}, end = ${streetEdgeBelongTo.vertexEnd}), " +
     s"segment = -, side: $side)"
-}
-
-object EdgeUtils {
-
-  def edgeToLine(edge: GeoEdge)(implicit graph: GraphContainer[GeoVertex]): Line = {
-    val start = edge.retrieveVertexStart.get
-    val end = edge.retrieveVertexEnd.get
-
-    val pointStart = Point(start.coordinate.longitude, start.coordinate.latitude)
-    val pointEnd = Point(end.coordinate.longitude, end.coordinate.latitude)
-
-    Line.ByPairPoints(pointStart, pointEnd)
-  }
-
-  def edgeToVector(edge: GeoEdge)(implicit graph: GraphContainer[GeoVertex]): GVector = {
-    val start = edge.retrieveVertexStart.get
-    val end = edge.retrieveVertexEnd.get
-
-    val pointStart = Point(start.coordinate.longitude, start.coordinate.latitude)
-    val pointEnd = Point(end.coordinate.longitude, end.coordinate.latitude)
-
-    GVector(pointStart, pointEnd)
-  }
 }

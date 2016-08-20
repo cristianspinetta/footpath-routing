@@ -1,6 +1,6 @@
-package mapgenerator.source.osm.graph
+package mapdomain.sidewalk
 
-import pathgenerator.graph.Coordinate
+import mapdomain.graph.Coordinate
 
 case class Ramp(coordinate: Coordinate,
   id: String,

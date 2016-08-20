@@ -1,7 +1,7 @@
 package mapgenerator.source.osm.model
 
+import mapdomain.graph.Coordinate
 import org.joda.time.DateTime
-import pathgenerator.graph.Coordinate
 
 case class OSMNode(lon: Double, lat: Double, uid: Long, user: String, timestamp: DateTime, changeset: Long,
     version: Int, visible: Boolean, id: Long, tags: Map[String, String]) extends OSMElement {

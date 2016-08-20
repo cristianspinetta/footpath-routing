@@ -2,6 +2,7 @@ package pathgenerator.core
 
 import pathgenerator.graph._
 import base.{ LazyLoggerSupport, MeterSupport }
+import mapdomain.graph.{ Edge, GraphContainer, Vertex }
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap

@@ -1,37 +1,6 @@
-package mapgenerator.sidewalk.math
+package mapdomain.math
 
 import scala.math._
-import utils.DoubleUtils._
-
-case class Point(x: Double, y: Double)
-
-object Point {
-
-  def distance(p1: Point, p2: Point): Double = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))
-
-  /**
-   * The angle between segment 1-2 and 1-3, applying The Law of Cosines.
-   */
-  def angleByThreePoints(p1: Point, p2: Point, p3: Point): Double = {
-    val s12 = distance(p1, p2)
-    val s23 = distance(p2, p3)
-    val s13 = distance(p1, p3)
-    acos((pow(s12, 2) + pow(s13, 2) - pow(s23, 2)) / (2 * s12 * s13))
-  }
-}
-
-trait PointUtils {
-
-  import utils.DoubleUtils._
-
-  implicit class PointComparator(point: Point) {
-    def ~=(other: Point)(implicit precision: Precision = DefaultValues.defaultPrecision): Boolean = {
-      (point.x ~= other.x) && (point.y ~= other.y)
-    }
-  }
-}
-
-object PointUtils extends PointUtils
 
 trait Line {
   val slope: Double
@@ -51,6 +20,7 @@ trait Line {
 }
 
 case class NormalLine(slope: Double, intercept: Double) extends Line {
+  import utils.DoubleUtils._
 
   def isConstant: Boolean = slope ~= 0
 
@@ -80,6 +50,8 @@ case class NormalLine(slope: Double, intercept: Double) extends Line {
 }
 
 case class VerticalLine(x: Double) extends Line {
+  import utils.DoubleUtils._
+
   val intercept: Double = Double.NaN
   val slope: Double = Double.PositiveInfinity
 
@@ -103,6 +75,8 @@ case class VerticalLine(x: Double) extends Line {
 }
 
 object Line {
+  import utils.DoubleUtils._
+
   def ByPairPoints(p1: Point, p2: Point): Line = {
     if (p1.x ~= p2.x) VerticalLine(p1.x)
     else {

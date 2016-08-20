@@ -1,18 +1,28 @@
-package mapgenerator.source
+package mapdomain.graph.grid
 
-import pathgenerator.graph.Coordinate
+import mapdomain.graph.Coordinate
 
 case class Bundle(topLeft: Coordinate, topRight: Coordinate,
-  bottomRight: Coordinate, bottomLeft: Coordinate)
+    bottomRight: Coordinate, bottomLeft: Coordinate) {
 
-case class Grid(id: Long, pathTPs: List[Long], bundle: Bundle)
+  lazy val width = topRight.longitude - topLeft.longitude
+  lazy val hight = topLeft.longitude - bottomLeft.longitude
+}
 
-object Grid {
+case class GridProperty()
 
-  def create(rows: Int, columns: Int, window: Int)(gridNro: Int, pathTPs: List[Long]): Grid =
-    new Grid(gridNro, pathTPs, getBoundForGrid(rows, columns, window, gridNro))
+case class Grid(granular: Int, mapBundle: Bundle) {
+  val window: Double = mapBundle.width / granular
+}
 
-  def getBoundForGrid(rows: Int, columns: Int, window: Int, gridNro: Int): Bundle = {
+case class Cell(id: Long, pathTPs: List[Long], bundle: Bundle)
+
+object Cell {
+
+  def create(columns: Int, window: Int)(gridNro: Int, pathTPs: List[Long]): Cell =
+    new Cell(gridNro, pathTPs, getBoundForCell(columns, window, gridNro))
+
+  def getBoundForCell(columns: Int, window: Int, gridNro: Int): Bundle = {
     val windowsByRow = (columns - 1) / window
     val restForPosByRow = gridNro % windowsByRow
     val posByRow = if (restForPosByRow == 0) windowsByRow else restForPosByRow
@@ -23,7 +33,7 @@ object Grid {
       val br = Coordinate(bl.latitude, bl.longitude + window)
       Bundle(tl, tr, br, bl)
     } else {
-      val beforeBound = getBoundForGrid(rows, columns, window, gridNro - windowsByRow)
+      val beforeBound = getBoundForCell(columns, window, gridNro - windowsByRow)
       val tl = beforeBound.bottomLeft
       val tr = beforeBound.bottomRight
       val bl = Coordinate(tl.latitude + window, tl.longitude)

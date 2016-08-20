@@ -1,14 +1,9 @@
-package mapgenerator.source.osm.graph
+package mapdomain.street
 
-import mapgenerator.source.osm.model.{ OSMNode, Way }
-import pathgenerator.graph.{ Coordinate, GeoEdge, GeoVertex }
+import mapdomain.graph.{ Coordinate, GeoEdge, GeoVertex }
 
 class OsmVertex(override val id: Long, override val edges: List[OsmStreetEdge], override val coordinate: Coordinate) extends GeoVertex(id, edges, coordinate) {
   override def toString = s"OsmVertex($id, $edges, $coordinate)"
-}
-
-object OsmVertex {
-  def apply(way: Way, node: OSMNode): OsmVertex = new OsmVertex(node.id, Nil, Coordinate(node.lat, node.lon))
 }
 
 case class TransitStopStreetVertex(override val id: Long, override val edges: List[OsmStreetEdge], override val coordinate: Coordinate) extends OsmVertex(id, edges, coordinate)

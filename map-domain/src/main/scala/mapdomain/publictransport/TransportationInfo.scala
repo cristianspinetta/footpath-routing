@@ -1,6 +1,6 @@
-package mapgenerator.source
+package mapdomain.publictransport
 
-import pathgenerator.graph.Coordinate
+import mapdomain.graph.Coordinate
 
 case class TransportationInfo(id: Int, lineNro: Int)
 

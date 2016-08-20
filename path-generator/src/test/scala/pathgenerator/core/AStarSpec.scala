@@ -1,8 +1,9 @@
 package pathgenerator.core
 
+import mapdomain.graph.{ Edge, GeoVertex, GraphContainer, GraphVertex }
 import pathgenerator.graph._
 import pathgenerator.testkit.BaseAStarSpec
-import pathgenerator.utils.GraphUtils
+import mapdomain.utils.GraphUtils
 import org.scalatest.{ Matchers, WordSpec }
 
 import scala.util.Try

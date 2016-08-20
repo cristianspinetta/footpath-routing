@@ -1,7 +1,8 @@
 package mapgenerator.source.osm
 
-import mapgenerator.source.osm.graph.Ramp
-import pathgenerator.graph.Coordinate
+import mapdomain.graph.Coordinate
+import mapdomain.sidewalk.Ramp
+
 import scala.io.Source
 
 trait RampLoader {

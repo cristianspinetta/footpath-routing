@@ -1,4 +1,4 @@
-package pathgenerator.graph
+package mapdomain.graph
 
 trait Edge {
   val vertexStart: Long

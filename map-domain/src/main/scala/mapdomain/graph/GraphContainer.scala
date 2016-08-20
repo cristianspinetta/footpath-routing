@@ -1,4 +1,4 @@
-package pathgenerator.graph
+package mapdomain.graph
 
 case class GraphContainer[N <: Vertex](vertices: List[N]) {
 

@@ -1,5 +1,7 @@
 package mapgenerator.source.osm.model
 
+import mapdomain.graph.Coordinate
+import mapdomain.street.OsmVertex
 import org.joda.time.DateTime
 
 case class Way(id: Long, visible: Boolean, version: Int, changeset: Long, timestamp: DateTime, user: String,
@@ -32,4 +34,8 @@ case class Way(id: Long, visible: Boolean, version: Int, changeset: Long, timest
       tags.get("amenity").contains("bicycle_parking")) &&
       nodeIds.size > 2
   }
+}
+
+object Way {
+  def createOSMVertex(way: Way, node: OSMNode): OsmVertex = new OsmVertex(node.id, Nil, Coordinate(node.lat, node.lon))
 }

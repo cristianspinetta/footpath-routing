@@ -1,4 +1,4 @@
-package pathgenerator.graph
+package mapdomain.graph
 
 import scala.math._
 

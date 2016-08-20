@@ -1,5 +1,6 @@
 package pathgenerator.graph
 
+import mapdomain.graph.Coordinate
 import org.scalatest.{ FlatSpec, Matchers }
 
 class CoordinateSpec extends FlatSpec with Matchers {

@@ -1,10 +1,10 @@
 package mapgenerator.source.osm
 
-import mapgenerator.source.osm.graph.{ OsmStreetEdge, OsmVertex }
+import mapdomain.graph.{ GeoVertex, GraphContainer }
+import mapdomain.street.{ OsmStreetEdge, OsmVertex }
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
 import org.scalatest.{ FlatSpec, Matchers }
-import pathgenerator.graph.{ GeoVertex, GraphContainer }
 
 import scala.annotation.tailrec
 import scala.collection.mutable.{ ArrayBuffer, ListBuffer }

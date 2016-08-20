@@ -1,7 +1,7 @@
 package service
 
-import mapgenerator.source.osm.graph.Ramp
-import pathgenerator.graph.Coordinate
+import mapdomain.graph.Coordinate
+import mapdomain.sidewalk.Ramp
 import spray.json._
 
 object Protocol extends DefaultJsonProtocol {

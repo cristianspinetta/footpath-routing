@@ -1,7 +1,7 @@
 package mapgenerator.source.osm.model
 
+import mapdomain.graph.Coordinate
 import org.joda.time.DateTime
-import pathgenerator.graph.Coordinate
 
 trait OSMElement {
   def id: Long
