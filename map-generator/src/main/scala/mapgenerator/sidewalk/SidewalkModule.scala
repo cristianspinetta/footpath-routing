@@ -63,7 +63,7 @@ case class SidewalkModule(implicit graph: GraphContainer[GeoVertex]) extends Laz
 
     def createEndVertex(endVertex: GeoVertex): SidewalkVertexBuilder = SidewalkVertexBuilder(None, endVertex)
 
-    // get line that represent the given edge
+    // get vector that represent the given edge
     val firstVector = EdgeUtils.edgeToVector(firstEdge)
     val secondVector = EdgeUtils.edgeToVector(secondEdge)
 
@@ -123,7 +123,7 @@ case class SideWalkBuilder(implicit graph: GraphContainer[GeoVertex], idGenerato
     }
   }
 
-  def getSidewalkEdgeBuilderFromMap(sidewalkEdgeBuilder: SidewalkEdgeBuilder): Option[SidewalkEdgeBuilder] = {
+  protected def getSidewalkEdgeBuilderFromMap(sidewalkEdgeBuilder: SidewalkEdgeBuilder): Option[SidewalkEdgeBuilder] = {
     _sidewalkOnCornerByStreetVertexId
       .get(sidewalkEdgeBuilder.sidewalkKey)
       .flatMap(set ⇒ set.find(builder ⇒ builder.streetEdgeBelongTo.equalDirection(sidewalkEdgeBuilder.streetEdgeBelongTo)))
@@ -153,7 +153,7 @@ case class SidewalkVertexBuilder(coordinate: Option[Coordinate], streetVertexBel
   def readable: String = s"SidewalkVertexBuilder(coordinate = (lng: ${coordinate.map(_.longitude.readable).getOrElse("-")}, lat: ${coordinate.map(_.latitude.readable).getOrElse("-")}), vertex belong to = ${streetVertexBelongTo.id})"
 }
 
-case class SidewalkEdge(from: SidewalkVertex, to: SidewalkVertex, streetVertexBelongTo: GeoEdge, side: Side)
+case class SidewalkEdge(from: SidewalkVertex, to: SidewalkVertex, streetEdgeBelongTo: GeoEdge, side: Side)
 
 object SidewalkEdge {
 
