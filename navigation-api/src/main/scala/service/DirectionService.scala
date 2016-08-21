@@ -11,13 +11,15 @@ import ch.megard.akka.http.cors.CorsDirectives
 import conf.ApiEnvConfig
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.Ramp
-import module.RoutingModule
+import model.Street
+import module.{ MapModule, RoutingModule }
 
 import scala.concurrent.{ ExecutionContextExecutor, Future }
 import scala.util.{ Failure ⇒ TFailure, Success ⇒ TSuccess }
 
 case class RoutingRequest(fromLng: Double, fromLat: Double, toLng: Double, toLat: Double)
 case class RoutingResponse(path: List[Coordinate])
+case class StreetResponse(streets: List[Street])
 case class RampResponse(ramps: Vector[Ramp])
 
 trait DirectionService extends ApiEnvConfig {
@@ -47,10 +49,19 @@ trait DirectionService extends ApiEnvConfig {
     }
   }
 
+  def fetchStreets: Future[Either[String, StreetResponse]] = {
+    Future.successful {
+      MapModule.streets match {
+        case TSuccess(list)           ⇒ Right(StreetResponse(list))
+        case TFailure(exc: Throwable) ⇒ Left(exc.getMessage)
+      }
+    }
+  }
+
   val routes = CorsDirectives.cors() {
     logRequestResult("routing-request") {
-      path("directions") {
-        get {
+      get {
+        path("directions") {
           parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double]).as(RoutingRequest) { routingRequest ⇒
             val response: Future[ToResponseMarshallable] = fetchDirections(routingRequest).map {
               case Right(routingResponse) ⇒ routingResponse
@@ -58,17 +69,26 @@ trait DirectionService extends ApiEnvConfig {
             }
             complete(response)
           }
-        }
-      } ~
-        path("ramps") {
-          get {
+        } ~
+          path("ramps") {
             val response: Future[ToResponseMarshallable] = fetchRamps.map {
               case Right(rampsResponse) ⇒ rampsResponse
               case Left(errorMessage)   ⇒ BadRequest -> errorMessage
             }
             complete(response)
+          } ~
+          pathPrefix("map") {
+            path("streets") {
+              val response: Future[ToResponseMarshallable] = Future.successful {
+                MapModule.streets match {
+                  case TSuccess(list)           ⇒ StreetResponse(list)
+                  case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
+                }
+              }
+              complete(response)
+            }
           }
-        }
+      }
     }
   }
 

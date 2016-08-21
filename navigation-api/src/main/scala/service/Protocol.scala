@@ -2,6 +2,7 @@ package service
 
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.Ramp
+import model.Street
 import spray.json._
 
 object Protocol extends DefaultJsonProtocol {
@@ -19,7 +20,9 @@ object Protocol extends DefaultJsonProtocol {
   }
 
   implicit val RampFormat = jsonFormat5(Ramp.apply)
+  implicit val StreetFormat = jsonFormat3(Street.apply)
   implicit val RoutingRequestFormat = jsonFormat4(RoutingRequest.apply)
   implicit val RoutingResponseFormat = jsonFormat1(RoutingResponse.apply)
+  implicit val StreetResponseFormat = jsonFormat1(StreetResponse.apply)
   implicit val RampResponseFormat = jsonFormat1(RampResponse.apply)
 }

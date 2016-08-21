@@ -22,11 +22,14 @@ object WebServer extends App with DirectionService with ApiEnvConfig {
 
   val bindingFuture = Http().bindAndHandle(routes, interface, port)
 
-  println(s"Server online at http://$interface:$port/\nPress RETURN to stop...")
+  bindingFuture foreach { binder ⇒
 
-  StdIn.readLine() // let it run until user presses return
+    println(s"Server online at http://$interface:$port/\nPress RETURN to stop...")
 
-  bindingFuture
-    .flatMap(_.unbind()) // trigger unbinding from the port
-    .onComplete(_ ⇒ system.terminate()) // and shutdown when done
+    //    StdIn.readLine() // let it run until user presses return
+    //
+    //    binder.unbind() // trigger unbinding from the port
+    //      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
+  }
+
 }

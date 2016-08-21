@@ -1,7 +1,8 @@
-package mapdomain.sidewalk
+package mapgenerator.sidewalk
 
-import mapdomain.graph.{Coordinate, GeoVertex, GraphContainer}
-import org.scalatest.{FlatSpec, Matchers}
+import mapdomain.graph.{ Coordinate, GeoVertex, GraphContainer }
+import mapdomain.sidewalk.SidewalkEdge
+import org.scalatest.{ FlatSpec, Matchers }
 
 class SidewalkModuleSpec extends FlatSpec with Matchers {
 

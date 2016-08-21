@@ -1,8 +1,10 @@
 package mapdomain.graph.grid
 
+import mapdomain.graph.Coordinate
+import mapdomain.publictransport.PathTP
 import org.scalatest.{FlatSpec, Matchers}
 
-class GridCreatorSpec extends FlatSpec with BaseOSMSpec with Matchers {
+class GridCreatorSpec extends FlatSpec with Matchers {
 
   val pathTPs: List[PathTP] = PathTP(List(
     List[(Double, Double)]((1, 2), (2, 2), (3, 2), (4, 2), (5, 2),
