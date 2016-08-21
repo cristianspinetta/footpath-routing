@@ -1,6 +1,6 @@
 package mapdomain.graph.grid
 
-import mapdomain.graph.Coordinate
+import mapdomain.graph.{Coordinate, CoordinateRepository}
 
 case class Bundle(topLeft: Coordinate, topRight: Coordinate,
     bottomRight: Coordinate, bottomLeft: Coordinate) {
@@ -27,17 +27,17 @@ object Cell {
     val restForPosByRow = gridNro % windowsByRow
     val posByRow = if (restForPosByRow == 0) windowsByRow else restForPosByRow
     if (gridNro <= windowsByRow) { // First row
-      val tl = Coordinate(1, (posByRow - 1) * window + 1)
-      val tr = Coordinate(1, tl.longitude + window)
-      val bl = Coordinate(1 + window, tl.longitude)
-      val br = Coordinate(bl.latitude, bl.longitude + window)
+      val tl = CoordinateRepository.create(1, (posByRow - 1) * window + 1)
+      val tr = CoordinateRepository.create(1, tl.longitude + window)
+      val bl = CoordinateRepository.create(1 + window, tl.longitude)
+      val br = CoordinateRepository.create(bl.latitude, bl.longitude + window)
       Bundle(tl, tr, br, bl)
     } else {
       val beforeBound = getBoundForCell(columns, window, gridNro - windowsByRow)
       val tl = beforeBound.bottomLeft
       val tr = beforeBound.bottomRight
-      val bl = Coordinate(tl.latitude + window, tl.longitude)
-      val br = Coordinate(bl.latitude, bl.longitude + window)
+      val bl = CoordinateRepository.create(tl.latitude + window, tl.longitude)
+      val br = CoordinateRepository.create(bl.latitude, bl.longitude + window)
       Bundle(tl, tr, br, bl)
     }
 
