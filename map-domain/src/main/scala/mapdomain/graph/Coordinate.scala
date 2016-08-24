@@ -71,9 +71,9 @@ trait CoordinateRepository {
 
   val c = Coordinate.syntax("c")
   
-  def apply(c: SyntaxProvider[Coordinate])(rs: WrappedResultSet): Coordinate = apply(c.resultName)(rs)
+  def coordinateFromSyntaxProvider(c: SyntaxProvider[Coordinate])(rs: WrappedResultSet): Coordinate = coordinateFromResultSet(c.resultName)(rs)
 
-  def apply(c: ResultName[Coordinate])(implicit rs: WrappedResultSet): Coordinate = {
+  private def coordinateFromResultSet(c: ResultName[Coordinate])(implicit rs: WrappedResultSet): Coordinate = {
     new Coordinate(latitude = rs.double(c.latitude), longitude = rs.double(c.longitude), id = Some(rs.long(c.id)))
   }
 
@@ -89,7 +89,7 @@ trait CoordinateRepository {
 
   def find(id: Long)(implicit session: DBSession = Coordinate.autoSession): Option[Coordinate] = {
     withSQL { select.from(Coordinate as c).where.eq(c.id, id) }
-      .map(apply(c)).single.apply()
+      .map(coordinateFromSyntaxProvider(c)).single.apply()
   }
 
   def save(coord: Coordinate)(implicit session: DBSession = Coordinate.autoSession): Coordinate = {
