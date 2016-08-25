@@ -38,7 +38,7 @@ object GeoVertex {
     }, coordinate)
   }
 
-  def sortEdgesByAngle(from: GeoVertex)(implicit graph: GraphContainer[GeoVertex]): List[GeoEdge] = {
+  def sortEdgesByAngle[T <: GeoVertex](from: GeoVertex)(implicit graph: GraphContainer[T]): List[GeoEdge] = {
     from.edges.sortBy(edge ⇒ { // FIXME: Ver de mejorar el ordenamiento
       from.coordinate.angleTo(graph.findVertex(edge.vertexEnd).get.coordinate)
     })(Ordering[Double])

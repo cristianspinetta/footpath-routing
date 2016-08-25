@@ -120,7 +120,7 @@ object Line {
   }
 
   def compareParallelsByAltitude(l1: Line, l2: Line): Int = {
-    assume(areParallel(l1, l2), s"the provided lines must be parallel")
+    assume(areParallel(l1, l2), s"The provided lines must be parallel. Line 1: $l1, Line 2: $l2")
 
     (l1, l2) match {
       // 1 -> l1 is to the right of l2, -1 -> l1 is to the left of l2

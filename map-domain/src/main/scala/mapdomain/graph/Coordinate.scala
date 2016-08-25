@@ -1,5 +1,7 @@
 package mapdomain.graph
 
+import mapdomain.math.Point
+
 import scala.math._
 
 case class Coordinate(latitude: Double, longitude: Double) {
@@ -12,6 +14,7 @@ case class Coordinate(latitude: Double, longitude: Double) {
    * @return the distance in meters.
    */
   def distanceTo(to: Coordinate): Double = {
+    // see http://www.movable-type.co.uk/scripts/latlong.html
     val φ2 = toRadians(to.latitude)
     val Δφ = toRadians(to.latitude - latitude)
     val Δλ = toRadians(to.longitude - longitude)
@@ -56,9 +59,12 @@ case class Coordinate(latitude: Double, longitude: Double) {
     }
   }
 
+  def toPoint: Point = Point(longitude, latitude)
+
   override def toString: String = s"Coordinate(Lat: $latitude, Lng: $longitude)"
 }
 
 object Coordinate {
   val radius: Double = 6.371 // meters
+  def fromPoint(point: Point): Coordinate = Coordinate(point.y, point.x)
 }
