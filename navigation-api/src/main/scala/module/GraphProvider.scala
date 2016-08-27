@@ -5,8 +5,8 @@ import java.net.URL
 import base.LazyLoggerSupport
 import conf.ApiEnvConfig
 import mapdomain.graph.GraphContainer
-import mapdomain.sidewalk.{ Ramp, SidewalkEdge }
-import mapdomain.street.{ OsmStreetEdge, OsmVertex }
+import mapdomain.sidewalk.{Ramp, SidewalkEdge, StreetCrossingEdge}
+import mapdomain.street.{OsmStreetEdge, OsmVertex}
 import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.osm._
 
@@ -38,6 +38,6 @@ object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
     edge ← vertex.edges
   } yield edge
 
-  lazy val sidewalks: Set[SidewalkEdge] = sidewalkModule.createSideWalks()
+  lazy val (sidewalks: Set[SidewalkEdge], streetCrossingEdges: Set[StreetCrossingEdge]) = sidewalkModule.createSideWalks()
 
 }

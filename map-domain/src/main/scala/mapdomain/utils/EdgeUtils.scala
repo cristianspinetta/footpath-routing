@@ -25,10 +25,10 @@ object EdgeUtils {
     GVector(pointStart, pointEnd)
   }
 
-  def pointToEdge[V <: GeoVertex](points: List[V], distance: Double = 10): Iterator[GeoEdge] = {
-    points.sliding(2).flatMap {
-      case fst :: snd :: Nil => Iterator(GeoEdge(fst.id, snd.id, distance))
-      case _ => Iterator.empty
+  def pointToEdge[V, E](points: List[V], edgeGenerator: (V, V) => E): List[E] = {
+    points.sliding(2).toList.flatMap {
+      case fst :: snd :: Nil => List(edgeGenerator(fst, snd))
+      case _ => Nil
     }
   }
 }

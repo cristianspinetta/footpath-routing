@@ -20,3 +20,5 @@ object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport {
 }
 
 case class SidewalkVertex(id: Long, coordinate: Coordinate, streetVertexBelongTo: GeoVertex)
+
+case class StreetCrossingEdge(from: SidewalkVertex, to: SidewalkVertex)

@@ -1,8 +1,8 @@
 package mapgenerator.sidewalk
 
-import mapdomain.graph.{ Coordinate, GeoVertex, GraphContainer }
-import mapdomain.sidewalk.SidewalkEdge
-import org.scalatest.{ FlatSpec, Matchers }
+import mapdomain.graph.{Coordinate, GeoVertex, GraphContainer}
+import mapdomain.sidewalk.{SidewalkEdge, StreetCrossingEdge}
+import org.scalatest.{FlatSpec, Matchers}
 
 class SidewalkModuleSpec extends FlatSpec with Matchers {
 
@@ -24,9 +24,10 @@ class SidewalkModuleSpec extends FlatSpec with Matchers {
 
     val distanceToStreet: Double = 1
 
-    val sideWalks: Set[SidewalkEdge] = sidewalkModule.createSideWalks(distanceToStreet)
+    val (sideWalks: Set[SidewalkEdge], streetCrossingEdges :Set[StreetCrossingEdge]) = sidewalkModule.createSideWalks(distanceToStreet)
 
     sideWalks.size should be(30)
+    streetCrossingEdges.size should be(31)
 
   }
 }

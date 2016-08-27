@@ -21,7 +21,10 @@ trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
     logger.info(s"Getting edges. Type: $edgeType")
     edgeType match {
       case StreetEdgeType => graphProvider.streets.map(street => Edge(street.osmVertexStart.coordinate, street.osmVertexEnd.coordinate))
-      case SidewalkEdgeType => graphProvider.sidewalks.map(sidewalk => Edge(sidewalk.from.coordinate, sidewalk.to.coordinate))
+      case SidewalkEdgeType =>
+        val sidewalks = graphProvider.sidewalks.map(sidewalk => Edge(sidewalk.from.coordinate, sidewalk.to.coordinate))
+        val streetCrossings = graphProvider.streetCrossingEdges.map(sidewalk => Edge(sidewalk.from.coordinate, sidewalk.to.coordinate))
+        sidewalks.toSeq ++: streetCrossings.toSeq
       case WayEdgeType => graphProvider.osmModule.streetWays.toList.flatMap(way => Edge.pointToEdge(Way.getPath(way)(graphProvider.graph)))
       case WayAreaEdgeType => graphProvider.osmModule.areaWays.toList.flatMap(way => Edge.pointToEdge(Way.getPath(way)(graphProvider.graph)))
       case _ => Nil
