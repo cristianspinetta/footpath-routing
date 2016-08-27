@@ -17,7 +17,6 @@ object ApiEnvConfig extends EnvConfig with LazyLoggerSupport {
 
 case class OSMConfiguration(config: Config) {
   val sourceFilePath: String = config.getString("source-file")
-  val otpFilePath: String = config.getString("otp-file")
 }
 
 case class RampConfiguration(config: Config) {

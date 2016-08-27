@@ -11,16 +11,18 @@ import ch.megard.akka.http.cors.CorsDirectives
 import conf.ApiEnvConfig
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.Ramp
-import model.{ Sidewalk, Street }
-import module.{ MapModule, RoutingModule }
+import model.{Edge, EdgeType, Sidewalk, Street}
+import module.{MapModule, RoutingModule}
 
-import scala.concurrent.{ ExecutionContextExecutor, Future }
-import scala.util.{ Failure ⇒ TFailure, Success ⇒ TSuccess }
+import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.{Failure => TFailure, Success => TSuccess}
 
 case class RoutingRequest(fromLng: Double, fromLat: Double, toLng: Double, toLat: Double)
+case class EdgeRequest(edgeType: String)
 case class RoutingResponse(path: Iterable[Coordinate])
 case class StreetResponse(streets: Iterable[Street])
 case class SidewalkResponse(sidewalks: Iterable[Sidewalk])
+case class EdgeResponse(edges: Iterable[Edge])
 case class RampResponse(ramps: Vector[Ramp])
 
 trait DirectionService extends ApiEnvConfig {
@@ -60,13 +62,13 @@ trait DirectionService extends ApiEnvConfig {
               val response: Future[ToResponseMarshallable] = Future.successful {
                 MapModule.streets match {
                   case TSuccess(list)           ⇒ StreetResponse(list)
-                  case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
+                  case TFailure(exc: Throwable) ⇒
+                    logger.error(exc, s"Failed")
+                    BadRequest -> exc.getMessage
                 }
               }
               complete(response)
-            }
-          } ~
-          pathPrefix("map") {
+            } ~
             path("sidewalks") {
               val response: Future[ToResponseMarshallable] = Future.successful {
                 MapModule.sidewalks match {
@@ -75,6 +77,17 @@ trait DirectionService extends ApiEnvConfig {
                 }
               }
               complete(response)
+            } ~
+            path("edges") {
+              parameters('edgeType.as[String]).as(EdgeRequest) { routingRequest =>
+                val response: Future[ToResponseMarshallable] = Future.successful {
+                  MapModule.edges(EdgeType(routingRequest.edgeType)) match {
+                    case TSuccess(list)           ⇒ EdgeResponse(list.toList)
+                    case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
+                  }
+                }
+                complete(response)
+              }
             }
           }
       }

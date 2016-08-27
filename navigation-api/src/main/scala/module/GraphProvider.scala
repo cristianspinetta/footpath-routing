@@ -23,7 +23,9 @@ object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
   private lazy val xmlParser: OSMReaderByXml = OSMReaderByXml(osmURL)
   private lazy val rampParser: RampLoader = RampLoaderByCSV(Seq((rampPath2014, RampLoader2014), (rampPath2011, RampLoader2011)))
 
-  private lazy val graphModule: GraphModule = GraphModule(OSMModule(xmlParser))
+  lazy val osmModule: OSMModule = OSMModule(xmlParser)
+
+  private lazy val graphModule: GraphModule = GraphModule(osmModule)
 
   implicit lazy val graph: GraphContainer[OsmVertex] = graphModule.createGraph
 

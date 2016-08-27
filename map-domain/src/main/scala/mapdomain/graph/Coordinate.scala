@@ -23,6 +23,21 @@ case class Coordinate(latitude: Double, longitude: Double) {
   }
 
   /**
+    * The distance between this point and the given one in degrees.
+    *
+    * @param to: point to where the distance is calculated.
+    * @return the distance in meters.
+    */
+  def distanceToInDegrees(to: Coordinate): Double = {
+    // see http://www.movable-type.co.uk/scripts/latlong.html
+    val φ2 = toRadians(to.latitude)
+    val Δφ = toRadians(to.latitude - latitude)
+    val Δλ = toRadians(to.longitude - longitude)
+    val a = pow(sin(Δφ / 2), 2) + cos(φ1) * cos(φ2) * pow(sin(Δλ / 2), 2)
+    toDegrees(2 * atan2(sqrt(a), sqrt(1 - a)))
+  }
+
+  /**
    * The angle from this point to the given one.
    * The latitude of this point is the adjacent side, the longitude of the given point
    * is the opposing side and the line from this point to the given one is the hypotenuse.

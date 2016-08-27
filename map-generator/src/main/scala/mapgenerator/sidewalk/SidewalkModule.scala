@@ -17,7 +17,7 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
     logger.debug(s"Create Sidewalks for all the graph")
     val builder = SideWalkBuilder()
     var verticesVisited = 0
-    for (vertex ← graph.vertices) {
+    for (vertex ← graph.vertices if vertex.edges.nonEmpty) { // FIXME a temporary workaround: vertex.edges.nonEmpty
       verticesVisited += 1
       logger.debug(s"Visiting vertex id = ${vertex.id}, number = $verticesVisited. Vertex: $vertex")
       createSidewalkByStreetVertex(builder, vertex, distanceToStreet)
@@ -26,15 +26,26 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
   }
 
   protected def createSidewalkByStreetVertex(builder: SideWalkBuilder[V], vertex: V, distanceToStreet: Double): Unit = {
+
     val sortedEdges: List[GeoEdge] = GeoVertex.sortEdgesByAngle(vertex)
 
-    val groupGeoEdges: List[(Option[GeoEdge], Option[GeoEdge])] = sortedEdges.sliding(2).toList match {
+    // FIXME a temporary workaround in order to get edges with distinct source and destination
+    val distinctEdges: List[GeoEdge] = sortedEdges.foldLeft(List.empty[GeoEdge]) { case (list, edge) =>
+      if (list.exists(e => (e.vertexStart == edge.vertexStart && e.vertexEnd == edge.vertexEnd) ||
+        (e.vertexStart == edge.vertexEnd && e.vertexStart == edge.vertexEnd)))
+        list
+      else
+        list :+ edge
+    }
+
+    val groupGeoEdges: List[(Option[GeoEdge], Option[GeoEdge])] = distinctEdges.sliding(2).toList match {
+      case Nil => throw LogicError("SidewalkModule.createSidewalkByStreetVertex", s"A vertex without edges: $vertex")
       case list @ (List(singleEdge)) :: xs ⇒ List((Some(singleEdge), None))
       case list ⇒
         list.map {
           case firstEdge :: secondEdge :: Nil ⇒ (Some(firstEdge), Some(secondEdge))
           case geoEdges                       ⇒ throw LogicError("SidewalkModule.createSidewalkByStreetVertex", s"wrong logic, expect a list with one or two elements, but come: $geoEdges")
-        } :+ (Some(sortedEdges.last), Some(sortedEdges.head))
+        } :+ (Some(distinctEdges.last), Some(distinctEdges.head))
     }
 
     for (geoEdges ← groupGeoEdges) yield {
@@ -142,6 +153,6 @@ object SidewalkModule {
   val defaultDistanceToStreet: Double = {
     val c1 = Coordinate(-34.6124922, -58.4130873)
     val c2 = Coordinate(-34.6125422, -58.4130873)
-    c1.distanceTo(c2)
+    c1.distanceToInDegrees(c2)
   }
 }
