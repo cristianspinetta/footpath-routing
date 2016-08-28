@@ -1,16 +1,16 @@
-package mapdomain
+package mapdomain.repository
 
-import mapdomain.graph.Coordinate
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
-import scalikejdbc.config.DBs
-import mapdomain.graph.CoordinateRepository
+import mapdomain.graph.{Coordinate, CoordinateRepository}
 import mapdomain.sidewalk.{Ramp, RampRepository}
 import mapdomain.street.{OsmStreetEdge, OsmStreetEdgeRepository, OsmVertexRepository}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
+import scalikejdbc.config.DBs
 
 class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach {
 
   override def beforeAll() {
     DBs.setupAll()
+    DBInitializer.run
   }
 
   override def afterEach(): Unit = {
