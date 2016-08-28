@@ -64,16 +64,16 @@ object Coordinate extends SQLSyntaxSupport[Coordinate] {
   val radius: Double = 6.371 // meters
 
   override val tableName = "Coordinate"
-  
+
 }
 
 trait CoordinateRepository {
 
   val c = Coordinate.syntax("c")
-  
-  def coordinateFromSyntaxProvider(c: SyntaxProvider[Coordinate])(rs: WrappedResultSet): Coordinate = coordinateFromResultSet(c.resultName)(rs)
 
-  private def coordinateFromResultSet(c: ResultName[Coordinate])(implicit rs: WrappedResultSet): Coordinate = {
+  def coordinate(c: SyntaxProvider[Coordinate])(rs: WrappedResultSet): Coordinate = coordinate(c.resultName)(rs)
+
+  private def coordinate(c: ResultName[Coordinate])(implicit rs: WrappedResultSet): Coordinate = {
     new Coordinate(latitude = rs.double(c.latitude), longitude = rs.double(c.longitude), id = Some(rs.long(c.id)))
   }
 
@@ -89,7 +89,7 @@ trait CoordinateRepository {
 
   def find(id: Long)(implicit session: DBSession = Coordinate.autoSession): Option[Coordinate] = {
     withSQL { select.from(Coordinate as c).where.eq(c.id, id) }
-      .map(coordinateFromSyntaxProvider(c)).single.apply()
+      .map(coordinate(c)).single.apply()
   }
 
   def save(coord: Coordinate)(implicit session: DBSession = Coordinate.autoSession): Coordinate = {
@@ -108,7 +108,7 @@ trait CoordinateRepository {
   def deleteAll(implicit session: DBSession = Coordinate.autoSession): Unit = withSQL {
     deleteFrom(Coordinate)
   }.update.apply()
-  
+
 }
 
 object CoordinateRepository extends CoordinateRepository

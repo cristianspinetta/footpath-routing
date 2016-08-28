@@ -1,14 +1,14 @@
 package mapdomain.sidewalk
 
-import mapdomain.graph.{Coordinate, CoordinateRepository}
-import scalikejdbc.{DBSession, WrappedResultSet, _}
+import mapdomain.graph.{ Coordinate, CoordinateRepository }
+import scalikejdbc.{ DBSession, WrappedResultSet, _ }
 
 case class Ramp(coordinate: Coordinate,
-  id: String,
-  street: String,
-  number: Option[Int],
-  address: String, coordinateId: Option[Long] = None) {
-  //val coordinateId = coordinate.id
+    id: String,
+    street: String,
+    number: Option[Int],
+    address: String,
+    coordinateId: Option[Long] = None) {
 }
 
 object Ramp extends SQLSyntaxSupport[Ramp] {
@@ -27,7 +27,7 @@ trait RampRepository {
 
   private val c = CoordinateRepository.c
 
-  private def rampFromSyntaxProvider(c: SyntaxProvider[Ramp])(rs: WrappedResultSet): Ramp= rampFromResultSet(c.resultName)(rs)
+  private def rampFromSyntaxProvider(c: SyntaxProvider[Ramp])(rs: WrappedResultSet): Ramp = rampFromResultSet(c.resultName)(rs)
 
   private def rampFromResultSet(r: ResultName[Ramp])(implicit rs: WrappedResultSet): Ramp = {
     new Ramp(
@@ -35,14 +35,12 @@ trait RampRepository {
       id = rs.string(r.id),
       street = rs.string(r.street),
       number = Some(rs.int(r.number)),
-      address = rs.string(r.address)
-    )
+      address = rs.string(r.address))
   }
 
   private def rampWithCoordinate(r: SyntaxProvider[Ramp], c: SyntaxProvider[Coordinate])(rs: WrappedResultSet): Ramp = {
     rampFromSyntaxProvider(r)(rs).copy(
-      coordinate = CoordinateRepository.coordinateFromSyntaxProvider(c)(rs)
-    )
+      coordinate = CoordinateRepository.coordinate(c)(rs))
   }
 
   def create(latitude: Double, longitude: Double, id: String, street: String, number: Option[Int], address: String)(implicit session: DBSession = Ramp.autoSession): Ramp = {
@@ -53,8 +51,7 @@ trait RampRepository {
         Ramp.column.id -> id,
         Ramp.column.street -> street,
         Ramp.column.number -> number,
-        Ramp.column.address -> address
-      )
+        Ramp.column.address -> address)
     }.updateAndReturnGeneratedKey.apply()
 
     Ramp(coordinate, id, street, number, address)
@@ -62,9 +59,9 @@ trait RampRepository {
 
   def find(id: Long)(implicit session: DBSession = Ramp.autoSession): Option[Ramp] = withSQL {
     select
-        .from(Ramp as r)
-        .leftJoin(Coordinate as c).on(r.coordinateId, c.id)
-        .where.eq(r.id, id)
+      .from(Ramp as r)
+      .leftJoin(Coordinate as c).on(r.coordinateId, c.id)
+      .where.eq(r.id, id)
   }.map(rampWithCoordinate(r, c)(_)).single.apply()
 
   def deleteAll(implicit session: DBSession = Ramp.autoSession): Unit = withSQL {
