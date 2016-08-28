@@ -2,7 +2,7 @@ package mapdomain.graph.grid
 
 import mapdomain.graph.Coordinate
 import mapdomain.publictransport.PathTP
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{ FlatSpec, Matchers }
 
 class GridCreatorSpec extends FlatSpec with Matchers {
 

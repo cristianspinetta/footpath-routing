@@ -1,7 +1,7 @@
 package mapdomain.utils
 
-import mapdomain.graph.{GeoEdge, GeoVertex, GraphContainer}
-import mapdomain.math.{GVector, Line, Point}
+import mapdomain.graph.{ GeoEdge, GeoVertex, GraphContainer }
+import mapdomain.math.{ GVector, Line, Point }
 
 object EdgeUtils {
 
@@ -25,10 +25,10 @@ object EdgeUtils {
     GVector(pointStart, pointEnd)
   }
 
-  def pointToEdge[V, E](points: List[V], edgeGenerator: (V, V) => E): List[E] = {
+  def pointToEdge[V, E](points: List[V], edgeGenerator: (V, V) ⇒ E): List[E] = {
     points.sliding(2).toList.flatMap {
-      case fst :: snd :: Nil => List(edgeGenerator(fst, snd))
-      case _ => Nil
+      case fst :: snd :: Nil ⇒ List(edgeGenerator(fst, snd))
+      case _                 ⇒ Nil
     }
   }
 }

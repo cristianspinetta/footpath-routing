@@ -1,12 +1,11 @@
 package mapgenerator.source.osm
 
-import mapdomain.graph.{ GeoVertex, GraphContainer }
+import mapdomain.graph.GraphContainer
 import mapdomain.street.{ OsmStreetEdge, OsmVertex }
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
 import org.scalatest.{ FlatSpec, Matchers }
 
-import scala.annotation.tailrec
 import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
 class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
@@ -96,30 +95,6 @@ class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
       logger.warn(s"Failed edges: $edgeFailed")
       logger.warn(s"Some missing edges on ${missingEdges.size} vertices: \n${missingEdges.map(mE ⇒ mE.veretxId.toString + " : " + mE.difference) mkString ", "}\n")
     }
-  }
-
-  ignore /*"With all OSM elements"*/ should "create a connected graph" in {
-    withClue("Connected created graph") {
-      isGraphConnected(graph) shouldBe true
-    }
-  }
-
-  private def findNeighbours[T <: GeoVertex](start: T, graph: GraphContainer[T]): List[T] = {
-    def childrenNotVisited(vertex: T, visited: List[T]) =
-      vertex.neighbours(graph) filter (x ⇒ !visited.contains(x)) toSet
-
-    @tailrec
-    def loop(stack: Set[T], visited: List[T]): List[T] = {
-      if (stack isEmpty) visited
-      else loop(childrenNotVisited(stack.head, visited) ++ stack.tail,
-        stack.head :: visited)
-    }
-    loop(Set(start), Nil) reverse
-  }
-
-  private def isGraphConnected[T <: GeoVertex](graph: GraphContainer[T]): Boolean = {
-    val neighbours = findNeighbours(graph.vertices.head, graph)
-    graph.vertices forall (v ⇒ neighbours contains v)
   }
 
 }

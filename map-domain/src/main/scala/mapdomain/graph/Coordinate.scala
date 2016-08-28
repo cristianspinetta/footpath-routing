@@ -23,11 +23,11 @@ case class Coordinate(latitude: Double, longitude: Double) {
   }
 
   /**
-    * The distance between this point and the given one in degrees.
-    *
-    * @param to: point to where the distance is calculated.
-    * @return the distance in meters.
-    */
+   * The distance between this point and the given one in degrees.
+   *
+   * @param to: point to where the distance is calculated.
+   * @return the distance in meters.
+   */
   def distanceToInDegrees(to: Coordinate): Double = {
     // see http://www.movable-type.co.uk/scripts/latlong.html
     val φ2 = toRadians(to.latitude)

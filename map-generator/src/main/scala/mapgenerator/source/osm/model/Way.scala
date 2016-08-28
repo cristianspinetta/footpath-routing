@@ -1,6 +1,6 @@
 package mapgenerator.source.osm.model
 
-import mapdomain.graph.{Coordinate, GeoVertex, GraphContainer}
+import mapdomain.graph.{ Coordinate, GeoVertex, GraphContainer }
 import mapdomain.street.OsmVertex
 import org.joda.time.DateTime
 
@@ -42,8 +42,8 @@ object Way {
 
   def getPath[V <: GeoVertex](way: Way)(implicit graph: GraphContainer[V]): List[Coordinate] = {
     for {
-      nodeId <- way.nodeIds
-      vertex <- graph.findVertex(nodeId).toSeq
+      nodeId ← way.nodeIds
+      vertex ← graph.findVertex(nodeId).toSeq
     } yield vertex.coordinate
   }
 }

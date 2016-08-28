@@ -2,7 +2,7 @@ package service
 
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.Ramp
-import model.{Edge, Sidewalk, Street}
+import model.{ Edge, Sidewalk, Street }
 import spray.json._
 
 object Protocol extends DefaultJsonProtocol {

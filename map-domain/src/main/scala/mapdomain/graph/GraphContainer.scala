@@ -1,6 +1,6 @@
 package mapdomain.graph
 
-case class GraphContainer[N <: Vertex](vertices: List[N]) {
+class GraphContainer[N <: Vertex](val vertices: List[N]) {
 
   /**
    * Find vertex by ID
@@ -9,9 +9,14 @@ case class GraphContainer[N <: Vertex](vertices: List[N]) {
    */
   def findVertex(id: Long): Option[N] = vertices.find(_.id == id) // TODO: replace by a DB query
 
+  def copy(vertices: List[N]): GraphContainer[N] = GraphContainer(vertices)
+  def copy(): GraphContainer[N] = GraphContainer(vertices)
+
 }
 
 object GraphContainer {
+
+  def apply[N <: Vertex](vertices: List[N]): GraphContainer[N] = new GraphContainer(vertices)
 
   def createGeoNodes(nodeData: Map[Long, (List[Long], Coordinate)]): GraphContainer[GeoVertex] = {
 
@@ -35,5 +40,10 @@ object GraphContainer {
           else before
       }
       Some((closestVertex, distance))
+  }
+
+  def joinGraphs[V <: Vertex](graphs: List[GraphContainer[V]]) = {
+    val vertices: List[V] = graphs.flatMap(graph ⇒ graph.vertices)
+    GraphContainer(vertices)
   }
 }
