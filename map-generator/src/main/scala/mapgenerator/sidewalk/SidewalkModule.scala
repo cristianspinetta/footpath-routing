@@ -5,29 +5,26 @@ import mapdomain.graph.{ Coordinate, GeoEdge, GeoVertex, GraphContainer }
 import mapdomain.math.{ GVector, VectorUtils }
 import mapdomain.sidewalk.SidewalkEdge.Side
 import mapdomain.sidewalk.{ SidewalkEdge, SidewalkGraphContainer, SidewalkVertex }
-import mapdomain.utils.{ EdgeUtils, GraphUtils }
+import mapdomain.utils.EdgeUtils
 
 case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) extends LazyLoggerSupport with FailureReporterSupport {
 
   import mapdomain.utils.PointUtils._
   implicit protected val vertexIdGenerator = SidewalkVertexIDGenerator()
 
-  def createSideWalks(distanceToStreet: Double = SidewalkModule.defaultDistanceToStreet): SidewalkGraphContainer = {
-    logger.debug(s"Create Sidewalks for all the graph")
+  def createSideWalks(distanceToStreet: Double = SidewalkModule.defaultDistanceToStreet,
+    failureTolerance: Boolean = false): SidewalkGraphContainer = {
+    logger.info(s"Creating Sidewalks for all the graph")
 
-    implicit val builders = Builders(SideWalkBuilder(), StreetCrossingBuilderManager(), SidewalkVertexBuilderManager(), SidewalkEdgeBuilderManager())
+    implicit val builders = Builders(StreetCrossingBuilderManager(), SidewalkVertexBuilderManager(), SidewalkEdgeBuilderManager())
     var verticesVisited = 0
     for (vertex ← graph.vertices if vertex.edges.nonEmpty) { // FIXME a temporary workaround: vertex.edges.nonEmpty
       verticesVisited += 1
       logger.debug(s"Visiting vertex id = ${vertex.id}, number = $verticesVisited. Vertex: $vertex")
       createSidewalkByStreetVertex(vertex, distanceToStreet)
     }
-    val vertices: Set[SidewalkVertex] = builders.sideWalkBuilder.build
+    val vertices: Set[SidewalkVertex] = SideWalkBuilder.build(failureTolerance)
     SidewalkGraphContainer(vertices.toList)
-  }
-
-  def purgeGraph(sidewalkGraphContainer: SidewalkGraphContainer): SidewalkGraphContainer = {
-    GraphUtils.getConnectedComponent(sidewalkGraphContainer, SidewalkGraphContainer.apply)
   }
 
   protected def createSidewalkByStreetVertex(vertex: V, distanceToStreet: Double)(implicit builders: Builders[V]): Unit = {
@@ -99,7 +96,7 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
           s"It could not find an intersection point between the vectors. vectorFirstSidewalk: $vectorFirstSidewalk. vectorSecondSidewalk: $vectorSecondSidewalk")
       }
       logger.debug(s"Create an intersected vertex ${vertex.id}")
-      builders.sidewalkVertexBuilderManager.create(Some(Coordinate(intersectionPoint.y, intersectionPoint.x)), vertex, key1, key2)
+      builders.sidewalkVertexBuilderManager.create(Coordinate(intersectionPoint.y, intersectionPoint.x), vertex, key1, key2)
     }
 
     val intersectedVertex: SidewalkVertexBuilder = createIntersectedVertex(vectorFirstSidewalk, vectorSecondSidewalk)
@@ -138,8 +135,8 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
     val key1 = SidewalkEdge.generateKey(edge, side1)
     val key2 = SidewalkEdge.generateKey(edge, side2)
 
-    val vertexStartFirstEdge = builders.sidewalkVertexBuilderManager.createForSingle(Some(Coordinate.fromPoint(vectorFirstSidewalk.source)), vertex, key1)
-    val vertexStartSecondEdge = builders.sidewalkVertexBuilderManager.createForSingle(Some(Coordinate.fromPoint(vectorSecondSidewalk.source)), vertex, key2)
+    val vertexStartFirstEdge = builders.sidewalkVertexBuilderManager.createForSingle(Coordinate.fromPoint(vectorFirstSidewalk.source), vertex, key1)
+    val vertexStartSecondEdge = builders.sidewalkVertexBuilderManager.createForSingle(Coordinate.fromPoint(vectorSecondSidewalk.source), vertex, key2)
 
     val sidewalkEdgeBuilderFirst = builders.sidewalkEdgeBuilderManager.addSideWalk(key1, vertexStartFirstEdge, edge, vectorFirstSidewalk, side1)
     val sidewalkEdgeBuilderSecond = builders.sidewalkEdgeBuilderManager.addSideWalk(key2, vertexStartSecondEdge, edge, vectorSecondSidewalk, side2)

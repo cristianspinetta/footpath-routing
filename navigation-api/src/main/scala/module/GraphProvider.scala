@@ -27,7 +27,7 @@ object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
 
   private lazy val graphModule: GraphModule = GraphModule(osmModule)
 
-  lazy val graph: GraphContainer[OsmVertex] = graphModule.createGraph
+  lazy val graph: GraphContainer[OsmVertex] = graphModule.createGraph.purge
 
   private lazy val sidewalkModule = SidewalkModule()(graph)
 
@@ -38,7 +38,7 @@ object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
     edge ← vertex.edges
   } yield edge
 
-  lazy val sidewalkGraphContainer: SidewalkGraphContainer = sidewalkModule.purgeGraph(sidewalkModule.createSideWalks())
+  lazy val sidewalkGraphContainer: SidewalkGraphContainer = sidewalkModule.createSideWalks(failureTolerance = true) //.purge
 
   lazy val sidewalks = sidewalkGraphContainer.sidewalkEdges
   lazy val streetCrossingEdges = sidewalkGraphContainer.streetCrossingEdges

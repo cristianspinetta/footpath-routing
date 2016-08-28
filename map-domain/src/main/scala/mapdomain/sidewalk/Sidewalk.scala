@@ -4,6 +4,7 @@ import base.{ FailureReporterSupport, LazyLoggerSupport }
 import mapdomain.graph._
 import mapdomain.math.Line
 import mapdomain.sidewalk.SidewalkEdge.Side
+import mapdomain.utils.GraphUtils
 
 class PedestrianEdge(override val vertexStart: Long, override val vertexEnd: Long, key: String, override val distance: Double = 1) extends GeoEdge(vertexStart, vertexEnd, distance) {
   def from(implicit graphContainer: GraphContainer[SidewalkVertex]): Option[SidewalkVertex] = graphContainer.findVertex(vertexStart)
@@ -43,6 +44,9 @@ case class SidewalkVertex(override val id: Long, override val coordinate: Coordi
 }
 
 case class SidewalkGraphContainer(override val vertices: List[SidewalkVertex]) extends GraphContainer(vertices) {
+
+  override def purge: SidewalkGraphContainer = GraphUtils.getConnectedComponent(this, SidewalkGraphContainer.apply)
+
   lazy val sidewalkEdges: List[SidewalkEdge] = {
     (for (vertex ← vertices; edge ← vertex.sidewalkEdges) yield (edge.key, edge))
       .groupBy { case (key, _) ⇒ key }

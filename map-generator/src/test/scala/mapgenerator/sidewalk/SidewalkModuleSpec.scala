@@ -46,7 +46,7 @@ class SidewalkModuleSpec extends FlatSpec with Matchers {
   it should "get a single maximum graph that is connected" in {
     val sidewalkModule = SidewalkModule()(unconnectedGeoGraphPrototype)
     val sidewalkGraphContainer: SidewalkGraphContainer = sidewalkModule.createSideWalks(distanceToStreet = 1)
-    val connectedGraph = sidewalkModule.purgeGraph(sidewalkGraphContainer)
+    val connectedGraph = sidewalkGraphContainer.purge
     connectedGraph.sidewalkEdges.size should be(30)
     connectedGraph.streetCrossingEdges.size should be(28)
     GraphUtils.isGraphConnected(connectedGraph) should be(true)

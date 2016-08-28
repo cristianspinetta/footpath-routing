@@ -46,15 +46,19 @@ case class SidewalkEdgeBuilder(key: String, from: SidewalkVertexBuilder, to: Opt
     streetEdgeBelongTo: GeoEdge, segment: GVector, side: Side) extends LazyLoggerSupport {
 
   def build(implicit idGenerator: SidewalkVertexIDGenerator): (SidewalkEdge, SidewalkVertex, SidewalkVertex) = {
+    val vertexStart: SidewalkVertex = from.build
+    val vertexEnd: SidewalkVertex = to.get.build
+    (SidewalkEdge(vertexStart.id, vertexEnd.id, key, streetEdgeBelongTo, side), vertexStart, vertexEnd)
+  }
+
+  def buildFailureTolerance(implicit idGenerator: SidewalkVertexIDGenerator): Option[(SidewalkEdge, SidewalkVertex, SidewalkVertex)] = {
     Try {
-      val vertexStart: SidewalkVertex = from.build
-      val vertexEnd: SidewalkVertex = to.get.build
-      (SidewalkEdge(vertexStart.id, vertexEnd.id, key, streetEdgeBelongTo, side), vertexStart, vertexEnd)
+      build
     } match {
-      case Success(x) ⇒ x
+      case Success(x) ⇒ Some(x)
       case Failure(exc) ⇒
-        logger.error(s"Failed trying to build a sidewalk edge: $readable")
-        throw exc
+        logger.error(s"Building a Sidewalk with Failure Tolerance. Failed trying to build the following sidewalk edge: $readable")
+        None
     }
   }
 

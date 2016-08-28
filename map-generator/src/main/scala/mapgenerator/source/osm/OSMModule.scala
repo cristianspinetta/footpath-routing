@@ -183,7 +183,7 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
           } else if (role == "outer") {
             outerWays += way
           } else {
-            println("Unexpected role " + role + " in multipolygon")
+            logger.warn("Unexpected role " + role + " in multipolygon")
           }
 
         }
@@ -275,7 +275,7 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
 
 }
 
-object OSMModule {
+object OSMModule extends LazyLoggerSupport {
   def apply(reader: OSMReader): OSMModule = new OSMModule(reader.loadNodes, reader.loadWays, reader.loadRelations)
 
   def getPermissionsForWay(way: Way, defPermission: StreetTraversalPermission): StreetTraversalPermission = {
@@ -294,7 +294,7 @@ object OSMModule {
     }
 
     if (way.isBicycleExplicitlyAllowed && !way.isBicycleDismountForced) {
-      println(s"DEBUG: Conflicting Bike Tags: bicycle = ${way.tags.get("bicycle")}, cycleway = ${way.tags.get("cycleway")}")
+      logger.warn(s"Conflicting Bike Tags: bicycle = ${way.tags.get("bicycle")}, cycleway = ${way.tags.get("cycleway")}")
     }
     partialPermission
   }
@@ -342,7 +342,6 @@ object OSMModule {
     }
 
     Option(partialPermission).getOrElse {
-      println(s"getPermissionsForEntity finaliza con partialPermission en null ... que raro!!!")
       defPermission
     }
   }

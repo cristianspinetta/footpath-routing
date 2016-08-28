@@ -7,51 +7,9 @@ import scala.collection.mutable.ArrayBuffer
 
 trait GraphUtils {
 
-  def readableEdges(edges: List[Edge]): String =
-    edgesToIds(edges) mkString " -> "
+  def readableEdges(edges: List[Edge]): String = edgesToIds(edges) mkString " -> "
 
   def edgesToIds(edges: List[Edge]): List[Long] = edges.headOption.map(_.vertexStart).toList ::: edges.map(_.vertexEnd)
-
-  def createGridGraphPrototype(rows: Int, columns: Int): GraphContainer[GraphVertex] = {
-
-    var nodes = scala.collection.mutable.ListBuffer.empty[GraphVertex]
-    var nodeNumber = 1
-
-    for (row ← 1 to rows; column ← 1 to columns) {
-      var neighbours = scala.collection.mutable.ListBuffer.empty[Int]
-
-      val columnMod = column % columns
-      if (columnMod == 1) {
-        // First column
-        neighbours += (nodeNumber + 1)
-      } else if (columnMod == 0) {
-        // Last column
-        neighbours += (nodeNumber - 1)
-      } else {
-        // Between the fist and last column
-        neighbours += (nodeNumber + 1)
-        neighbours += (nodeNumber - 1)
-      }
-
-      val rowMod = row % rows
-      if (rowMod == 1) {
-        // First row
-        neighbours += (nodeNumber + columns)
-      } else if (rowMod == 0) {
-        // Last row
-        neighbours += (nodeNumber - columns)
-      } else {
-        // Between first and last row
-        neighbours += (nodeNumber + columns)
-        neighbours += (nodeNumber - columns)
-      }
-
-      nodes += GraphVertex.createWithEdges(nodeNumber, neighbours.toList)
-      nodeNumber += 1
-    }
-
-    GraphContainer(nodes.toList)
-  }
 
   def createGridGraphGraph(rows: Int, columns: Int, offset: Int = 0): GraphContainer[GraphVertex] = {
     val vertexCreator = (id: Int, row: Int, column: Int, neighbours: Iterable[NeighbourPartialCreation]) ⇒
@@ -67,10 +25,10 @@ trait GraphUtils {
 
   case class NeighbourPartialCreation(id: Int, coordinate: Coordinate)
 
-  def createGridGraph[T <: Vertex](rows: Int, columns: Int, offset: Int,
-    vertexCreator: (Int, Int, Int, Iterable[NeighbourPartialCreation]) ⇒ T): GraphContainer[T] = {
+  def createGridGraph[V <: Vertex](rows: Int, columns: Int, offset: Int,
+    vertexCreator: (Int, Int, Int, Iterable[NeighbourPartialCreation]) ⇒ V): GraphContainer[V] = {
 
-    val nodes = ArrayBuffer.empty[T]
+    val nodes = ArrayBuffer.empty[V]
     var nodeNumber = offset
 
     for (row ← 1 to rows; column ← 1 to columns) {
@@ -113,17 +71,17 @@ trait GraphUtils {
    * A connected component is a maximal connected subgraph of G.
    * @return The maximal connected subgraph
    */
-  def getConnectedComponent[T <: GeoVertex, G <: GraphContainer[T]](graph: G, creator: (List[T]) ⇒ G): G = {
-    creator(splitByConnectedGraph(graph).max(Ordering.by[List[T], Int](list ⇒ list.size)))
+  def getConnectedComponent[V <: Vertex, G <: GraphContainer[V]](graph: G, creator: (List[V]) ⇒ G): G = {
+    creator(splitByConnectedGraph(graph).max(Ordering.by[List[V], Int](list ⇒ list.size)))
   }
 
-  def splitByConnectedGraph[T <: GeoVertex](graph: GraphContainer[T]): List[List[T]] = {
+  def splitByConnectedGraph[V <: Vertex](graph: GraphContainer[V]): List[List[V]] = {
 
     @tailrec
-    def findNotVisited(visits: List[T], graph: GraphContainer[T], result: List[List[T]]): List[List[T]] = {
+    def findNotVisited(visits: List[V], graph: GraphContainer[V], result: List[List[V]]): List[List[V]] = {
       graph.vertices filter (v ⇒ !visits.contains(v)) match {
         case list @ x :: xs ⇒
-          val neighbours: List[T] = findNeighbours(list.head, graph)
+          val neighbours: List[V] = findNeighbours(list.head, graph)
           findNotVisited(neighbours, GraphContainer(list), neighbours :: result)
         case Nil ⇒ result
       }
@@ -132,12 +90,12 @@ trait GraphUtils {
     findNotVisited(Nil, graph, Nil)
   }
 
-  def findNeighbours[T <: GeoVertex](start: T, graph: GraphContainer[T]): List[T] = {
-    def childrenNotVisited(vertex: T, visited: List[T]) =
+  def findNeighbours[V <: Vertex](start: V, graph: GraphContainer[V]): List[V] = {
+    def childrenNotVisited(vertex: V, visited: List[V]) =
       vertex.neighbours(graph) filter (x ⇒ !visited.contains(x)) toSet
 
     @tailrec
-    def loop(stack: Set[T], visited: List[T]): List[T] = {
+    def loop(stack: Set[V], visited: List[V]): List[V] = {
       if (stack isEmpty) visited
       else loop(childrenNotVisited(stack.head, visited) ++ stack.tail,
         stack.head :: visited)
@@ -145,7 +103,7 @@ trait GraphUtils {
     loop(Set(start), Nil).distinct.reverse
   }
 
-  def isGraphConnected[T <: GeoVertex](graph: GraphContainer[T]): Boolean = {
+  def isGraphConnected[V <: Vertex](graph: GraphContainer[V]): Boolean = {
     val neighbours = findNeighbours(graph.vertices.head, graph)
     graph.vertices forall (v ⇒ neighbours contains v)
   }

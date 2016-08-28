@@ -1,10 +1,12 @@
 package mapdomain.graph
 
+import mapdomain.utils.GraphUtils
+
 class GraphContainer[N <: Vertex](val vertices: List[N]) {
 
   /**
    * Find vertex by ID
-   * @param id
+   * @param id: Long
    * @return
    */
   def findVertex(id: Long): Option[N] = vertices.find(_.id == id) // TODO: replace by a DB query
@@ -12,6 +14,11 @@ class GraphContainer[N <: Vertex](val vertices: List[N]) {
   def copy(vertices: List[N]): GraphContainer[N] = GraphContainer(vertices)
   def copy(): GraphContainer[N] = GraphContainer(vertices)
 
+  /**
+   * Create a new GraphContainer with maximal connected subgraph that this graph contains
+   * @return The connected graph
+   */
+  def purge: GraphContainer[N] = GraphUtils.getConnectedComponent(this, GraphContainer.apply)
 }
 
 object GraphContainer {
