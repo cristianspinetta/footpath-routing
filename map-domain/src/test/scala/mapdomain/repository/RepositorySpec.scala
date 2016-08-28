@@ -10,7 +10,7 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
 
   override def beforeAll() {
     DBs.setupAll()
-    DBInitializer.run
+    new DBInitializer().run()
   }
 
   override def afterEach(): Unit = {
