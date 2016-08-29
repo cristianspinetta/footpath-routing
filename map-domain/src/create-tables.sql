@@ -34,3 +34,9 @@ CREATE TABLE IF NOT EXISTS `easy-travel`.`Ramp` (
 	PRIMARY KEY (`id`),
   FOREIGN KEY (`coordinateId`) REFERENCES `Coordinate` (`id`)
 );
+
+CREATE TABLE IF NOT EXISTS `Path` (
+	`id` bigint(20) NOT NULL AUTO_INCREMENT,
+	`coordinates` varchar(10000) DEFAULT NULL,
+	PRIMARY KEY (`id`)
+);

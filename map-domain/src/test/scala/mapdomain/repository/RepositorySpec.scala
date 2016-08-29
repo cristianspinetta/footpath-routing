@@ -1,6 +1,7 @@
 package mapdomain.repository
 
 import mapdomain.graph.{ Coordinate, CoordinateRepository }
+import mapdomain.publictransport.PathRepository
 import mapdomain.sidewalk.{ Ramp, RampRepository }
 import mapdomain.street.{ OsmStreetEdge, OsmStreetEdgeRepository, OsmVertexRepository }
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
@@ -14,10 +15,11 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
   }
 
   override def afterEach(): Unit = {
-    OsmStreetEdgeRepository.deleteAll()
-    OsmVertexRepository.deleteAll()
-    RampRepository.deleteAll()
-    CoordinateRepository.deleteAll()
+    OsmStreetEdgeRepository.deleteAll
+    OsmVertexRepository.deleteAll
+    RampRepository.deleteAll
+    CoordinateRepository.deleteAll
+    PathRepository.deleteAll
   }
 
   "With database configurated" should "create coordinates correctly" in {
@@ -64,8 +66,8 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     vertex1.coordinate.latitude shouldBe 12
     vertex1.coordinate.longitude shouldBe 11
 
-    var vertex2 = OsmVertexRepository.create(6, 13, 14)
-    var vertex3 = OsmVertexRepository.create(7, 14, 15)
+    val vertex2 = OsmVertexRepository.create(6, 13, 14)
+    val vertex3 = OsmVertexRepository.create(7, 14, 15)
 
     val firstEdgeId = OsmStreetEdgeRepository.create(vertex1.id, vertex2.id, 10d, 9l)
     val secondEdgeId = OsmStreetEdgeRepository.create(vertex1.id, vertex3.id, 10d, 9l)
@@ -78,6 +80,16 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     edges = OsmVertexRepository.findEdges(vertex2.id)
     edges.size shouldBe 1
     edges.head.id.get shouldBe thirdEdgeId
+  }
+
+  it should "create paths correctly" in {
+    val coordinates = "{lng: 34, lat: 20}, {lng: 34, lat: 21}"
+    var path = PathRepository.create(coordinates)
+    path.id should not be None
+
+    path = PathRepository.find(path.id.get).get
+    path.id should not be None
+    path.coordinates shouldBe coordinates
   }
 
 }

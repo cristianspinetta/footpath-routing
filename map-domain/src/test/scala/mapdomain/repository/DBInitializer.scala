@@ -34,13 +34,19 @@ CREATE TABLE IF NOT EXISTS `OsmStreetEdge` (
                );
 
 CREATE TABLE IF NOT EXISTS `Ramp` (
-                `id` varchar(255) NOT NULL,
-                `street` varchar(255) DEFAULT NULL,
-                `number` int DEFAULT NULL,
-                `address` varchar(255) DEFAULT NULL,
+               	`id` varchar(255) NOT NULL,
+               	`street` varchar(255) DEFAULT NULL,
+               	`number` int DEFAULT NULL,
+               	`address` varchar(255) DEFAULT NULL,
                  `coordinateId` bigint(20) DEFAULT NULL,
                 PRIMARY KEY (`id`),
                  FOREIGN KEY (`coordinateId`) REFERENCES `Coordinate` (`id`)
+               );
+
+CREATE TABLE IF NOT EXISTS `Path` (
+               	`id` bigint(20) NOT NULL AUTO_INCREMENT,
+               	`coordinates` varchar(255) DEFAULT NULL,
+               	PRIMARY KEY (`id`)
                );
    """.execute.apply()
   }

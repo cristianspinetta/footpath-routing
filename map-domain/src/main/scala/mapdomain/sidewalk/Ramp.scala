@@ -27,9 +27,9 @@ trait RampRepository {
 
   private val c = CoordinateRepository.c
 
-  private def rampFromSyntaxProvider(c: SyntaxProvider[Ramp])(rs: WrappedResultSet): Ramp = rampFromResultSet(c.resultName)(rs)
+  private def ramp(c: SyntaxProvider[Ramp])(rs: WrappedResultSet): Ramp = ramp(c.resultName)(rs)
 
-  private def rampFromResultSet(r: ResultName[Ramp])(implicit rs: WrappedResultSet): Ramp = {
+  private def ramp(r: ResultName[Ramp])(implicit rs: WrappedResultSet): Ramp = {
     new Ramp(
       coordinate = null,
       id = rs.string(r.id),
@@ -39,7 +39,7 @@ trait RampRepository {
   }
 
   private def rampWithCoordinate(r: SyntaxProvider[Ramp], c: SyntaxProvider[Coordinate])(rs: WrappedResultSet): Ramp = {
-    rampFromSyntaxProvider(r)(rs).copy(
+    ramp(r)(rs).copy(
       coordinate = CoordinateRepository.coordinate(c)(rs))
   }
 
