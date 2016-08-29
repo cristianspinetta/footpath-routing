@@ -10,7 +10,7 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(noPublishing: _*)
-    .aggregate(pathGenerator, mapGenerator, navigationApi)
+    .aggregate(pathGenerator, mapGenerator, navigationApi, mapDomain)
 
   lazy val pathGenerator = Project("path-generator", file("path-generator"))
     .dependsOn(commonLibrary, mapDomain)

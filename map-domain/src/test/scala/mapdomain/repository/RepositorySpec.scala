@@ -1,16 +1,16 @@
 package mapdomain.repository
 
-import mapdomain.graph.{Coordinate, CoordinateRepository}
-import mapdomain.sidewalk.{Ramp, RampRepository}
-import mapdomain.street.{OsmStreetEdge, OsmStreetEdgeRepository, OsmVertexRepository}
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
+import mapdomain.graph.{ Coordinate, CoordinateRepository }
+import mapdomain.sidewalk.{ Ramp, RampRepository }
+import mapdomain.street.{ OsmStreetEdge, OsmStreetEdgeRepository, OsmVertexRepository }
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
 import scalikejdbc.config.DBs
 
 class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach {
 
   override def beforeAll() {
     DBs.setupAll()
-    new DBInitializer().run()
+    new DBInitializer().start()
   }
 
   override def afterEach(): Unit = {
@@ -21,17 +21,17 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
   }
 
   "With database configurated" should "create coordinates correctly" in {
-    var coordinate: Coordinate= CoordinateRepository.create(10, 20)
+    var coordinate: Coordinate = CoordinateRepository.create(10, 20)
     coordinate.id should not be None
     coordinate = CoordinateRepository.find(coordinate.id.get).get
     coordinate.latitude shouldBe 10
     coordinate.longitude shouldBe 20
   }
 
-  "With database configurated" should "create ramps correctly" in {
+  it should "create ramps correctly" in {
     var ramp: Ramp = RampRepository.create(11, 12, "16", "Callao", Some(500), "Callao 523")
     ramp.id shouldBe "16"
-    ramp = RampRepository.find(ramp.id.toLong).get
+    ramp = RampRepository.find(ramp.id).get
     ramp.coordinate.latitude shouldBe 11
     ramp.coordinate.longitude shouldBe 12
     ramp.street shouldBe "Callao"
@@ -39,12 +39,12 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     ramp.address shouldBe "Callao 523"
   }
 
-  "With database configurated" should "create edges correctly" in {
+  it should "create edges correctly" in {
     val vertexStart = OsmVertexRepository.create(5, 12, 11)
     val vertexEnd = OsmVertexRepository.create(6, 14, 13)
     val edgeId = OsmStreetEdgeRepository.create(vertexStart.id, vertexEnd.id, 10d, 9l)
 
-    val edge: OsmStreetEdge =  OsmStreetEdgeRepository.find(edgeId)
+    val edge: OsmStreetEdge = OsmStreetEdgeRepository.find(edgeId)
     edge.id should not be None
     edge.distance shouldBe 10d
     edge.wayId shouldBe 9l
@@ -57,7 +57,7 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     edge.osmVertexEnd.coordinate.longitude shouldBe 13
   }
 
-  "With database configurated" should "create vertex correctly" in {
+  it should "create vertex correctly" in {
     var vertex1 = OsmVertexRepository.create(5, 12, 11)
     vertex1 = OsmVertexRepository.find(vertex1.id).get
     vertex1.id shouldBe 5
@@ -73,7 +73,7 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
 
     var edges = OsmVertexRepository.findEdges(vertex1.id)
     edges.size shouldBe 2
-    edges.map(e => e.id.get) should contain only (firstEdgeId, secondEdgeId)
+    edges.map(e ⇒ e.id.get) should contain only (firstEdgeId, secondEdgeId)
 
     edges = OsmVertexRepository.findEdges(vertex2.id)
     edges.size shouldBe 1

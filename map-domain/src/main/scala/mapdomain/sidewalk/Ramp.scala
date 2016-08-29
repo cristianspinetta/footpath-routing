@@ -47,17 +47,17 @@ trait RampRepository {
     val coordinate = CoordinateRepository.create(latitude, longitude)
     withSQL {
       insert.into(Ramp).namedValues(
-        Ramp.column.coordinateId -> coordinate.id,
+        Ramp.column.coordinateId -> coordinate.id.get,
         Ramp.column.id -> id,
         Ramp.column.street -> street,
         Ramp.column.number -> number,
         Ramp.column.address -> address)
-    }.updateAndReturnGeneratedKey.apply()
+    }.update().apply()
 
     Ramp(coordinate, id, street, number, address)
   }
 
-  def find(id: Long)(implicit session: DBSession = Ramp.autoSession): Option[Ramp] = withSQL {
+  def find(id: String)(implicit session: DBSession = Ramp.autoSession): Option[Ramp] = withSQL {
     select
       .from(Ramp as r)
       .leftJoin(Coordinate as c).on(r.coordinateId, c.id)
