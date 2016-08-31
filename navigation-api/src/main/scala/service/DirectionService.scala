@@ -33,9 +33,9 @@ case object SidewalkRouting extends TypeRouting
 
 object TypeRouting {
   def apply(typeRouting: String): TypeRouting = typeRouting match {
-    case "street" => StreetRouting
-    case "sidewalk" => SidewalkRouting
-    case _ => SidewalkRouting
+    case "street"   ⇒ StreetRouting
+    case "sidewalk" ⇒ SidewalkRouting
+    case _          ⇒ SidewalkRouting
   }
 }
 

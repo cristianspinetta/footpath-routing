@@ -40,6 +40,8 @@ case class SidewalkVertex(override val id: Long, override val coordinate: Coordi
 
   lazy val neighbourIds: List[Long] = edges.map(edge ⇒ if (edge.vertexStart == id) edge.vertexEnd else edge.vertexStart)
 
+  override def getEdgesFor(vertexId: Long): Option[Edge] = edges.find(edge ⇒ edge.vertexEnd == vertexId || edge.vertexStart == vertexId)
+
   override def neighbours[V <: Vertex](graph: GraphContainer[V]): List[V] = neighbourIds.flatMap(id ⇒ graph.findVertex(id) toList)
 }
 
