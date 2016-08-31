@@ -41,6 +41,7 @@ object Projects extends Build {
         akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
+    .settings(settingsForPlayground: _*)
     .settings(mainClass in (Compile, run) := Some("api.WebServer"))
 
   lazy val mapDomain = Project("map-domain", file("map-domain"))

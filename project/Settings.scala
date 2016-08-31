@@ -10,6 +10,10 @@ object Settings extends Version {
     scalaVersion := ScalaVersion,
     resolvers ++= Dependencies.resolutionRepos,
     version <<= version in ThisBuild,
+    fork in run    := true,
+//    javaOptions in run := Seq(
+//      ""
+//    ),
     javacOptions   := Seq(
       "-Xlint:-options",
       "-source", JavaVersion, "-target", JavaVersion),
@@ -31,6 +35,11 @@ object Settings extends Version {
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
     ScalariformKeys.preferences in Compile := formattingPreferences,
     ScalariformKeys.preferences in Test := formattingPreferences
+  )
+
+  lazy val settingsForPlayground: Seq[Setting[_]] = Seq(
+    connectInput in run := true,
+    cancelable in Global := true
   )
 
   def formattingPreferences =

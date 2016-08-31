@@ -38,7 +38,7 @@ object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
     edge ← vertex.edges
   } yield edge
 
-  lazy val sidewalkGraphContainer: SidewalkGraphContainer = sidewalkModule.createSideWalks(failureTolerance = true) //.purge
+  lazy val sidewalkGraphContainer: SidewalkGraphContainer = sidewalkModule.createSideWalks(failureTolerance = true).purge
 
   lazy val sidewalks = sidewalkGraphContainer.sidewalkEdges
   lazy val streetCrossingEdges = sidewalkGraphContainer.streetCrossingEdges

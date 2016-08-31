@@ -17,13 +17,27 @@ import module.{ MapModule, RoutingModule }
 import scala.concurrent.{ ExecutionContextExecutor, Future }
 import scala.util.{ Failure ⇒ TFailure, Success ⇒ TSuccess }
 
-case class RoutingRequest(fromLng: Double, fromLat: Double, toLng: Double, toLat: Double)
+case class RoutingRequest(fromLng: Double, fromLat: Double, toLng: Double, toLat: Double, routingType: String) {
+  val routingTypeO: TypeRouting = TypeRouting(routingType)
+}
 case class EdgeRequest(edgeType: String)
 case class RoutingResponse(path: Iterable[Coordinate])
 case class StreetResponse(streets: Iterable[Street])
 case class SidewalkResponse(sidewalks: Iterable[Sidewalk])
 case class EdgeResponse(edges: Iterable[Edge])
 case class RampResponse(ramps: Vector[Ramp])
+
+trait TypeRouting
+case object StreetRouting extends TypeRouting
+case object SidewalkRouting extends TypeRouting
+
+object TypeRouting {
+  def apply(typeRouting: String): TypeRouting = typeRouting match {
+    case "street" => StreetRouting
+    case "sidewalk" => SidewalkRouting
+    case _ => SidewalkRouting
+  }
+}
 
 trait DirectionService extends ApiEnvConfig {
   implicit val system: ActorSystem
@@ -38,9 +52,9 @@ trait DirectionService extends ApiEnvConfig {
     logRequestResult("routing-request") {
       get {
         path("directions") {
-          parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double]).as(RoutingRequest) { routingRequest ⇒
+          parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double], 'routingType ? "street").as(RoutingRequest) { routingRequest ⇒
             val response: Future[ToResponseMarshallable] = Future.successful {
-              RoutingModule.routing(Coordinate(routingRequest.fromLat, routingRequest.fromLng), Coordinate(routingRequest.toLat, routingRequest.toLng)) match {
+              RoutingModule.routing(Coordinate(routingRequest.fromLat, routingRequest.fromLng), Coordinate(routingRequest.toLat, routingRequest.toLng), routingRequest.routingTypeO) match {
                 case TSuccess(list)           ⇒ RoutingResponse(list.map(coor ⇒ Coordinate(coor.latitude, coor.longitude)))
                 case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
               }
