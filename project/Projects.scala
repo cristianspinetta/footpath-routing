@@ -49,7 +49,7 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
-      compile(typesafeConfig, logbackCore, logbackClassic, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, h2Connector) ++
+      compile(typesafeConfig, logbackCore, logbackClassic, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, h2Connector, h2gis) ++
         test(scalatest, mockito, scalacheck))
     .settings(noPublishing: _*)
 
