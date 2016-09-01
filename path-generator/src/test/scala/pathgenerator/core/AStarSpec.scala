@@ -190,7 +190,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
     "it runs on Grid Graph with 20000 vertices" should {
       "resolve correctly the path between 1 and 16888" in {
-        val graph: GraphContainer[GraphVertex] = createGridGraphPrototype(100, 200)
+        val graph: GraphContainer[GraphVertex] = createGridGraphGraph(100, 200)
 
         val source: GraphVertex = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex = graph.vertices.find(_.id == 16888L).get

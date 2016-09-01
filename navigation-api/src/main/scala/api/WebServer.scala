@@ -24,7 +24,7 @@ object WebServer extends App with DirectionService with ApiEnvConfig {
 
   bindingFuture foreach { binder ⇒
 
-    println(s"Server online at http://$interface:$port/\nPress RETURN to stop...")
+    logger.info(s"Server online at http://$interface:$port/...")
 
     //    StdIn.readLine() // let it run until user presses return
     //

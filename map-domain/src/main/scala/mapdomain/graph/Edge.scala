@@ -24,8 +24,14 @@ class GeoEdge(override val vertexStart: Long, override val vertexEnd: Long, over
   override def toString: String = s"GeoEdge(vertexStart: $vertexStart, vertexEnd: $vertexEnd, distance: $distance, directed: $directed)"
 
   // To more idiomatic code
-  def retrieveVertexStart(implicit graph: GraphContainer[GeoVertex]): Option[GeoVertex] = graph.findVertex(vertexStart)
-  def retrieveVertexEnd(implicit graph: GraphContainer[GeoVertex]): Option[GeoVertex] = graph.findVertex(vertexEnd)
+  def retrieveVertexStart[V <: GeoVertex](implicit graph: GraphContainer[V]): Option[V] = graph.findVertex(vertexStart)
+  def retrieveVertexEnd[V <: GeoVertex](implicit graph: GraphContainer[V]): Option[V] = graph.findVertex(vertexEnd)
+  def retrieveOppositeVertexFor[V <: GeoVertex](vertexId: Long)(implicit graph: GraphContainer[V]): Option[V] = {
+    assert(vertexStart == vertexId || vertexEnd == vertexId,
+      s"The supplied vertex $vertexId doesn't belong to this edge [vertexStart = $vertexStart, vertexEnd = $vertexEnd]")
+    val vertexToSearch: Long = if (vertexStart == vertexId) vertexEnd else vertexStart
+    graph.findVertex(vertexToSearch)
+  }
 
   // TODO antes de usarlo en el mapa agregar un id
 }

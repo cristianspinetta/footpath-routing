@@ -1,10 +1,11 @@
 package mapdomain.graph.grid
 
+import base.LazyLoggerSupport
 import mapdomain.graph.Coordinate
 import mapdomain.publictransport.PathTP
 import org.scalatest.{ FlatSpec, Matchers }
 
-class GridCreatorSpec extends FlatSpec with Matchers {
+class GridCreatorSpec extends FlatSpec with Matchers with LazyLoggerSupport {
 
   val pathTPs: List[PathTP] = PathTP(List(
     List[(Double, Double)]((1, 2), (2, 2), (3, 2), (4, 2), (5, 2),
@@ -40,7 +41,7 @@ class GridCreatorSpec extends FlatSpec with Matchers {
       Cell(10, List(4),
         Bundle(Coordinate(3, 9), Coordinate(3, 11), Coordinate(5, 11), Coordinate(5, 9))))
 
-    combinationsGrid.foreach(grid ⇒ println(s"$grid"))
+    combinationsGrid.foreach(grid ⇒ logger.debug(s"$grid"))
 
     val creator = Cell.create(12, 2) _
 
@@ -56,7 +57,7 @@ class GridCreatorSpec extends FlatSpec with Matchers {
       creator(9, List(4)),
       creator(10, List(4)))
 
-    combinationsGridMoreFun.foreach(grid ⇒ println(s"$grid"))
+    combinationsGridMoreFun.foreach(grid ⇒ logger.debug(s"$grid"))
 
     combinationsGrid should be(combinationsGridMoreFun)
   }

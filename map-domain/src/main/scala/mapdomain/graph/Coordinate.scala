@@ -1,5 +1,7 @@
 package mapdomain.graph
 
+import mapdomain.math.Point
+
 import scala.math._
 import scalikejdbc._
 
@@ -13,11 +15,27 @@ case class Coordinate(latitude: Double, longitude: Double, override val id: Opti
    * @return the distance in meters.
    */
   def distanceTo(to: Coordinate): Double = {
+    // see http://www.movable-type.co.uk/scripts/latlong.html
     val φ2 = toRadians(to.latitude)
     val Δφ = toRadians(to.latitude - latitude)
     val Δλ = toRadians(to.longitude - longitude)
     val a = pow(sin(Δφ / 2), 2) + cos(φ1) * cos(φ2) * pow(sin(Δλ / 2), 2)
     2 * atan2(sqrt(a), sqrt(1 - a)) * Coordinate.radius
+  }
+
+  /**
+   * The distance between this point and the given one in degrees.
+   *
+   * @param to: point to where the distance is calculated.
+   * @return the distance in meters.
+   */
+  def distanceToInDegrees(to: Coordinate): Double = {
+    // see http://www.movable-type.co.uk/scripts/latlong.html
+    val φ2 = toRadians(to.latitude)
+    val Δφ = toRadians(to.latitude - latitude)
+    val Δλ = toRadians(to.longitude - longitude)
+    val a = pow(sin(Δφ / 2), 2) + cos(φ1) * cos(φ2) * pow(sin(Δλ / 2), 2)
+    toDegrees(2 * atan2(sqrt(a), sqrt(1 - a)))
   }
 
   /**
@@ -57,6 +75,8 @@ case class Coordinate(latitude: Double, longitude: Double, override val id: Opti
     }
   }
 
+  def toPoint: Point = Point(longitude, latitude)
+
   override def toString: String = s"Coordinate(Lat: $latitude, Lng: $longitude)"
 }
 
@@ -65,6 +85,7 @@ object Coordinate extends SQLSyntaxSupport[Coordinate] {
 
   override val tableName = "Coordinate"
 
+  def fromPoint(point: Point): Coordinate = Coordinate(point.y, point.x)
 }
 
 trait CoordinateRepository {

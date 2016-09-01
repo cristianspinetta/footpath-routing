@@ -119,15 +119,23 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
 
   private def reconstructPath(_cameFrom: mutable.Map[N, N], targetVertex: N)(implicit tag: TypeTag[N]): List[Edge] = {
     var current = targetVertex
-    var totalPath = List(current)
+    var totalPathBuilder = List.newBuilder[N]
+    totalPathBuilder += current
     while (_cameFrom.contains(current)) {
       current = _cameFrom(current)
-      totalPath = totalPath.:+(current)
+      totalPathBuilder += current
     }
-    totalPath.tail.foldLeft((List.empty[Edge], totalPath.head)) {
+    val totalPath: List[N] = totalPathBuilder.result()
+    val (edges: List[Edge], _) = totalPath.tail.foldLeft((List.empty[Edge], totalPath.head)) {
       case ((listEdges, beforeVertex), current: N) ⇒
-        (current.getEdgesFor(beforeVertex.id).toList ::: listEdges, current)
-    }._1
+        current.getEdgesFor(beforeVertex.id) match {
+          case Some(edge) ⇒ (edge :: listEdges, current)
+          case None ⇒
+            logger.warn(s"Could not find the edge between the vectors ${beforeVertex.id} and ${current.id}")
+            (listEdges, current)
+        }
+    }
+    edges
   }
 
   private def logCurrentState(nroLoop: Int): Unit = {
