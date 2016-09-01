@@ -1,7 +1,7 @@
 package mapdomain.repository
 
 import mapdomain.graph.{ Coordinate, CoordinateRepository }
-import mapdomain.publictransport.PathRepository
+import mapdomain.publictransport.{ PathRepository, StopRepository, TravelInfoRepository }
 import mapdomain.sidewalk.{ Ramp, RampRepository }
 import mapdomain.street.{ OsmStreetEdge, OsmStreetEdgeRepository, OsmVertexRepository }
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
@@ -15,11 +15,13 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
   }
 
   override def afterEach(): Unit = {
+    StopRepository.deleteAll
     OsmStreetEdgeRepository.deleteAll
     OsmVertexRepository.deleteAll
     RampRepository.deleteAll
     CoordinateRepository.deleteAll
     PathRepository.deleteAll
+    TravelInfoRepository.deleteAll
   }
 
   "With database configurated" should "create coordinates correctly" in {
@@ -90,6 +92,60 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     path = PathRepository.find(path.id.get).get
     path.id should not be None
     path.coordinates shouldBe coordinates
+  }
+
+  it should "create stops correctly" in {
+    val travelInfo = TravelInfoRepository.create("any description")
+    val coordinates = "{lng: 34, lat: 20}, {lng: 34, lat: 21}"
+    val path = PathRepository.create(coordinates)
+
+    val firstStop = StopRepository.create(10l, 11l, 5, false, path.id.get)
+    var secondStop = StopRepository.create(12l, 13l, 6, true, path.id.get)
+    val thirdStop = StopRepository.create(14l, 15l, 7, true, path.id.get)
+
+    secondStop = secondStop.copy(previousStopId = firstStop.id, nextStopId = thirdStop.id, cellNumber = 10, travelInfoId = travelInfo.id)
+    StopRepository.save(secondStop)
+
+    secondStop = StopRepository.find(secondStop.id.get).get
+    secondStop.isAccessible shouldBe true
+    secondStop.cellNumber shouldBe 10
+    secondStop.previousStopId shouldBe firstStop.id
+    secondStop.previousStop.get.cellNumber shouldBe 5
+    secondStop.previousStop.get.isAccessible shouldBe false
+    secondStop.coordinate.get.latitude shouldBe 12l
+    secondStop.coordinate.get.longitude shouldBe 13l
+    secondStop.coordinateId should not be None
+    secondStop.nextStopId shouldBe thirdStop.id
+    secondStop.nextStop.get.cellNumber shouldBe 7
+    secondStop.nextStop.get.isAccessible shouldBe true
+    secondStop.path.get.coordinates shouldBe coordinates
+    secondStop.pathId shouldBe path.id
+    secondStop.travelInfo.get.description shouldBe travelInfo.description
+    secondStop.travelInfoId shouldBe travelInfo.id
+
+    StopRepository.deleteAll
+  }
+
+  it should "create travelInfo correctly" in {
+    var travelInfo = TravelInfoRepository.create("any description")
+
+    val path = PathRepository.create("some coordinates")
+    val firstStop = StopRepository.create(10l, 11l, 5, false, path.id.get)
+    val lastStop = StopRepository.create(12l, 13l, 6, true, path.id.get)
+
+    travelInfo = travelInfo.copy(firstStopId = firstStop.id, lastStopId = lastStop.id)
+    TravelInfoRepository.save(travelInfo)
+
+    travelInfo = TravelInfoRepository.find(travelInfo.id.get).get
+    travelInfo.description shouldBe "any description"
+    travelInfo.firstStopId shouldBe firstStop.id
+    travelInfo.lastStopId shouldBe lastStop.id
+    travelInfo.firstStop.get.pathId shouldBe path.id
+    travelInfo.firstStop.get.cellNumber shouldBe 5
+    travelInfo.lastStop.get.pathId shouldBe path.id
+    travelInfo.lastStop.get.cellNumber shouldBe 6
+
+    TravelInfoRepository.deleteAll
   }
 
 }

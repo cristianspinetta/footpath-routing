@@ -39,7 +39,7 @@ trait PathRepository {
   def save(path: Path)(implicit session: DBSession = Path.autoSession): Path = {
     withSQL {
       update(Path).set(
-        Path.column.coordinates -> path.coordinates)
+        Path.column.coordinates -> path.coordinates).where.eq(Path.column.id, path.id)
     }.update.apply()
     path
   }
