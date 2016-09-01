@@ -1,6 +1,6 @@
 package mapdomain.graph.grid
 
-import mapdomain.graph.Coordinate
+import mapdomain.graph.{ Coordinate, CoordinateRepository }
 
 case class Bundle(topLeft: Coordinate, topRight: Coordinate,
     bottomRight: Coordinate, bottomLeft: Coordinate) {

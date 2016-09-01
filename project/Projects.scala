@@ -38,7 +38,7 @@ object Projects extends Build {
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi, logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental,
-        akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors) ++
+        akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
     .settings(settingsForPlayground: _*)
@@ -49,7 +49,7 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
-      compile(typesafeConfig, logbackCore, logbackClassic) ++
+      compile(typesafeConfig, logbackCore, logbackClassic, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, h2Connector) ++
         test(scalatest, mockito, scalacheck))
     .settings(noPublishing: _*)
 
