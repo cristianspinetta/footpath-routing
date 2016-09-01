@@ -21,7 +21,7 @@ class GeoRepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll wi
   }
 
   "With database configurated" should "find a geo point correctly" in {
-    val spatialOpt: Option[Spatial] = SpatialRepository.find(Coordinate(20, 30))
+    val spatialOpt: Option[Spatial] = SpatialRepository.findNearest(Coordinate(20, 20), 100)
     spatialOpt shouldBe 'defined
     spatialOpt.get.point.latitude should be > 0D
     spatialOpt.get.point.longitude should be > 0D
@@ -35,7 +35,7 @@ class GeoRepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll wi
 
   def initializeDB() = DB autoCommit { implicit s ⇒
     sql"""
-CREATE TABLE IF NOT EXISTS `geo_test` (
+              CREATE TABLE IF NOT EXISTS `geo_test` (
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
                 `point` Point,
                 PRIMARY KEY (`id`)
@@ -75,11 +75,13 @@ object SpatialRepository {
     spatial.copy(id = Some(id))
   }
 
-  def find(coordinate: Coordinate)(implicit session: DBSession = Spatial.autoSession): Option[Spatial] = {
+  def findNearest(coordinate: Coordinate, distance: Double)(implicit session: DBSession = Spatial.autoSession): Option[Spatial] = {
 //    val getPoints = sql"select x(point) lat, y(point) lng from geo_test where ST_Distance(point(20,20), point) <= 100 limit 1"
 //    getPoints.map(spatial(s)).first().apply()
-    withSQL { select(sqls"x(point) lat, y(point) lng").from(Spatial as s).where.append(sqls"ST_Distance(point(20,20), point)").limit(1) }
-      .map(spatial(s)).first().apply()
+    withSQL {
+      select(sqls"x(point) lat, y(point) lng").from(Spatial as s)
+      .where.append(sqls"ST_Distance(point(${coordinate.latitude},${coordinate.longitude}), point) < $distance").limit(1)
+    }.map(spatial(s)).first().apply()
   }
 
 //  def save(coord: Coordinate)(implicit session: DBSession = Coordinate.autoSession): Coordinate = {
