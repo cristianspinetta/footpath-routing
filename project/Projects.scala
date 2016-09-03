@@ -49,7 +49,7 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
-      compile(typesafeConfig, logbackCore, logbackClassic, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, h2Connector, h2gis) ++
+      compile(typesafeConfig, logbackCore, logbackClassic, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, h2Connector) ++
         test(scalatest, mockito, scalacheck))
     .settings(noPublishing: _*)
 
@@ -60,6 +60,19 @@ object Projects extends Build {
       compile(typesafeConfig, logbackCore, logbackClassic) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
+
+  lazy val routingPlayground = Project("routing-playground", file("routing-playground"))
+    .dependsOn(pathGenerator, mapGenerator, mapDomain, commonLibrary)
+    .settings(basicSettings: _*)
+    .settings(formatSettings: _*)
+    .settings(libraryDependencies ++=
+      compile(typesafeConfig, slf4jApi, logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental,
+        scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp,
+        akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
+        test(scalatest, mockito))
+    .settings(noPublishing: _*)
+    .settings(settingsForPlayground: _*)
+    .settings(mainClass in (Compile, run) := Some("api.WebServer"))
 
   val noPublishing = Seq(publish := (), publishLocal := (), publishArtifact := false)
 }

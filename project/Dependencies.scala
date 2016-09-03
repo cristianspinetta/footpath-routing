@@ -36,7 +36,6 @@ object Dependencies extends Version {
   val commonsPool                    = "commons-pool"              % "commons-pool"                         % "1.6"
   val commonsDbcp                    = "commons-dbcp"              % "commons-dbcp"                         % "1.4"
   val h2Connector                    = "com.h2database"            % "h2"                                   % "1.4.192"
-  val h2gis                          = "org.orbisgis"              % "h2gis"                                % "1.3.0" pomOnly()
 
 
   def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
