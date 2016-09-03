@@ -43,7 +43,7 @@ object GeoNode extends SQLSyntaxSupport[GeoNode] {
     sql"""
               CREATE TABLE IF NOT EXISTS `geo_3_node` (
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `point` Point,
+                `point` Point NOT NULL,
                 `lat` DOUBLE,
                 `lng` DOUBLE,
                 PRIMARY KEY (`id`)
