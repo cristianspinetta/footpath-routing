@@ -38,8 +38,6 @@ trait RoutingModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfi
       case otherResult ⇒ Failure(new RuntimeException(s"It could not get a near vertex. $otherResult"))
     }
   }
-
-  def ramps: Try[Vector[Ramp]] = Try(graphProvider.ramps)
 }
 
 object RoutingModule extends RoutingModule
