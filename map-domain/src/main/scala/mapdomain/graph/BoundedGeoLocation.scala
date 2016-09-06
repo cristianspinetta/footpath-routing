@@ -19,10 +19,10 @@ object BoundedGeoLocation {
     val minLatCandidate = coordinate.radLatitude - radDist
     val maxLatCandidate = coordinate.radLatitude + radDist
 
-    val MIN_LAT = (-90d).toRadians  // -PI/2
-    val MAX_LAT = 90d.toRadians   //  PI/2
+    val MIN_LAT = (-90d).toRadians // -PI/2
+    val MAX_LAT = 90d.toRadians //  PI/2
     val MIN_LON = (-180d).toRadians // -PI
-    val MAX_LON = 180d.toRadians  //  PI
+    val MAX_LON = 180d.toRadians //  PI
 
     val (maxLat, minLat, minLng, maxLng) = if (minLatCandidate > MIN_LAT && maxLatCandidate < MAX_LAT) {
       val deltaLon = asin(sin(radDist) / cos(coordinate.radLatitude))

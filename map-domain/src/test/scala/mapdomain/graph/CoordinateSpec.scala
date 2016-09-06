@@ -1,6 +1,6 @@
 package mapdomain.graph
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{ FlatSpec, Matchers }
 import utils.DoubleUtils
 
 class CoordinateSpec extends FlatSpec with Matchers {

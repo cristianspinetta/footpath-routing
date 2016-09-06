@@ -64,19 +64,19 @@ trait DirectionService extends ApiEnvConfig {
           }
         } ~
           pathPrefix("map") {
-              path("edges") {
-                parameters('edgeType.as[String], 'radius ? 1.0D, 'lat.as[Double], 'lng.as[Double]).as(EdgeRequest) { edgeRequest ⇒
-                  val response: Future[ToResponseMarshallable] = Future.successful {
-                    MapModule.edges(EdgeType(edgeRequest.edgeType), Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius) match {
-                      case TSuccess(list)           ⇒ EdgeResponse(list.toList)
-                      case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
-                    }
+            path("edges") {
+              parameters('edgeType.as[String], 'radius ? 1.0D, 'lat.as[Double], 'lng.as[Double]).as(EdgeRequest) { edgeRequest ⇒
+                val response: Future[ToResponseMarshallable] = Future.successful {
+                  MapModule.edges(EdgeType(edgeRequest.edgeType), Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius) match {
+                    case TSuccess(list)           ⇒ EdgeResponse(list.toList)
+                    case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
                   }
-                  complete(response)
                 }
-              } ~
+                complete(response)
+              }
+            } ~
               path("ramps") {
-                parameters('lat.as[Double], 'lng.as[Double], 'radius ? 1.0D).as(RampRequest) { rampRequest: RampRequest =>
+                parameters('lat.as[Double], 'lng.as[Double], 'radius ? 1.0D).as(RampRequest) { rampRequest: RampRequest ⇒
                   val response: Future[ToResponseMarshallable] = Future.successful {
                     MapModule.ramps(Coordinate(rampRequest.lat, rampRequest.lng), rampRequest.radius) match {
                       case TSuccess(list)           ⇒ RampResponse(list)

@@ -70,18 +70,24 @@ object GeoNodeRepository {
 
     val sqlPoint = SQLPoint(geoNode)
 
-    val id = sql"""insert into geo_3_node (point, lat, lng) values (PointFromText(${sqlPoint.sql}), ${geoNode.point.radLatitude}, ${geoNode.point.radLongitude})"""
-      //    val id = withSQL {
-      //      insert.into(GeoNode)
-      //        .append(sqls"""(point, lat, lng) values (PointFromText(${sqlPoint.sql}), ${geoNode.point.latitude}, ${geoNode.point.longitude})""")
-      //      insert.into(GeoNode).namedValues(
-      //        GeoNode.column.point -> sqls"PointFromText(${sqlPoint.sql})",
-      //        sqls"lat" -> geoNode.point.latitude,
-      //        sqls"lng" -> geoNode.point.longitude
-      //      )
+    val point = SQLSyntax.createUnsafely(s"PointFromText('POINT(${sqlPoint.geoNode.point.latitude} ${sqlPoint.geoNode.point.longitude})')")
 
-      //    }
-      .updateAndReturnGeneratedKey().apply()
+    val q = sql"""insert into geo_3_node (point, lat, lng) values ($point, ${sqlPoint.geoNode.point.latitude}, ${sqlPoint.geoNode.point.longitude})"""
+
+    val id = q.updateAndReturnGeneratedKey().apply()
+
+//    val id = sql"""insert into geo_3_node (point, lat, lng) values (PointFromText(${sqlPoint.sql}), ${geoNode.point.radLatitude}, ${geoNode.point.radLongitude})"""
+//      //    val id = withSQL {
+//      //      insert.into(GeoNode)
+//      //        .append(sqls"""(point, lat, lng) values (PointFromText(${sqlPoint.sql}), ${geoNode.point.latitude}, ${geoNode.point.longitude})""")
+//      //      insert.into(GeoNode).namedValues(
+//      //        GeoNode.column.point -> sqls"PointFromText(${sqlPoint.sql})",
+//      //        sqls"lat" -> geoNode.point.latitude,
+//      //        sqls"lng" -> geoNode.point.longitude
+//      //      )
+//
+//      //    }
+//      .updateAndReturnGeneratedKey().apply()
 
     geoNode.copy(id = Some(id))
   }

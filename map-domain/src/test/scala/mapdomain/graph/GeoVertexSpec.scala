@@ -1,6 +1,6 @@
 package mapdomain.graph
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{ FlatSpec, Matchers }
 
 class GeoVertexSpec extends FlatSpec with Matchers {
 

@@ -2,9 +2,9 @@ package module
 
 import base.LazyLoggerSupport
 import conf.ApiEnvConfig
-import mapdomain.graph.{Coordinate, GeoSearch, GeoVertex, GraphContainer}
-import mapdomain.sidewalk.{PedestrianEdge, Ramp, SidewalkEdge, SidewalkVertex}
-import mapdomain.street.{OsmStreetEdge, OsmVertex}
+import mapdomain.graph.{ Coordinate, GeoSearch, GeoVertex, GraphContainer }
+import mapdomain.sidewalk.{ PedestrianEdge, Ramp, SidewalkEdge, SidewalkVertex }
+import mapdomain.street.{ OsmStreetEdge, OsmVertex }
 import mapgenerator.source.osm.model.Way
 import model._
 
@@ -18,15 +18,15 @@ trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
       case StreetEdgeType ⇒
         val streets: List[OsmStreetEdge] = graphProvider.streets
         val nearestStreets: List[OsmStreetEdge] = GeoSearch.findNearestByRadius(startPosition,
-          radius, streets, (street: OsmStreetEdge) => Seq(street.osmVertexStart.coordinate,street.osmVertexEnd.coordinate))
+          radius, streets, (street: OsmStreetEdge) ⇒ Seq(street.osmVertexStart.coordinate, street.osmVertexEnd.coordinate))
         nearestStreets.map(street ⇒ Edge(street.osmVertexStart.coordinate, street.osmVertexEnd.coordinate))
       case SidewalkEdgeType ⇒
         implicit val graph: GraphContainer[SidewalkVertex] = graphProvider.sidewalkGraphContainer
         val pedestrianEdges: List[PedestrianEdge] = graphProvider.sidewalks ++: graphProvider.streetCrossingEdges
         val nearestEdges: List[PedestrianEdge] = GeoSearch.findNearestByRadius(startPosition, radius, pedestrianEdges,
-          (edge: PedestrianEdge) =>
+          (edge: PedestrianEdge) ⇒
             Seq(graph.findVertex(edge.vertexStart).get.coordinate, graph.findVertex(edge.vertexEnd).get.coordinate))
-        nearestEdges.map(edge ⇒ Edge(edge.from.get.coordinate, edge.to.get.coordinate))
+        nearestEdges.map(edge ⇒ Edge(edge.from.get.coordinate, edge.to.get.coordinate))(collection.breakOut)
       case WayEdgeType ⇒
         implicit val graph: GraphContainer[OsmVertex] = graphProvider.graph
         graphProvider.osmModule.streetWays.toList.flatMap(way ⇒ Edge.pointToEdge(Way.getPath(way)(graphProvider.graph)))
@@ -38,7 +38,7 @@ trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
   }
 
   def ramps(coordinate: Coordinate, radius: Double): Try[Vector[Ramp]] = Try {
-    GeoSearch.findNearestByRadius(coordinate, radius, graphProvider.ramps, (ramp: Ramp) => Seq(ramp.coordinate))
+    GeoSearch.findNearestByRadius(coordinate, radius, graphProvider.ramps, (ramp: Ramp) ⇒ Seq(ramp.coordinate))
   }
 
 }
