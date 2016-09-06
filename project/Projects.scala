@@ -10,7 +10,7 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(noPublishing: _*)
-    .aggregate(pathGenerator, mapGenerator, navigationApi, mapDomain)
+    .aggregate(pathGenerator, mapGenerator, navigationApi, mapDomain, commonLibrary)
 
   lazy val pathGenerator = Project("path-generator", file("path-generator"))
     .dependsOn(commonLibrary, mapDomain)
@@ -41,6 +41,7 @@ object Projects extends Build {
         akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
+    .settings(settingsForPlayground: _*)
     .settings(mainClass in (Compile, run) := Some("api.WebServer"))
 
   lazy val mapDomain = Project("map-domain", file("map-domain"))

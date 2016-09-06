@@ -5,7 +5,7 @@ import mapdomain.math.{ GVector, Line, Point }
 
 object EdgeUtils {
 
-  def edgeToLine(edge: GeoEdge)(implicit graph: GraphContainer[GeoVertex]): Line = {
+  def edgeToLine[V <: GeoVertex, E <: GeoEdge](edge: E)(implicit graph: GraphContainer[V]): Line = {
     val start = edge.retrieveVertexStart.get
     val end = edge.retrieveVertexEnd.get
 
@@ -15,7 +15,7 @@ object EdgeUtils {
     Line.ByPairPoints(pointStart, pointEnd)
   }
 
-  def edgeToVector(edge: GeoEdge)(implicit graph: GraphContainer[GeoVertex]): GVector = {
+  def edgeToVector[V <: GeoVertex, E <: GeoEdge](edge: E)(implicit graph: GraphContainer[V]): GVector = {
     val start = edge.retrieveVertexStart.get
     val end = edge.retrieveVertexEnd.get
 
@@ -23,5 +23,12 @@ object EdgeUtils {
     val pointEnd = Point(end.coordinate.longitude, end.coordinate.latitude)
 
     GVector(pointStart, pointEnd)
+  }
+
+  def pointToEdge[V, E](points: List[V], edgeGenerator: (V, V) ⇒ E): List[E] = {
+    points.sliding(2).toList.flatMap {
+      case fst :: snd :: Nil ⇒ List(edgeGenerator(fst, snd))
+      case _                 ⇒ Nil
+    }
   }
 }

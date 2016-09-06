@@ -5,8 +5,9 @@ import java.net.URL
 import base.LazyLoggerSupport
 import conf.ApiEnvConfig
 import mapdomain.graph.GraphContainer
-import mapdomain.sidewalk.Ramp
+import mapdomain.sidewalk._
 import mapdomain.street.{ OsmStreetEdge, OsmVertex }
+import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.osm._
 
 trait GraphSupport {
@@ -15,15 +16,20 @@ trait GraphSupport {
 
 object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
 
-  lazy val osmURL: URL = getClass.getResource(configuration.OSM.sourceFilePath)
-  lazy val rampPath2014: String = getClass.getResource(configuration.Ramp.sourceFile2014Path).getPath
-  lazy val rampPath2011: String = getClass.getResource(configuration.Ramp.sourceFile2011Path).getPath
+  private lazy val osmURL: URL = getClass.getResource(configuration.OSM.sourceFilePath)
+  private lazy val rampPath2014: String = getClass.getResource(configuration.Ramp.sourceFile2014Path).getPath
+  private lazy val rampPath2011: String = getClass.getResource(configuration.Ramp.sourceFile2011Path).getPath
 
-  lazy val xmlParser: OSMReaderByXml = OSMReaderByXml(osmURL)
-  lazy val rampParser: RampLoader = RampLoaderByCSV(Seq((rampPath2014, RampLoader2014), (rampPath2011, RampLoader2011)))
+  private lazy val xmlParser: OSMReaderByXml = OSMReaderByXml(osmURL)
+  private lazy val rampParser: RampLoader = RampLoaderByCSV(Seq((rampPath2014, RampLoader2014), (rampPath2011, RampLoader2011)))
 
-  lazy val graphModule: GraphModule = GraphModule(OSMModule(xmlParser))
-  lazy val graph: GraphContainer[OsmVertex] = graphModule.createGraph
+  lazy val osmModule: OSMModule = OSMModule(xmlParser)
+
+  private lazy val graphModule: GraphModule = GraphModule(osmModule)
+
+  lazy val graph: GraphContainer[OsmVertex] = graphModule.createGraph.purge
+
+  private lazy val sidewalkModule = SidewalkModule()(graph)
 
   lazy val ramps: Vector[Ramp] = rampParser.loadRamps
 
@@ -31,5 +37,10 @@ object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
     vertex ← graph.vertices
     edge ← vertex.edges
   } yield edge
+
+  lazy val sidewalkGraphContainer: SidewalkGraphContainer = sidewalkModule.createSideWalks(failureTolerance = true).purge
+
+  lazy val sidewalks = sidewalkGraphContainer.sidewalkEdges
+  lazy val streetCrossingEdges = sidewalkGraphContainer.streetCrossingEdges
 
 }

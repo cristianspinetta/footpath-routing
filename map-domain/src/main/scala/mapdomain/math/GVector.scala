@@ -25,6 +25,8 @@ case class GVector(source: Point, extreme: Point) {
   def createParallel(distanceForX: Double, distanceForY: Double): GVector =
     GVector(Point(source.x + distanceForX, source.y + distanceForY), Point(extreme.x + distanceForX, extreme.y + distanceForY))
 
+  def invert: GVector = GVector(source = extreme, extreme = source)
+
   private def defineQuadrant: Quadrant with Product with Serializable = {
     angle match {
       case x if x > (Pi / 2)  ⇒ Quad2
@@ -39,6 +41,13 @@ object VectorUtils {
 
   import mapdomain.utils.PointUtils._
 
+  /**
+   * Create a parallel vector keeping the direction
+   * @param vector: the reference Vector
+   * @param distance: The distance between the vector and its parallel
+   * @param antiHourRotation: Define the side where the parallel will be created
+   * @return The parallel Vector
+   */
   def createParallelVector(vector: GVector, distance: Double, antiHourRotation: Boolean): GVector = (vector.quadrant, antiHourRotation) match {
     case (Quad1, true) ⇒
       val α = (Pi / 2) - vector.θ

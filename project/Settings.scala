@@ -10,6 +10,30 @@ object Settings extends Version {
     scalaVersion := ScalaVersion,
     resolvers ++= Dependencies.resolutionRepos,
     version <<= version in ThisBuild,
+    fork in run    := true,
+    javaOptions in run := Seq(
+      "-Duser.timezone=GMT-0",
+      "-DenvironmentOverride=./environment-override.conf",
+      "-Dcom.sun.management.jmxremote.ssl=false",
+      "-Dcom.sun.management.jmxremote.authenticate=false",
+      "-Dcom.sun.management.jmxremote.port=29290",
+      "-Xms1024m",
+      "-Xmx2048m",
+      "-verbose:gc",
+      "-XX:+PrintGCDetails",
+      "-XX:+PrintGCTimeStamps",
+      "-Xloggc:./gc.log",
+      "-XX:+HeapDumpOnOutOfMemoryError",
+      "-XX:HeapDumpPath=./dumps/heap-dump.hprof",
+      "-XX:-OmitStackTraceInFastThrow",
+      "-XX:+DisableExplicitGC",
+      "-XX:+TieredCompilation",
+      "-XX:+UseConcMarkSweepGC",
+      "-XX:CMSInitiatingOccupancyFraction=40",
+      "-XX:+UseCMSInitiatingOccupancyOnly",
+      "-XX:+CMSScavengeBeforeRemark",
+      "-XX:NewRatio=1"
+    ),
     javacOptions   := Seq(
       "-Xlint:-options",
       "-source", JavaVersion, "-target", JavaVersion),
@@ -31,6 +55,11 @@ object Settings extends Version {
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
     ScalariformKeys.preferences in Compile := formattingPreferences,
     ScalariformKeys.preferences in Test := formattingPreferences
+  )
+
+  lazy val settingsForPlayground: Seq[Setting[_]] = Seq(
+    connectInput in run := true,
+    cancelable in Global := true
   )
 
   def formattingPreferences =

@@ -40,6 +40,7 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
             lineForParallel.intercept should equal(intercept +- precision)
             Line.areParallel(lineForVector, lineForParallel) should be(true)
             Line.compareParallelsByAltitude(lineForVector, lineForParallel) should equal(-1)
+            compareRightDirection(vector, parallel)
           }
         }
       }
@@ -63,6 +64,7 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
             lineForParallel.intercept should equal(intercept +- precision)
             Line.areParallel(lineForVector, lineForParallel) should be(true)
             Line.compareParallelsByAltitude(lineForVector, lineForParallel) should equal(1)
+            compareRightDirection(vector, parallel)
           }
         }
       }
@@ -94,6 +96,7 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
             lineForParallel.intercept should equal(intercept +- precision)
             Line.areParallel(lineForVector, lineForParallel) should be(true)
             Line.compareParallelsByAltitude(lineForVector, lineForParallel) should equal(1)
+            compareRightDirection(vector, parallel)
           }
         }
       }
@@ -119,6 +122,7 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
             lineForParallel.intercept should equal(intercept +- precision)
             Line.areParallel(lineForVector, lineForParallel) should be(true)
             Line.compareParallelsByAltitude(lineForVector, lineForParallel) should equal(-1)
+            compareRightDirection(vector, parallel)
           }
         }
       }
@@ -150,6 +154,7 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
             lineForParallel.intercept should equal(intercept +- precision)
             Line.areParallel(lineForVector, lineForParallel) should be(true)
             Line.compareParallelsByAltitude(lineForVector, lineForParallel) should equal(1)
+            compareRightDirection(vector, parallel)
           }
         }
       }
@@ -175,6 +180,7 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
             lineForParallel.intercept should equal(intercept +- precision)
             Line.areParallel(lineForVector, lineForParallel) should be(true)
             Line.compareParallelsByAltitude(lineForVector, lineForParallel) should equal(-1)
+            compareRightDirection(vector, parallel)
           }
         }
       }
@@ -206,6 +212,7 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
             lineForParallel.intercept should equal(intercept +- precision)
             Line.areParallel(lineForVector, lineForParallel) should be(true)
             Line.compareParallelsByAltitude(lineForVector, lineForParallel) should equal(-1)
+            compareRightDirection(vector, parallel)
           }
         }
       }
@@ -231,9 +238,14 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
             lineForParallel.intercept should equal(intercept +- precision)
             Line.areParallel(lineForVector, lineForParallel) should be(true)
             Line.compareParallelsByAltitude(lineForVector, lineForParallel) should equal(1)
+            compareRightDirection(vector, parallel)
           }
         }
       }
     }
+  }
+
+  private def compareRightDirection(vector: GVector, parallel: GVector): Unit = {
+    Point.distance(vector.source, parallel.source) should be < Point.distance(vector.source, parallel.extreme)
   }
 }

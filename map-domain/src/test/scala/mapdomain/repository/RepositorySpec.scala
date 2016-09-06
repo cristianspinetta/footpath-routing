@@ -24,6 +24,10 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     TravelInfoRepository.deleteAll
   }
 
+  override def afterAll(): Unit = {
+    DBs.closeAll()
+  }
+
   "With database configurated" should "create coordinates correctly" in {
     var coordinate: Coordinate = CoordinateRepository.create(10, 20)
     coordinate.id should not be None
