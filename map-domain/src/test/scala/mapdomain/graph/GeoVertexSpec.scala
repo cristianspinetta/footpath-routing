@@ -1,6 +1,5 @@
-package pathgenerator.graph
+package mapdomain.graph
 
-import mapdomain.graph.{ Coordinate, GeoVertex, GraphContainer }
 import org.scalatest.{ FlatSpec, Matchers }
 
 class GeoVertexSpec extends FlatSpec with Matchers {

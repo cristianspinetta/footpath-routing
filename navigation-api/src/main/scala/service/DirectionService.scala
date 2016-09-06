@@ -20,7 +20,8 @@ import scala.util.{ Failure ⇒ TFailure, Success ⇒ TSuccess }
 case class RoutingRequest(fromLng: Double, fromLat: Double, toLng: Double, toLat: Double, routingType: String) {
   val routingTypeO: TypeRouting = TypeRouting(routingType)
 }
-case class EdgeRequest(edgeType: String)
+case class EdgeRequest(edgeType: String, radius: Double, lat: Double, lng: Double)
+case class RampRequest(lat: Double, lng: Double, radius: Double)
 case class RoutingResponse(path: Iterable[Coordinate])
 case class StreetResponse(streets: Iterable[Street])
 case class SidewalkResponse(sidewalks: Iterable[Sidewalk])
@@ -62,41 +63,23 @@ trait DirectionService extends ApiEnvConfig {
             complete(response)
           }
         } ~
-          path("ramps") {
-            val response: Future[ToResponseMarshallable] = Future.successful {
-              RoutingModule.ramps match {
-                case TSuccess(list)           ⇒ RampResponse(list)
-                case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
-              }
-            }
-            complete(response)
-          } ~
           pathPrefix("map") {
-            path("streets") {
-              val response: Future[ToResponseMarshallable] = Future.successful {
-                MapModule.streets match {
-                  case TSuccess(list) ⇒ StreetResponse(list)
-                  case TFailure(exc: Throwable) ⇒
-                    logger.error(exc, s"Failed")
-                    BadRequest -> exc.getMessage
-                }
-              }
-              complete(response)
-            } ~
-              path("sidewalks") {
+            path("edges") {
+              parameters('edgeType.as[String], 'radius ? 1.0D, 'lat.as[Double], 'lng.as[Double]).as(EdgeRequest) { edgeRequest ⇒
                 val response: Future[ToResponseMarshallable] = Future.successful {
-                  MapModule.sidewalks match {
-                    case TSuccess(list)           ⇒ SidewalkResponse(list.toList)
+                  MapModule.edges(EdgeType(edgeRequest.edgeType), Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius) match {
+                    case TSuccess(list)           ⇒ EdgeResponse(list.toList)
                     case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
                   }
                 }
                 complete(response)
-              } ~
-              path("edges") {
-                parameters('edgeType.as[String]).as(EdgeRequest) { routingRequest ⇒
+              }
+            } ~
+              path("ramps") {
+                parameters('lat.as[Double], 'lng.as[Double], 'radius ? 1.0D).as(RampRequest) { rampRequest: RampRequest ⇒
                   val response: Future[ToResponseMarshallable] = Future.successful {
-                    MapModule.edges(EdgeType(routingRequest.edgeType)) match {
-                      case TSuccess(list)           ⇒ EdgeResponse(list.toList)
+                    MapModule.ramps(Coordinate(rampRequest.lat, rampRequest.lng), rampRequest.radius) match {
+                      case TSuccess(list)           ⇒ RampResponse(list)
                       case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
                     }
                   }

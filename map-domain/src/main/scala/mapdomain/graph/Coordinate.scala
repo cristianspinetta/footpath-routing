@@ -5,11 +5,20 @@ import mapdomain.math.Point
 import scala.math._
 import scalikejdbc._
 
+/**
+ *
+ * @param latitude: in degrees
+ * @param longitude: in degrees
+ * @param id: optional
+ */
 case class Coordinate(latitude: Double, longitude: Double, override val id: Option[Long] = None) extends BaseEntity {
   private val φ1: Double = latitude.toRadians
 
+  val radLatitude: Double = latitude.toRadians
+  val radLongitude: Double = longitude.toRadians
+
   /**
-   * The distance between this point and the given one in meters.
+   * The distance between this point and the given one in km.
    *
    * @param to: point to where the distance is calculated.
    * @return the distance in meters.
@@ -30,7 +39,7 @@ case class Coordinate(latitude: Double, longitude: Double, override val id: Opti
    * @return the distance in meters.
    */
   def distanceToInDegrees(to: Coordinate): Double = {
-    // see http://www.movable-type.co.uk/scripts/latlong.html
+    // @see http://www.movable-type.co.uk/scripts/latlong.html
     val φ2 = toRadians(to.latitude)
     val Δφ = toRadians(to.latitude - latitude)
     val Δλ = toRadians(to.longitude - longitude)
@@ -81,11 +90,27 @@ case class Coordinate(latitude: Double, longitude: Double, override val id: Opti
 }
 
 object Coordinate extends SQLSyntaxSupport[Coordinate] {
-  val radius: Double = 6.371 // meters
+  val radius: Double = 6371 // Km
 
   override val tableName = "Coordinate"
 
   def fromPoint(point: Point): Coordinate = Coordinate(point.y, point.x)
+
+  /**
+   *
+   * @param source: source in decimal degree
+   * @param bearing: the bearing from the start point (clockwise from north)
+   * @param distance: the distance travelled in meters
+   * @return
+   */
+  def destinationPointByDistanceAndBearing(source: Coordinate, bearing: Double, distance: Double): Coordinate = {
+    val δ = distance / radius
+    val θ = toRadians(bearing)
+    val (φ1, λ1) = (toRadians(source.latitude), toRadians(source.longitude))
+    val φ2 = asin(sin(φ1) * cos(δ) + cos(φ1) * sin(δ) * cos(θ))
+    val λ2 = λ1 + atan2(sin(θ) * sin(δ) * cos(φ1), cos(δ) - sin(φ1) * sin(φ2))
+    Coordinate(φ2, λ2)
+  }
 }
 
 trait CoordinateRepository {

@@ -61,5 +61,18 @@ object Projects extends Build {
         test(scalatest, mockito))
     .settings(noPublishing: _*)
 
+  lazy val routingPlayground = Project("routing-playground", file("routing-playground"))
+    .dependsOn(pathGenerator, mapGenerator, mapDomain, commonLibrary)
+    .settings(basicSettings: _*)
+    .settings(formatSettings: _*)
+    .settings(libraryDependencies ++=
+      compile(typesafeConfig, slf4jApi, logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental,
+        scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp,
+        akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
+        test(scalatest, mockito))
+    .settings(noPublishing: _*)
+    .settings(settingsForPlayground: _*)
+    .settings(mainClass in (Compile, run) := Some("api.WebServer"))
+
   val noPublishing = Seq(publish := (), publishLocal := (), publishArtifact := false)
 }

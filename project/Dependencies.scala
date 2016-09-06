@@ -32,10 +32,11 @@ object Dependencies extends Version {
 
   val scalikejdbc                    = "org.scalikejdbc"           %% "scalikejdbc"                         % "2.4.1"
   val scalikejdbcConfig              = "org.scalikejdbc"           %% "scalikejdbc-config"                  % "2.4.1"
-  val mariadbConnector               = "org.mariadb.jdbc"          % "mariadb-java-client"                 % "1.4.6"
-  val commonsPool                    = "commons-pool"              % "commons-pool"                        % "1.6"
-  val commonsDbcp                    = "commons-dbcp"              % "commons-dbcp"                        % "1.4"
-  val h2Connector                    = "com.h2database"            % "h2"                                  % "1.4.192"
+  val mariadbConnector               = "org.mariadb.jdbc"          % "mariadb-java-client"                  % "1.4.6"
+  val commonsPool                    = "commons-pool"              % "commons-pool"                         % "1.6"
+  val commonsDbcp                    = "commons-dbcp"              % "commons-dbcp"                         % "1.4"
+  val h2Connector                    = "com.h2database"            % "h2"                                   % "1.4.192"
+
 
   def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
   def provided  (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "provided")
