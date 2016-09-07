@@ -91,7 +91,7 @@ case class GraphModule(osmModule: OSMModule) {
 
   private def addEdgeToCreatedVertex(osmVertex: OsmVertex, osmEdge: OsmStreetEdge): Unit = {
 
-    assert(osmEdge.osmVertexStart == osmVertex, "The startVertex of the edge must be the Vertex that it belong to.")
+    assert(osmEdge.vertexStartId == osmVertex.id, "The startVertex of the edge must be the Vertex that it belong to.")
 
     val indexWhere: Int = createdOsmVertex.indexWhere(vertex ⇒ vertex.id == osmVertex.id)
 

@@ -6,6 +6,7 @@ import java.sql.PreparedStatement
 
 import mapdomain.graph.{BaseEntity, BoundedGeoLocation, Coordinate}
 import scalikejdbc.{DBSession, WrappedResultSet, _}
+import sql.SpatialSQLSupport
 
 import scala.math._
 
@@ -56,7 +57,7 @@ case class SQLPoint(geoNode: GeoNode) {
   lazy val sql: String = s"POINT(${geoNode.point.radLongitude} ${geoNode.point.radLatitude})"
 }
 
-object GeoNodeRepository {
+object GeoNodeRepository extends SpatialSQLSupport {
 
   val n = GeoNode.syntax("n")
 
@@ -74,7 +75,13 @@ object GeoNodeRepository {
 
     val q = sql"""insert into geo_3_node (point, lat, lng) values ($point, ${sqlPoint.geoNode.point.latitude}, ${sqlPoint.geoNode.point.longitude})"""
 
-    val id = q.updateAndReturnGeneratedKey().apply()
+//    val id = q.updateAndReturnGeneratedKey().apply()
+
+    val id = withSQL {
+
+      insert.into(GeoNode).namedValues(
+        GeoNode.column.point -> positionToSQL(Coordinate(geoNode.point.latitude, geoNode.point.longitude)))
+    }
 
 //    val id = sql"""insert into geo_3_node (point, lat, lng) values (PointFromText(${sqlPoint.sql}), ${geoNode.point.radLatitude}, ${geoNode.point.radLongitude})"""
 //      //    val id = withSQL {
@@ -87,7 +94,7 @@ object GeoNodeRepository {
 //      //      )
 //
 //      //    }
-//      .updateAndReturnGeneratedKey().apply()
+      .updateAndReturnGeneratedKey().apply()
 
     geoNode.copy(id = Some(id))
   }

@@ -66,7 +66,7 @@ class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
         edge ← otpVertex.outgoingStreetEdges
       } {
 
-        def sameEdge(e: OsmStreetEdge): Boolean = e.osmVertexStart.id == edge.startOsmNodeId && e.osmVertexEnd.id == edge.endOsmNodeId
+        def sameEdge(e: OsmStreetEdge): Boolean = e.vertexStartId == edge.startOsmNodeId && e.vertexEndId == edge.endOsmNodeId
 
         if (!vertex.edges.exists(sameEdge)) {
 

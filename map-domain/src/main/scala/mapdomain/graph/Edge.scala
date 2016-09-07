@@ -1,8 +1,8 @@
 package mapdomain.graph
 
 trait Edge {
-  val vertexStart: Long
-  val vertexEnd: Long
+  val vertexStartId: Long
+  val vertexEndId: Long
   val distance: Double
   val directed: Boolean = true
 
@@ -14,22 +14,22 @@ trait Edge {
    * @return A Boolean indicating are equal or not.
    */
   def equalDirection(to: Edge): Boolean =
-    (vertexStart == to.vertexStart && vertexEnd == to.vertexEnd) ||
-      (vertexStart == to.vertexEnd && vertexEnd == to.vertexStart)
+    (vertexStartId == to.vertexStartId && vertexEndId == to.vertexEndId) ||
+      (vertexStartId == to.vertexEndId && vertexEndId == to.vertexStartId)
 }
 
-case class GraphEdge(vertexStart: Long, vertexEnd: Long, distance: Double = 10, override val directed: Boolean = true) extends Edge
+case class GraphEdge(vertexStartId: Long, vertexEndId: Long, distance: Double = 10, override val directed: Boolean = true) extends Edge
 
-class GeoEdge(override val vertexStart: Long, override val vertexEnd: Long, override val distance: Double, override val directed: Boolean = true) extends Edge {
-  override def toString: String = s"GeoEdge(vertexStart: $vertexStart, vertexEnd: $vertexEnd, distance: $distance, directed: $directed)"
+class GeoEdge(override val vertexStartId: Long, override val vertexEndId: Long, override val distance: Double, override val directed: Boolean = true) extends Edge {
+  override def toString: String = s"GeoEdge(vertexStartId: $vertexStartId, vertexEndId: $vertexEndId, distance: $distance, directed: $directed)"
 
   // To more idiomatic code
-  def retrieveVertexStart[V <: GeoVertex](implicit graph: GraphContainer[V]): Option[V] = graph.findVertex(vertexStart)
-  def retrieveVertexEnd[V <: GeoVertex](implicit graph: GraphContainer[V]): Option[V] = graph.findVertex(vertexEnd)
+  def retrieveVertexStart[V <: GeoVertex](implicit graph: GraphContainer[V]): Option[V] = graph.findVertex(vertexStartId)
+  def retrieveVertexEnd[V <: GeoVertex](implicit graph: GraphContainer[V]): Option[V] = graph.findVertex(vertexEndId)
   def retrieveOppositeVertexFor[V <: GeoVertex](vertexId: Long)(implicit graph: GraphContainer[V]): Option[V] = {
-    assert(vertexStart == vertexId || vertexEnd == vertexId,
-      s"The supplied vertex $vertexId doesn't belong to this edge [vertexStart = $vertexStart, vertexEnd = $vertexEnd]")
-    val vertexToSearch: Long = if (vertexStart == vertexId) vertexEnd else vertexStart
+    assert(vertexStartId == vertexId || vertexEndId == vertexId,
+      s"The supplied vertex $vertexId doesn't belong to this edge [vertexStartId = $vertexStartId, vertexEndId = $vertexEndId]")
+    val vertexToSearch: Long = if (vertexStartId == vertexId) vertexEndId else vertexStartId
     graph.findVertex(vertexToSearch)
   }
 

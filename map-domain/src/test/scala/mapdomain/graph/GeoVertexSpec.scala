@@ -30,8 +30,8 @@ class GeoVertexSpec extends FlatSpec with Matchers {
     23L -> (List(9L, 13L), Coordinate(0, 5))))
 
   "GeoVertex" should "sort its edges by angle correctly" in {
-    GeoVertex.sortEdgesByAngle(geoGraphPrototype.findVertex(5).get).map(_.vertexEnd) shouldBe List[Long](11, 6)
-    GeoVertex.sortEdgesByAngle(geoGraphPrototype.findVertex(11).get).map(_.vertexEnd) shouldBe List[Long](12, 10, 5)
-    GeoVertex.sortEdgesByAngle(geoGraphPrototype.findVertex(15).get).map(_.vertexEnd) shouldBe List[Long](23, 16, 22, 19, 21, 18, 20, 17)
+    GeoVertex.sortEdgesByAngle(geoGraphPrototype.findVertex(5).get).map(_.vertexEndId) shouldBe List[Long](11, 6)
+    GeoVertex.sortEdgesByAngle(geoGraphPrototype.findVertex(11).get).map(_.vertexEndId) shouldBe List[Long](12, 10, 5)
+    GeoVertex.sortEdgesByAngle(geoGraphPrototype.findVertex(15).get).map(_.vertexEndId) shouldBe List[Long](23, 16, 22, 19, 21, 18, 20, 17)
   }
 }

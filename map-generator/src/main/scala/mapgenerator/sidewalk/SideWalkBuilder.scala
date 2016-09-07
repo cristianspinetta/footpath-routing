@@ -58,7 +58,7 @@ object SideWalkBuilder extends LazyLoggerSupport {
 
   private def uniqueEdges[E <: PedestrianEdge](vertices: Set[SidewalkVertex], edges: List[E]): Map[SidewalkVertex, Set[E]] = {
     vertices.map(vertex ⇒ {
-      val filteredEdges: Set[E] = edges.filter(edge ⇒ edge.vertexStart == vertex.id || edge.vertexEnd == vertex.id).toSet
+      val filteredEdges: Set[E] = edges.filter(edge ⇒ edge.vertexStartId == vertex.id || edge.vertexEndId == vertex.id).toSet
       vertex -> filteredEdges
     }).toMap
   }

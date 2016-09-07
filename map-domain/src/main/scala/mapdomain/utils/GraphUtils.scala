@@ -9,7 +9,7 @@ trait GraphUtils {
 
   def readableEdges(edges: List[Edge]): String = edgesToIds(edges) mkString " -> "
 
-  def edgesToIds(edges: List[Edge]): List[Long] = edges.headOption.map(_.vertexStart).toList ::: edges.map(_.vertexEnd)
+  def edgesToIds(edges: List[Edge]): List[Long] = edges.headOption.map(_.vertexStartId).toList ::: edges.map(_.vertexEndId)
 
   def createGridGraphGraph(rows: Int, columns: Int, offset: Int = 0): GraphContainer[GraphVertex] = {
     val vertexCreator = (id: Int, row: Int, column: Int, neighbours: Iterable[NeighbourPartialCreation]) ⇒

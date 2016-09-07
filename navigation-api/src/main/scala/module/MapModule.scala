@@ -18,14 +18,19 @@ trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
       case StreetEdgeType ⇒
         val streets: List[OsmStreetEdge] = graphProvider.streets
         val nearestStreets: List[OsmStreetEdge] = GeoSearch.findNearestByRadius(startPosition,
-          radius, streets, (street: OsmStreetEdge) ⇒ Seq(street.osmVertexStart.coordinate, street.osmVertexEnd.coordinate))
-        nearestStreets.map(street ⇒ Edge(street.osmVertexStart.coordinate, street.osmVertexEnd.coordinate))
+          radius, streets,
+          (street: OsmStreetEdge) ⇒
+            Seq(graphProvider.graph.findVertex(street.vertexStartId).get.coordinate,
+              graphProvider.graph.findVertex(street.vertexEndId).get.coordinate))
+        nearestStreets.map(street ⇒
+          Edge(graphProvider.graph.findVertex(street.vertexStartId).get.coordinate,
+            graphProvider.graph.findVertex(street.vertexEndId).get.coordinate))
       case SidewalkEdgeType ⇒
         implicit val graph: GraphContainer[SidewalkVertex] = graphProvider.sidewalkGraphContainer
         val pedestrianEdges: List[PedestrianEdge] = graphProvider.sidewalks ++: graphProvider.streetCrossingEdges
         val nearestEdges: List[PedestrianEdge] = GeoSearch.findNearestByRadius(startPosition, radius, pedestrianEdges,
           (edge: PedestrianEdge) ⇒
-            Seq(graph.findVertex(edge.vertexStart).get.coordinate, graph.findVertex(edge.vertexEnd).get.coordinate))
+            Seq(graph.findVertex(edge.vertexStartId).get.coordinate, graph.findVertex(edge.vertexEndId).get.coordinate))
         nearestEdges.map(edge ⇒ Edge(edge.from.get.coordinate, edge.to.get.coordinate))(collection.breakOut)
       case WayEdgeType ⇒
         implicit val graph: GraphContainer[OsmVertex] = graphProvider.graph

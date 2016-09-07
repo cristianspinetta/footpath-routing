@@ -6,13 +6,13 @@ import mapdomain.math.Line
 import mapdomain.sidewalk.SidewalkEdge.Side
 import mapdomain.utils.GraphUtils
 
-class PedestrianEdge(override val vertexStart: Long, override val vertexEnd: Long, key: String, override val distance: Double = 1) extends GeoEdge(vertexStart, vertexEnd, distance) {
-  def from(implicit graphContainer: GraphContainer[SidewalkVertex]): Option[SidewalkVertex] = graphContainer.findVertex(vertexStart)
-  def to(implicit graphContainer: GraphContainer[SidewalkVertex]): Option[SidewalkVertex] = graphContainer.findVertex(vertexEnd)
+class PedestrianEdge(override val vertexStartId: Long, override val vertexEndId: Long, key: String, override val distance: Double = 1) extends GeoEdge(vertexStartId, vertexEndId, distance) {
+  def from(implicit graphContainer: GraphContainer[SidewalkVertex]): Option[SidewalkVertex] = graphContainer.findVertex(vertexStartId)
+  def to(implicit graphContainer: GraphContainer[SidewalkVertex]): Option[SidewalkVertex] = graphContainer.findVertex(vertexEndId)
 }
 
-case class SidewalkEdge(override val vertexStart: Long, override val vertexEnd: Long, key: String,
-  streetEdgeBelongTo: GeoEdge, side: Side) extends PedestrianEdge(vertexStart, vertexEnd, key)
+case class SidewalkEdge(override val vertexStartId: Long, override val vertexEndId: Long, key: String,
+  streetEdgeBelongTo: GeoEdge, side: Side) extends PedestrianEdge(vertexStartId, vertexEndId, key)
 
 object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport {
 
@@ -22,8 +22,8 @@ object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport {
   }, (exc: Throwable) ⇒ logger.error(s"Failed trying to calculate the side of a sidewalk from an edge.", exc))
 
   def generateKey[E <: GeoEdge](edgeBelongTo: E, side: Side): String = {
-    val vertexStartId: Long = edgeBelongTo.vertexStart
-    val vertexEndId: Long = edgeBelongTo.vertexEnd
+    val vertexStartId: Long = edgeBelongTo.vertexStartId
+    val vertexEndId: Long = edgeBelongTo.vertexEndId
     val idPart = if (vertexStartId > vertexEndId) s"$vertexEndId-$vertexStartId" else s"$vertexStartId-$vertexEndId"
     s"$idPart-$side"
   }
@@ -33,14 +33,14 @@ object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport {
   case object SouthSide extends Side
 }
 
-case class StreetCrossingEdge(override val vertexStart: Long, override val vertexEnd: Long, key: String) extends PedestrianEdge(vertexStart, vertexEnd, key)
+case class StreetCrossingEdge(override val vertexStartId: Long, override val vertexEndId: Long, key: String) extends PedestrianEdge(vertexStartId, vertexEndId, key)
 
 case class SidewalkVertex(override val id: Long, override val coordinate: Coordinate, sidewalkEdges: List[SidewalkEdge],
     streetCrossingEdges: List[StreetCrossingEdge], streetVertexBelongTo: GeoVertex) extends GeoVertex(id, sidewalkEdges ++ streetCrossingEdges, coordinate) {
 
-  lazy val neighbourIds: List[Long] = edges.map(edge ⇒ if (edge.vertexStart == id) edge.vertexEnd else edge.vertexStart)
+  lazy val neighbourIds: List[Long] = edges.map(edge ⇒ if (edge.vertexStartId == id) edge.vertexEndId else edge.vertexStartId)
 
-  override def getEdgesFor(vertexId: Long): Option[Edge] = edges.find(edge ⇒ edge.vertexEnd == vertexId || edge.vertexStart == vertexId)
+  override def getEdgesFor(vertexId: Long): Option[Edge] = edges.find(edge ⇒ edge.vertexEndId == vertexId || edge.vertexStartId == vertexId)
 
   override def neighbours[V <: Vertex](graph: GraphContainer[V]): List[V] = neighbourIds.flatMap(id ⇒ graph.findVertex(id) toList)
 }

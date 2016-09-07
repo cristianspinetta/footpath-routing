@@ -1,6 +1,6 @@
 package mapdomain.publictransport
 
-import mapdomain.graph.{ Coordinate, CoordinateRepository }
+import mapdomain.graph.Coordinate
 
 case class TransportationInfo(id: Int, lineNro: Int)
 

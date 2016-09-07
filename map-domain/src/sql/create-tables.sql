@@ -1,18 +1,9 @@
-package mapdomain.repository
-
-import scalikejdbc._
-
-case class DBInitializer() {
-
-  def start() = DB autoCommit { implicit s ⇒
-    //DROP ALL OBJECTS;
-    sql"""
+use `EASY_TRAVEL`;
 
 CREATE TABLE IF NOT EXISTS `OsmVertex` (
                 `id` bigint(20) NOT NULL,
                 `coordinate` Point NOT NULL,
-                PRIMARY KEY (`id`),
-                SPATIAL INDEX(coordinate)
+                PRIMARY KEY (`id`)
                ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `OsmStreetEdge` (
@@ -69,8 +60,3 @@ CREATE TABLE IF NOT EXISTS `TravelInfo` (
        ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 ALTER TABLE `Stop` ADD CONSTRAINT fk_travelInfo_id FOREIGN KEY (travelInfoId) REFERENCES `TravelInfo` (`id`);
-
-   """.execute.apply()
-  }
-
-}

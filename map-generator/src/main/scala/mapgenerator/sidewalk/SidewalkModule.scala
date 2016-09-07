@@ -34,8 +34,8 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
     // FIXME a temporary workaround in order to get edges with distinct source and destination
     val distinctEdges: List[GeoEdge] = sortedEdges.foldLeft(List.empty[GeoEdge]) {
       case (list, edge) ⇒
-        if (list.exists(e ⇒ (e.vertexStart == edge.vertexStart && e.vertexEnd == edge.vertexEnd) ||
-          (e.vertexStart == edge.vertexEnd && e.vertexStart == edge.vertexEnd)))
+        if (list.exists(e ⇒ (e.vertexStartId == edge.vertexStartId && e.vertexEndId == edge.vertexEndId) ||
+          (e.vertexStartId == edge.vertexEndId && e.vertexStartId == edge.vertexEndId)))
           list
         else
           list :+ edge
@@ -121,7 +121,7 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
         gvector.invert
     }
 
-    // get vector that represent the given edge with the vertexStart as its source
+    // get vector that represent the given edge with the vertexStartId as its source
     val edgeVector = createRightVector(edge)
 
     // get parallel lines from edges

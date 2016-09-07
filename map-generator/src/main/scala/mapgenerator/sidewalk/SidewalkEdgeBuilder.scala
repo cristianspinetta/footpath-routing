@@ -63,6 +63,6 @@ case class SidewalkEdgeBuilder(key: String, from: SidewalkVertexBuilder, to: Opt
   }
 
   def readable: String = s"SidewalkEdgeBuilder(key = $key, from = ${this.from.readable}, to = ${to.map(_.readable)}, " +
-    s"street edge belong to = (start = ${streetEdgeBelongTo.vertexStart}, end = ${streetEdgeBelongTo.vertexEnd}), " +
+    s"street edge belong to = (start = ${streetEdgeBelongTo.vertexStartId}, end = ${streetEdgeBelongTo.vertexEndId}), " +
     s"segment = -, side: $side)"
 }
