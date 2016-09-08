@@ -30,14 +30,14 @@ trait StopRepository extends SpatialSQLSupport {
 
   val (ns, ps, p, ti) = (Stop.syntax("ns"), Stop.syntax("ps"), PathRepository.p, TravelInfoRepository.ti)
 
-  def stop(s: SyntaxProvider[Stop])(rs: WrappedResultSet): Stop = stop(s.resultName)(rs)
+  def stop(s: SyntaxProvider[Stop])(rs: WrappedResultSet): Stop = stop(s.resultName, s.tableAliasName)(rs)
 
-  private def stop(s: ResultName[Stop])(implicit rs: WrappedResultSet): Stop = {
+  private def stop(s: ResultName[Stop], tableAlias: String)(implicit rs: WrappedResultSet): Stop = {
     new Stop(
       id = Some(rs.long(s.id)),
       cellNumber = rs.int(s.cellNumber),
       isAccessible = rs.boolean(s.isAccessible),
-      coordinate = Coordinate(rs.double("lat"), rs.double("lng")),
+      coordinate = Coordinate(rs.double(s"${tableAlias}_lat"), rs.double(s"${tableAlias}_lng")),
       nextStopId = rs.get(s.nextStopId),
       previousStopId = rs.get(s.previousStopId),
       pathId = rs.get(s.pathId),
@@ -46,7 +46,6 @@ trait StopRepository extends SpatialSQLSupport {
 
   private def stop(s: SyntaxProvider[Stop], ns: SyntaxProvider[Stop], ps: SyntaxProvider[Stop], p: SyntaxProvider[Path], ti: SyntaxProvider[TravelInfo])(rs: WrappedResultSet): Stop = {
     stop(s)(rs)
-      .copy(coordinate = Coordinate(rs.double("lat"), rs.double("lng")))
       .copy(nextStop = Some(stop(ns)(rs)))
       .copy(previousStop = Some(stop(ps)(rs)))
       .copy(path = Some(PathRepository.path(p)(rs)))
@@ -74,7 +73,9 @@ trait StopRepository extends SpatialSQLSupport {
   def find(id: Long)(implicit session: DBSession = Stop.autoSession): Option[Stop] = {
     withSQL {
       select.all(s, ns, ps, p, ti)
-        .append(sqls", x(${s.column("coordinate")}) lng, y(${s.column("coordinate")}) lat")
+        .append(selectLatitudeAndLongitude(s))
+        .append(selectLatitudeAndLongitude(ns))
+        .append(selectLatitudeAndLongitude(ps))
         .from(Stop as s)
         .leftJoin(Stop as ns).on(s.nextStopId, ns.id)
         .leftJoin(Stop as ps).on(s.previousStopId, ps.id)

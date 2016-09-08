@@ -1,6 +1,7 @@
 package mapdomain.publictransport
 
 import scalikejdbc._
+import sql.SpatialSQLSupport
 
 case class TravelInfo(
   id: Option[Long] = None,
@@ -18,7 +19,7 @@ object TravelInfo extends SQLSyntaxSupport[TravelInfo] {
 
 }
 
-trait TravelInfoRepository {
+trait TravelInfoRepository extends SpatialSQLSupport {
 
   val ti = TravelInfo.syntax("ti")
 
@@ -50,7 +51,11 @@ trait TravelInfoRepository {
   }
 
   def find(id: Long)(implicit session: DBSession = TravelInfo.autoSession): Option[TravelInfo] = withSQL {
-    select.from(TravelInfo as ti)
+    select
+      .all(ti, fs, ls)
+      .append(selectLatitudeAndLongitude(fs))
+      .append(selectLatitudeAndLongitude(ls))
+      .from(TravelInfo as ti)
       .leftJoin(Stop as fs).on(ti.firstStopId, fs.id)
       .leftJoin(Stop as ls).on(ti.lastStopId, ls.id)
       .where.eq(ti.id, id)
