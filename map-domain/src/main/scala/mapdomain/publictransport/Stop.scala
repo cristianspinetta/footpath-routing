@@ -73,7 +73,8 @@ trait StopRepository extends SpatialSQLSupport {
 
   def find(id: Long)(implicit session: DBSession = Stop.autoSession): Option[Stop] = {
     withSQL {
-      select().append(sqls"x(${s.column("coordinate")}) lng, y(${s.column("coordinate")}) lat")
+      select.all(s, ns, ps, p, ti)
+        .append(sqls", x(${s.column("coordinate")}) lng, y(${s.column("coordinate")}) lat")
         .from(Stop as s)
         .leftJoin(Stop as ns).on(s.nextStopId, ns.id)
         .leftJoin(Stop as ps).on(s.previousStopId, ps.id)
