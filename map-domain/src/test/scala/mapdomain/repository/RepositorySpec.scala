@@ -141,7 +141,15 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
 
   it should "create sidewalks correctly" in {
     val vertex1 = OsmVertexRepository.create(OsmVertex(5, Nil, Coordinate(12, 11)))
-    val sidewalk = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1, Some(vertex1.id)))
+    var sidewalk = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1, Some(vertex1.id)))
+    sidewalk = SidewalkVertexRepository.find(sidewalk.id).get
+    sidewalk.id shouldBe 4
+    sidewalk.coordinate.latitude shouldBe 10
+    sidewalk.coordinate.longitude shouldBe 9
+    sidewalk.streetVertexBelongToId shouldBe Some(5)
+    sidewalk.streetVertexBelongTo.id shouldBe 5
+    sidewalk.streetVertexBelongTo.coordinate.latitude shouldBe 12
+    sidewalk.streetVertexBelongTo.coordinate.longitude shouldBe 11
   }
 
 }

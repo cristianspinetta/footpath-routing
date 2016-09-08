@@ -33,19 +33,8 @@ trait OsmVertexRepository extends SpatialSQLSupport {
 
   val v = OsmVertex.syntax("v")
 
-  private val e = OsmStreetEdgeRepository.e
-
-  private def osmVertex(v: SyntaxProvider[OsmVertex])(rs: WrappedResultSet): OsmVertex = osmVertex(v.resultName)(rs)
-
-  private def osmVertex(vertex: ResultName[OsmVertex])(implicit rs: WrappedResultSet): OsmVertex = {
-    OsmVertex(
-      rs.long(vertex.id),
-      Nil,
-      null)
-  }
-
-  private def osmVertexOnly(v: SyntaxProvider[OsmVertex])(rs: WrappedResultSet): OsmVertex = {
-    OsmVertex(rs.long(v.resultName.id), Nil, Coordinate(rs.double("lat"), rs.double("lng")))
+  def osmVertexOnly(v: SyntaxProvider[OsmVertex])(rs: WrappedResultSet): OsmVertex = {
+    OsmVertex(rs.long(v.resultName.id), Nil, coordinateFromResultSet(rs, v.tableAliasName))
   }
 
   def create(osmVertex: OsmVertex)(implicit session: DBSession = OsmVertex.autoSession): OsmVertex = {
@@ -58,19 +47,13 @@ trait OsmVertexRepository extends SpatialSQLSupport {
     osmVertex
   }
 
-  def find(id: Long)(implicit session: DBSession = OsmVertex.autoSession): Option[OsmVertex] = DB readOnly { implicit session ⇒
-    //    select
-    //      .from(OsmVertex as v)
-    //      .where.eq(v.id, id)
-    sql"""
-       select
-        ${v.resultAll}, x(coordinate) lng, y(coordinate) lat
-       from
-        ${OsmVertex.as(v)}
-       where
-        ${v.id} = ${id}
-    """.map(osmVertexOnly(v)(_)).single.apply()
-  }
+  def find(id: Long)(implicit session: DBSession = OsmVertex.autoSession): Option[OsmVertex] = withSQL {
+    select
+        .all(v)
+        .append(selectLatitudeAndLongitude(v))
+        .from(OsmVertex as v)
+        .where.eq(v.id, id)
+  }.map(osmVertexOnly(v)).single().apply()
 
   def deleteAll(implicit session: DBSession = OsmVertex.autoSession): Unit = withSQL {
     deleteFrom(OsmVertex)

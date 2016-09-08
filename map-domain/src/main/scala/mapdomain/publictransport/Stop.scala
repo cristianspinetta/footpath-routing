@@ -37,7 +37,7 @@ trait StopRepository extends SpatialSQLSupport {
       id = Some(rs.long(s.id)),
       cellNumber = rs.int(s.cellNumber),
       isAccessible = rs.boolean(s.isAccessible),
-      coordinate = Coordinate(rs.double(s"${tableAlias}_lat"), rs.double(s"${tableAlias}_lng")),
+      coordinate = coordinateFromResultSet(rs, tableAlias),
       nextStopId = rs.get(s.nextStopId),
       previousStopId = rs.get(s.previousStopId),
       pathId = rs.get(s.pathId),

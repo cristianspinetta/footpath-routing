@@ -4,6 +4,8 @@ import base.{FailureReporterSupport, LazyLoggerSupport}
 import mapdomain.graph._
 import mapdomain.math.Line
 import mapdomain.sidewalk.SidewalkEdge.Side
+import mapdomain.street.OsmVertexRepository
+import mapdomain.street.OsmVertex
 import mapdomain.utils.GraphUtils
 import scalikejdbc._
 import sql.SpatialSQLSupport
@@ -59,6 +61,16 @@ object SidewalkVertex extends SQLSyntaxSupport[SidewalkVertex] {
 trait SidewalkVertexRepository extends SpatialSQLSupport {
 
   val s = SidewalkVertex.syntax("s")
+  private val v = OsmVertexRepository.v
+
+  def sidewalkVertex(s: SyntaxProvider[SidewalkVertex])(rs: WrappedResultSet): SidewalkVertex = sidewalkVertex(s.resultName, s.tableAliasName)(rs)
+
+  private def sidewalkVertex(v: ResultName[SidewalkVertex], tableAlias: String)(rs: WrappedResultSet): SidewalkVertex =
+    SidewalkVertex(rs.long(v.id), coordinateFromResultSet(rs, tableAlias), Nil, Nil, null, Some(rs.long(v.streetVertexBelongToId)))
+
+  private def sidewalkVertex(s: SyntaxProvider[SidewalkVertex], v: SyntaxProvider[OsmVertex])(rs: WrappedResultSet): SidewalkVertex = {
+    sidewalkVertex(s)(rs).copy(streetVertexBelongTo = OsmVertexRepository.osmVertexOnly(v)(rs))
+  }
 
   def create(sidewalkVertex: SidewalkVertex)(implicit session: DBSession = SidewalkVertex.autoSession): SidewalkVertex = {
     withSQL {
@@ -71,6 +83,17 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
 
     sidewalkVertex
   }
+
+  def find(id: Long)(implicit session: DBSession = SidewalkVertex.autoSession): Option[SidewalkVertex] = withSQL {
+    select
+      .all(s, v)
+      .append(selectLatitudeAndLongitude(s))
+      .append(selectLatitudeAndLongitude(v))
+      .from(SidewalkVertex as s)
+      .leftJoin(OsmVertex as v)
+      .on(s.streetVertexBelongToId, v.id)
+      .where.eq(s.id, id)
+  }.map(sidewalkVertex(s, v)).single().apply()
 
   def deleteAll(implicit session: DBSession = SidewalkVertex.autoSession): Unit = withSQL {
     deleteFrom(SidewalkVertex)
