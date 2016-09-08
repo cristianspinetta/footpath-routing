@@ -45,7 +45,7 @@ trait OsmVertexRepository extends SpatialSQLSupport {
   }
 
   private def osmVertexOnly(v: SyntaxProvider[OsmVertex])(rs: WrappedResultSet): OsmVertex = {
-    OsmVertex(rs.long(v.id), Nil, Coordinate(rs.double("lat"), rs.double("lng")))
+    OsmVertex(rs.long(v.resultName.id), Nil, Coordinate(rs.double("lat"), rs.double("lng")))
   }
 
   def create(osmVertex: OsmVertex)(implicit session: DBSession = OsmVertex.autoSession): OsmVertex = {
