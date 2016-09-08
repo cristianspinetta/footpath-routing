@@ -1,10 +1,12 @@
 package mapdomain.sidewalk
 
-import base.{ FailureReporterSupport, LazyLoggerSupport }
+import base.{FailureReporterSupport, LazyLoggerSupport}
 import mapdomain.graph._
 import mapdomain.math.Line
 import mapdomain.sidewalk.SidewalkEdge.Side
 import mapdomain.utils.GraphUtils
+import scalikejdbc._
+import sql.SpatialSQLSupport
 
 class PedestrianEdge(override val vertexStartId: Long, override val vertexEndId: Long, key: String, override val distance: Double = 1) extends GeoEdge(vertexStartId, vertexEndId, distance) {
   def from(implicit graphContainer: GraphContainer[SidewalkVertex]): Option[SidewalkVertex] = graphContainer.findVertex(vertexStartId)
@@ -36,7 +38,7 @@ object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport {
 case class StreetCrossingEdge(override val vertexStartId: Long, override val vertexEndId: Long, key: String) extends PedestrianEdge(vertexStartId, vertexEndId, key)
 
 case class SidewalkVertex(override val id: Long, override val coordinate: Coordinate, sidewalkEdges: List[SidewalkEdge],
-    streetCrossingEdges: List[StreetCrossingEdge], streetVertexBelongTo: GeoVertex) extends GeoVertex(id, sidewalkEdges ++ streetCrossingEdges, coordinate) {
+    streetCrossingEdges: List[StreetCrossingEdge], streetVertexBelongTo: GeoVertex, streetVertexBelongToId: Option[Long] = None) extends GeoVertex(id, sidewalkEdges ++ streetCrossingEdges, coordinate) {
 
   lazy val neighbourIds: List[Long] = edges.map(edge ⇒ if (edge.vertexStartId == id) edge.vertexEndId else edge.vertexStartId)
 
@@ -44,6 +46,39 @@ case class SidewalkVertex(override val id: Long, override val coordinate: Coordi
 
   override def neighbours[V <: Vertex](graph: GraphContainer[V]): List[V] = neighbourIds.flatMap(id ⇒ graph.findVertex(id) toList)
 }
+
+object SidewalkVertex extends SQLSyntaxSupport[SidewalkVertex] {
+
+  override val tableName = "SidewalkVertex"
+
+  override val useSnakeCaseColumnName = false
+
+}
+
+
+trait SidewalkVertexRepository extends SpatialSQLSupport {
+
+  val s = SidewalkVertex.syntax("s")
+
+  def create(sidewalkVertex: SidewalkVertex)(implicit session: DBSession = SidewalkVertex.autoSession): SidewalkVertex = {
+    withSQL {
+      insert.into(SidewalkVertex).namedValues(
+        SidewalkVertex.column.id -> sidewalkVertex.id,
+        SidewalkVertex.column.coordinate -> positionToSQL(sidewalkVertex.coordinate),
+        SidewalkVertex.column.streetVertexBelongToId -> sidewalkVertex.streetVertexBelongToId
+      )
+    }.update().apply()
+
+    sidewalkVertex
+  }
+
+  def deleteAll(implicit session: DBSession = SidewalkVertex.autoSession): Unit = withSQL {
+    deleteFrom(SidewalkVertex)
+  }.update.apply()
+
+}
+
+object SidewalkVertexRepository extends SidewalkVertexRepository
 
 case class SidewalkGraphContainer(override val vertices: List[SidewalkVertex]) extends GraphContainer(vertices) {
 

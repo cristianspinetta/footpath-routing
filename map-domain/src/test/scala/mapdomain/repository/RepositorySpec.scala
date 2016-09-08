@@ -1,10 +1,10 @@
 package mapdomain.repository
 
 import mapdomain.graph.Coordinate
-import mapdomain.publictransport.{ PathRepository, StopRepository, TravelInfoRepository }
-import mapdomain.sidewalk.{ Ramp, RampRepository }
-import mapdomain.street.{ OsmStreetEdge, OsmStreetEdgeRepository, OsmVertex, OsmVertexRepository }
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
+import mapdomain.publictransport.{PathRepository, StopRepository, TravelInfoRepository}
+import mapdomain.sidewalk.{Ramp, RampRepository, SidewalkVertex, SidewalkVertexRepository}
+import mapdomain.street.{OsmStreetEdge, OsmStreetEdgeRepository, OsmVertex, OsmVertexRepository}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
 import scalikejdbc.config.DBs
 
 class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -21,6 +21,7 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     RampRepository.deleteAll
     PathRepository.deleteAll
     TravelInfoRepository.deleteAll
+    SidewalkVertexRepository.deleteAll
   }
 
   override def afterAll(): Unit = {
@@ -136,6 +137,11 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     travelInfo.lastStop.get.cellNumber shouldBe 6
 
     TravelInfoRepository.deleteAll
+  }
+
+  it should "create sidewalks correctly" in {
+    val vertex1 = OsmVertexRepository.create(OsmVertex(5, Nil, Coordinate(12, 11)))
+    val sidewalk = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1, Some(vertex1.id)))
   }
 
 }
