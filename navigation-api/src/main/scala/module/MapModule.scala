@@ -20,24 +20,24 @@ trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
         val nearestStreets: List[OsmStreetEdge] = GeoSearch.findNearestByRadius(startPosition,
           radius, streets,
           (street: OsmStreetEdge) ⇒
-            Seq(graphProvider.graph.findVertex(street.vertexStartId).get.coordinate,
-              graphProvider.graph.findVertex(street.vertexEndId).get.coordinate))
+            Seq(graphProvider.streetGraph.findVertex(street.vertexStartId).get.coordinate,
+              graphProvider.streetGraph.findVertex(street.vertexEndId).get.coordinate))
         nearestStreets.map(street ⇒
-          Edge(graphProvider.graph.findVertex(street.vertexStartId).get.coordinate,
-            graphProvider.graph.findVertex(street.vertexEndId).get.coordinate))
+          Edge(graphProvider.streetGraph.findVertex(street.vertexStartId).get.coordinate,
+            graphProvider.streetGraph.findVertex(street.vertexEndId).get.coordinate))
       case SidewalkEdgeType ⇒
-        implicit val graph: GraphContainer[SidewalkVertex] = graphProvider.sidewalkGraphContainer
+        implicit val graph: GraphContainer[SidewalkVertex] = graphProvider.sidewalkGraph
         val pedestrianEdges: List[PedestrianEdge] = graphProvider.sidewalks ++: graphProvider.streetCrossingEdges
         val nearestEdges: List[PedestrianEdge] = GeoSearch.findNearestByRadius(startPosition, radius, pedestrianEdges,
           (edge: PedestrianEdge) ⇒
             Seq(graph.findVertex(edge.vertexStartId).get.coordinate, graph.findVertex(edge.vertexEndId).get.coordinate))
         nearestEdges.map(edge ⇒ Edge(edge.from.get.coordinate, edge.to.get.coordinate))(collection.breakOut)
       case WayEdgeType ⇒
-        implicit val graph: GraphContainer[OsmVertex] = graphProvider.graph
-        graphProvider.osmModule.streetWays.toList.flatMap(way ⇒ Edge.pointToEdge(Way.getPath(way)(graphProvider.graph)))
+        implicit val graph: GraphContainer[OsmVertex] = graphProvider.streetGraph
+        graphProvider.osmModule.streetWays.toList.flatMap(way ⇒ Edge.pointToEdge(Way.getPath(way)(graphProvider.streetGraph)))
       case WayAreaEdgeType ⇒
-        implicit val graph: GraphContainer[OsmVertex] = graphProvider.graph
-        graphProvider.osmModule.areaWays.toList.flatMap(way ⇒ Edge.pointToEdge(Way.getPath(way)(graphProvider.graph)))
+        implicit val graph: GraphContainer[OsmVertex] = graphProvider.streetGraph
+        graphProvider.osmModule.areaWays.toList.flatMap(way ⇒ Edge.pointToEdge(Way.getPath(way)(graphProvider.streetGraph)))
       case _ ⇒ Nil
     }
   }

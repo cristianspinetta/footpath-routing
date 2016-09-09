@@ -1,14 +1,15 @@
-package mapgenerator.source.osm
+package mapgenerator.street
 
 import mapdomain.graph.GraphContainer
 import mapdomain.street.{ OsmStreetEdge, OsmVertex }
+import mapgenerator.source.osm._
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
 import org.scalatest.{ FlatSpec, Matchers }
 
 import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
-class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
+class StreetGraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
   implicit val formats = DefaultFormats
 
@@ -17,8 +18,8 @@ class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
   //  val intersectionVertexCount: Int = 1076
 
   val osmModule: OSMModule = OSMModule(xmlReader.loadNodes, xmlReader.loadWays, xmlReader.loadRelations)
-  val graphModule: GraphModule = GraphModule(osmModule)
-  val graph: GraphContainer[OsmVertex] = graphModule.createGraph
+  val streetGraphModule: StreetGraphModule = StreetGraphModule(osmModule)
+  val graph: GraphContainer[OsmVertex] = streetGraphModule.createGraph
 
   val otpVertices: ListBuffer[OTPVertex] = ListBuffer(graphJsonParser.vertices: _*)
 

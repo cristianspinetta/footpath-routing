@@ -1,4 +1,4 @@
-package mapgenerator.source.osm
+package mapgenerator.source.features
 
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.Ramp

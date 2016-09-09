@@ -8,7 +8,9 @@ import mapdomain.graph.GraphContainer
 import mapdomain.sidewalk._
 import mapdomain.street.{ OsmStreetEdge, OsmVertex }
 import mapgenerator.sidewalk.SidewalkModule
+import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 import mapgenerator.source.osm._
+import mapgenerator.street.StreetGraphModule
 
 trait GraphSupport {
   val graphProvider = GraphProvider
@@ -25,22 +27,22 @@ object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
 
   lazy val osmModule: OSMModule = OSMModule(xmlParser)
 
-  private lazy val graphModule: GraphModule = GraphModule(osmModule)
+  private lazy val streetGraphModule: StreetGraphModule = StreetGraphModule(osmModule)
 
-  lazy val graph: GraphContainer[OsmVertex] = graphModule.createGraph.purge
+  lazy val streetGraph: GraphContainer[OsmVertex] = streetGraphModule.createGraph.purge
 
-  private lazy val sidewalkModule = SidewalkModule()(graph)
+  private lazy val sidewalkModule = SidewalkModule()(streetGraph)
 
   lazy val ramps: Vector[Ramp] = rampParser.loadRamps
 
   lazy val streets: List[OsmStreetEdge] = for {
-    vertex ← graph.vertices
+    vertex ← streetGraph.vertices
     edge ← vertex.edges
   } yield edge
 
-  lazy val sidewalkGraphContainer: SidewalkGraphContainer = sidewalkModule.createSideWalks(failureTolerance = true).purge
+  lazy val sidewalkGraph: SidewalkGraphContainer = sidewalkModule.createSideWalks(failureTolerance = true).purge
 
-  lazy val sidewalks = sidewalkGraphContainer.sidewalkEdges
-  lazy val streetCrossingEdges = sidewalkGraphContainer.streetCrossingEdges
+  lazy val sidewalks = sidewalkGraph.sidewalkEdges
+  lazy val streetCrossingEdges = sidewalkGraph.streetCrossingEdges
 
 }

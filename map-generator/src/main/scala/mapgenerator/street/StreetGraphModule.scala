@@ -1,24 +1,26 @@
-package mapgenerator.source.osm
+package mapgenerator.street
 
+import base.{ LazyLoggerSupport, MeterSupport }
 import enums.StreetTraversalPermission
 import mapdomain.graph.{ Coordinate, GraphContainer }
 import mapdomain.street._
+import mapgenerator.source.osm.OSMModule
 import mapgenerator.source.osm.model._
 
-import scala.collection.mutable
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
-case class GraphModule(osmModule: OSMModule) {
+case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport with MeterSupport {
 
   private val intersectionNodes: Set[Long] = getIntersections
-  private val createdOsmVertex = ListBuffer.empty[OsmVertex]
+  private val createdOsmVertex = ArrayBuffer.empty[OsmVertex]
 
-  private val multiLevelNodes: mutable.HashMap[Long, Map[OSMLevel, OsmVertex]] = new mutable.HashMap[Long, Map[OSMLevel, OsmVertex]]
+  private val multiLevelNodes = TrieMap[Long, Map[OSMLevel, OsmVertex]]()
 
-  def createGraph: GraphContainer[OsmVertex] = {
+  def createGraph: GraphContainer[OsmVertex] = withTimeLogging({
     for (way ← osmModule.streetWays) processStreetWay(way)
     GraphContainer(createdOsmVertex.toList)
-  }
+  }, (time: Long) ⇒ logger.info(s"Create Street Graph in $time ms."))
 
   private def processStreetWay(way: Way): Unit = {
     // TODO agregar properties utiles del way
