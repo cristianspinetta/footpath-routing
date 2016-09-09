@@ -13,7 +13,7 @@ case class TravelInfo(
 
 object TravelInfo extends SQLSyntaxSupport[TravelInfo] {
 
-  override val tableName = "TravelInfo"
+  override val tableName = "travel_info"
 
   override val useSnakeCaseColumnName = false
 

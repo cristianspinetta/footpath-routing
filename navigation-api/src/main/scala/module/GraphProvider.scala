@@ -6,7 +6,7 @@ import base.LazyLoggerSupport
 import conf.ApiEnvConfig
 import mapdomain.graph.GraphContainer
 import mapdomain.sidewalk._
-import mapdomain.street.{ OsmStreetEdge, OsmVertex }
+import mapdomain.street.{ StreetEdge, StreetVertex }
 import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 import mapgenerator.source.osm._
@@ -29,13 +29,13 @@ object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
 
   private lazy val streetGraphModule: StreetGraphModule = StreetGraphModule(osmModule)
 
-  lazy val streetGraph: GraphContainer[OsmVertex] = streetGraphModule.createGraph.purge
+  lazy val streetGraph: GraphContainer[StreetVertex] = streetGraphModule.createGraph.purge
 
   private lazy val sidewalkModule = SidewalkModule()(streetGraph)
 
   lazy val ramps: Vector[Ramp] = rampParser.loadRamps
 
-  lazy val streets: List[OsmStreetEdge] = for {
+  lazy val streets: List[StreetEdge] = for {
     vertex ← streetGraph.vertices
     edge ← vertex.edges
   } yield edge

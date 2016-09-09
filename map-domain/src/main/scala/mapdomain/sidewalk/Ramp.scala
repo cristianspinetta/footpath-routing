@@ -14,7 +14,7 @@ case class Ramp(
 
 object Ramp extends SQLSyntaxSupport[Ramp] {
 
-  override val tableName = "Ramp"
+  override val tableName = "ramp"
 
   override val columns = Seq("id", "street", "number", "address", "coordinate")
 

@@ -1,7 +1,7 @@
 package mapgenerator.source.osm.model
 
 import mapdomain.graph.{ Coordinate, GeoVertex, GraphContainer }
-import mapdomain.street.OsmVertex
+import mapdomain.street.StreetVertex
 import org.joda.time.DateTime
 
 case class Way(id: Long, visible: Boolean, version: Int, changeset: Long, timestamp: DateTime, user: String,
@@ -38,7 +38,7 @@ case class Way(id: Long, visible: Boolean, version: Int, changeset: Long, timest
 
 object Way {
 
-  def createOSMVertex(way: Way, node: OSMNode): OsmVertex = OsmVertex(node.id, Nil, Coordinate(node.lat, node.lon))
+  def createOSMVertex(way: Way, node: OSMNode): StreetVertex = StreetVertex(node.id, Nil, Coordinate(node.lat, node.lon))
 
   def getPath[V <: GeoVertex](way: Way)(implicit graph: GraphContainer[V]): List[Coordinate] = {
     for {

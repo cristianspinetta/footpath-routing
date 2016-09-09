@@ -20,6 +20,8 @@ case class Stop(
 
 object Stop extends SQLSyntaxSupport[Stop] {
 
+  override val tableName = "stop"
+
   override val useSnakeCaseColumnName = false
 
 }

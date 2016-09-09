@@ -3,7 +3,7 @@ package mapdomain.sidewalk
 import base.{ FailureReporterSupport, LazyLoggerSupport }
 import mapdomain.graph._
 import mapdomain.math.Line
-import mapdomain.street.{ OsmStreetEdge, OsmStreetEdgeRepository, OsmVertex, OsmVertexRepository }
+import mapdomain.street.{ StreetEdge, StreetEdgeRepository, StreetVertex, StreetVertexRepository }
 import mapdomain.utils.GraphUtils
 import scalikejdbc._
 import sql.SpatialSQLSupport
@@ -22,7 +22,7 @@ case class SidewalkEdge(override val vertexStartId: Long, override val vertexEnd
 
 object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport with SQLSyntaxSupport[SidewalkEdge] {
 
-  override val tableName = "SidewalkEdge"
+  override val tableName = "sidewalk_edge"
 
   override val useSnakeCaseColumnName = false
 
@@ -44,7 +44,7 @@ object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport with S
 
 trait SidewalkEdgeRepository {
 
-  val (se, sv, oe) = (SidewalkEdge.syntax("se"), SidewalkVertex.syntax("sv"), OsmStreetEdge.syntax("oe"))
+  val (se, sv, oe) = (SidewalkEdge.syntax("se"), SidewalkVertex.syntax("sv"), StreetEdge.syntax("oe"))
 
   def getSide(code: Int) = if (code == 0) NorthSide else SouthSide
 
@@ -55,8 +55,8 @@ trait SidewalkEdgeRepository {
 
   def sidewalkEdge(e: SyntaxProvider[SidewalkEdge])(rs: WrappedResultSet): SidewalkEdge = sidewalkEdge(e.resultName)(rs)
 
-  def sidewalkEdge(se: SyntaxProvider[SidewalkEdge], oe: SyntaxProvider[OsmStreetEdge])(rs: WrappedResultSet): SidewalkEdge =
-    sidewalkEdge(se.resultName)(rs).copy(streetEdgeBelongTo = OsmStreetEdgeRepository.osmStreetEdge(oe)(rs))
+  def sidewalkEdge(se: SyntaxProvider[SidewalkEdge], oe: SyntaxProvider[StreetEdge])(rs: WrappedResultSet): SidewalkEdge =
+    sidewalkEdge(se.resultName)(rs).copy(streetEdgeBelongTo = StreetEdgeRepository.streetEdge(oe)(rs))
 
   private def sidewalkEdge(e: ResultName[SidewalkEdge])(implicit rs: WrappedResultSet): SidewalkEdge = {
     SidewalkEdge(
@@ -86,7 +86,7 @@ trait SidewalkEdgeRepository {
   def find(id: Long)(implicit session: DBSession = SidewalkEdge.autoSession): SidewalkEdge = withSQL {
     select
       .from(SidewalkEdge as se)
-      .leftJoin(OsmStreetEdge as oe)
+      .leftJoin(StreetEdge as oe)
       .on(se.streetEdgeBelongToId, oe.id)
       .where.eq(se.id, id)
   }.map(sidewalkEdge(se, oe)).single().apply().get
@@ -116,7 +116,7 @@ case class StreetCrossingEdge(override val vertexStartId: Long, override val ver
 
 object StreetCrossingEdge extends SQLSyntaxSupport[StreetCrossingEdge] {
 
-  override val tableName = "StreetCrossingEdge"
+  override val tableName = "street_crossing_edge"
 
   override val useSnakeCaseColumnName = false
 
@@ -187,7 +187,7 @@ case class SidewalkVertex(override val id: Long, override val coordinate: Coordi
 
 object SidewalkVertex extends SQLSyntaxSupport[SidewalkVertex] {
 
-  override val tableName = "SidewalkVertex"
+  override val tableName = "sidewalk_vertex"
 
   override val useSnakeCaseColumnName = false
 
@@ -196,15 +196,15 @@ object SidewalkVertex extends SQLSyntaxSupport[SidewalkVertex] {
 trait SidewalkVertexRepository extends SpatialSQLSupport {
 
   val s = SidewalkVertex.syntax("s")
-  private val v = OsmVertexRepository.v
+  private val v = StreetVertexRepository.v
 
   def sidewalkVertex(s: SyntaxProvider[SidewalkVertex])(rs: WrappedResultSet): SidewalkVertex = sidewalkVertex(s.resultName, s.tableAliasName)(rs)
 
   private def sidewalkVertex(v: ResultName[SidewalkVertex], tableAlias: String)(rs: WrappedResultSet): SidewalkVertex =
     SidewalkVertex(rs.long(v.id), coordinateFromResultSet(rs, tableAlias), Nil, Nil, null, Some(rs.long(v.streetVertexBelongToId)))
 
-  private def sidewalkVertex(s: SyntaxProvider[SidewalkVertex], v: SyntaxProvider[OsmVertex])(rs: WrappedResultSet): SidewalkVertex = {
-    sidewalkVertex(s)(rs).copy(streetVertexBelongTo = OsmVertexRepository.osmVertexOnly(v)(rs))
+  private def sidewalkVertex(s: SyntaxProvider[SidewalkVertex], v: SyntaxProvider[StreetVertex])(rs: WrappedResultSet): SidewalkVertex = {
+    sidewalkVertex(s)(rs).copy(streetVertexBelongTo = StreetVertexRepository.streetVertexOnly(v)(rs))
   }
 
   def create(sidewalkVertex: SidewalkVertex)(implicit session: DBSession = SidewalkVertex.autoSession): SidewalkVertex = {
@@ -224,7 +224,7 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
       .append(selectLatitudeAndLongitude(s))
       .append(selectLatitudeAndLongitude(v))
       .from(SidewalkVertex as s)
-      .leftJoin(OsmVertex as v)
+      .leftJoin(StreetVertex as v)
       .on(s.streetVertexBelongToId, v.id)
       .where.eq(s.id, id)
   }.map(sidewalkVertex(s, v)).single().apply()
