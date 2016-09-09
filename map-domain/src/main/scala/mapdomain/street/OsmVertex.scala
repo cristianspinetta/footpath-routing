@@ -49,10 +49,10 @@ trait OsmVertexRepository extends SpatialSQLSupport {
 
   def find(id: Long)(implicit session: DBSession = OsmVertex.autoSession): Option[OsmVertex] = withSQL {
     select
-        .all(v)
-        .append(selectLatitudeAndLongitude(v))
-        .from(OsmVertex as v)
-        .where.eq(v.id, id)
+      .all(v)
+      .append(selectLatitudeAndLongitude(v))
+      .from(OsmVertex as v)
+      .where.eq(v.id, id)
   }.map(osmVertexOnly(v)).single().apply()
 
   def deleteAll(implicit session: DBSession = OsmVertex.autoSession): Unit = withSQL {

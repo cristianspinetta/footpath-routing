@@ -1,10 +1,10 @@
 package mapdomain.repository
 
 import mapdomain.graph.Coordinate
-import mapdomain.publictransport.{PathRepository, StopRepository, TravelInfoRepository}
-import mapdomain.sidewalk.{Ramp, RampRepository, SidewalkVertex, SidewalkVertexRepository}
-import mapdomain.street.{OsmStreetEdge, OsmStreetEdgeRepository, OsmVertex, OsmVertexRepository}
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
+import mapdomain.publictransport.{ PathRepository, StopRepository, TravelInfoRepository }
+import mapdomain.sidewalk._
+import mapdomain.street.{ OsmStreetEdge, OsmStreetEdgeRepository, OsmVertex, OsmVertexRepository }
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
 import scalikejdbc.config.DBs
 
 class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -21,6 +21,7 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     RampRepository.deleteAll
     PathRepository.deleteAll
     TravelInfoRepository.deleteAll
+    StreetCrossingEdgeRepository.deleteAll
     SidewalkVertexRepository.deleteAll
   }
 
@@ -40,8 +41,8 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
   }
 
   it should "create edges correctly" in {
-    val vertexStart = OsmVertexRepository.create(OsmVertex(5, Nil, Coordinate(12, 11)))
-    val vertexEnd = OsmVertexRepository.create(OsmVertex(6, Nil, Coordinate(14, 13)))
+    OsmVertexRepository.create(OsmVertex(5, Nil, Coordinate(12, 11)))
+    OsmVertexRepository.create(OsmVertex(6, Nil, Coordinate(14, 13)))
     val streetEdge = OsmStreetEdge(None, 5, 6, 10, 9)
     val edgeId = OsmStreetEdgeRepository.create(streetEdge)
 
@@ -150,6 +151,24 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     sidewalk.streetVertexBelongTo.id shouldBe 5
     sidewalk.streetVertexBelongTo.coordinate.latitude shouldBe 12
     sidewalk.streetVertexBelongTo.coordinate.longitude shouldBe 11
+  }
+
+  it should "create sidewalk crossing edges correctly" in {
+    val vertex1 = OsmVertexRepository.create(OsmVertex(5, Nil, Coordinate(12, 11)))
+    var sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1, Some(vertex1.id)))
+    var sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1, Some(vertex1.id)))
+
+    val streetCrossingEdge1Id = StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk1.id, sidewalk2.id, "key1"))
+    val streetCrossingEdge1 = StreetCrossingEdgeRepository.find(streetCrossingEdge1Id)
+    streetCrossingEdge1.id should not be None
+    streetCrossingEdge1.keyValue shouldBe "key1"
+    streetCrossingEdge1.vertexStartId shouldBe sidewalk1.id
+    streetCrossingEdge1.vertexEndId shouldBe sidewalk2.id
+
+    val crossingEdges = StreetCrossingEdgeRepository.findCrossingEdgesBySidewalkVertex(sidewalk1.id)
+    crossingEdges.size shouldBe 1
+    crossingEdges.head.id.get shouldBe streetCrossingEdge1Id
+    crossingEdges.head.keyValue shouldBe "key1"
   }
 
 }

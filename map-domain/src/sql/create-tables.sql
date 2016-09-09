@@ -68,3 +68,13 @@ CREATE TABLE IF NOT EXISTS `SidewalkVertex` (
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 ALTER TABLE `Stop` ADD CONSTRAINT fk_travelInfo_id FOREIGN KEY (travelInfoId) REFERENCES `TravelInfo` (`id`);
+
+CREATE TABLE IF NOT EXISTS `StreetCrossingEdge` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `vertexStartId` bigint(20) NOT NULL,
+  `vertexEndId` bigint(20) NOT NULL,
+  `keyValue` VARCHAR(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`vertexStartId`) REFERENCES `SidewalkVertex` (`id`),
+  FOREIGN KEY (`vertexEndId`) REFERENCES `SidewalkVertex` (`id`)
+) ENGINE=Aria DEFAULT CHARSET=utf8;
