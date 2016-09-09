@@ -3,9 +3,7 @@ package mapdomain.sidewalk
 import base.{ FailureReporterSupport, LazyLoggerSupport }
 import mapdomain.graph._
 import mapdomain.math.Line
-import mapdomain.sidewalk.SidewalkEdge.Side
-import mapdomain.street.OsmVertexRepository
-import mapdomain.street.OsmVertex
+import mapdomain.street.{ OsmStreetEdge, OsmStreetEdgeRepository, OsmVertex, OsmVertexRepository }
 import mapdomain.utils.GraphUtils
 import scalikejdbc._
 import sql.SpatialSQLSupport
@@ -15,10 +13,20 @@ class PedestrianEdge(override val vertexStartId: Long, override val vertexEndId:
   def to(implicit graphContainer: GraphContainer[SidewalkVertex]): Option[SidewalkVertex] = graphContainer.findVertex(vertexEndId)
 }
 
-case class SidewalkEdge(override val vertexStartId: Long, override val vertexEndId: Long, keyValue: String,
-  streetEdgeBelongTo: GeoEdge, side: Side, val id: Option[Long] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue)
+trait Side
+case object NorthSide extends Side
+case object SouthSide extends Side
 
-object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport {
+case class SidewalkEdge(override val vertexStartId: Long, override val vertexEndId: Long, keyValue: String,
+  streetEdgeBelongTo: GeoEdge, side: Side, val id: Option[Long] = None, val streetEdgeBelongToId: Option[Long] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue)
+
+object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport with SQLSyntaxSupport[SidewalkEdge] {
+
+  override val tableName = "SidewalkEdge"
+
+  override val useSnakeCaseColumnName = false
+
+  override val columns = Seq("id", "vertexStartId", "vertexEndId", "keyValue", "side", "streetEdgeBelongToId")
 
   def sideByEdges(streetLine: Line, sidewalkLine: Line): Side = withFailureLogging({
     if (Line.compareParallelsByAltitude(streetLine, sidewalkLine) == 1) SouthSide
@@ -32,10 +40,77 @@ object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport {
     s"$idPart-$side"
   }
 
-  trait Side
-  case object NorthSide extends Side
-  case object SouthSide extends Side
 }
+
+trait SidewalkEdgeRepository {
+
+  val (se, sv, oe) = (SidewalkEdge.syntax("se"), SidewalkVertex.syntax("sv"), OsmStreetEdge.syntax("oe"))
+
+  def getSide(code: Int) = if (code == 0) NorthSide else SouthSide
+
+  def getSideCode(side: Side) = side match {
+    case NorthSide ⇒ 0
+    case SouthSide ⇒ 1
+  }
+
+  def sidewalkEdge(e: SyntaxProvider[SidewalkEdge])(rs: WrappedResultSet): SidewalkEdge = sidewalkEdge(e.resultName)(rs)
+
+  def sidewalkEdge(se: SyntaxProvider[SidewalkEdge], oe: SyntaxProvider[OsmStreetEdge])(rs: WrappedResultSet): SidewalkEdge =
+    sidewalkEdge(se.resultName)(rs).copy(streetEdgeBelongTo = OsmStreetEdgeRepository.osmStreetEdge(oe)(rs))
+
+  private def sidewalkEdge(e: ResultName[SidewalkEdge])(implicit rs: WrappedResultSet): SidewalkEdge = {
+    SidewalkEdge(
+      vertexStartId = rs.long(e.vertexStartId),
+      vertexEndId = rs.long(e.vertexEndId),
+      keyValue = rs.string(e.keyValue),
+      id = rs.longOpt(e.id),
+      side = getSide(rs.int(e.side)),
+      streetEdgeBelongTo = null,
+      streetEdgeBelongToId = rs.longOpt(e.streetEdgeBelongToId))
+  }
+
+  def opt(e: SyntaxProvider[SidewalkEdge])(rs: WrappedResultSet): Option[SidewalkEdge] =
+    rs.longOpt(e.resultName.id).map(_ ⇒ sidewalkEdge(e)(rs))
+
+  def create(edge: SidewalkEdge)(implicit session: DBSession = SidewalkEdge.autoSession): Long = {
+    withSQL {
+      insert.into(SidewalkEdge).namedValues(
+        SidewalkEdge.column.vertexStartId -> edge.vertexStartId,
+        SidewalkEdge.column.vertexEndId -> edge.vertexEndId,
+        SidewalkEdge.column.keyValue -> edge.keyValue,
+        SidewalkEdge.column.side -> getSideCode(edge.side),
+        SidewalkEdge.column.streetEdgeBelongToId -> edge.streetEdgeBelongToId)
+    }.updateAndReturnGeneratedKey.apply()
+  }
+
+  def find(id: Long)(implicit session: DBSession = SidewalkEdge.autoSession): SidewalkEdge = withSQL {
+    select
+      .from(SidewalkEdge as se)
+      .leftJoin(OsmStreetEdge as oe)
+      .on(se.streetEdgeBelongToId, oe.id)
+      .where.eq(se.id, id)
+  }.map(sidewalkEdge(se, oe)).single().apply().get
+
+  def deleteAll(implicit session: DBSession = SidewalkEdge.autoSession): Unit = withSQL {
+    deleteFrom(SidewalkEdge)
+  }.update.apply()
+
+  def findSidewalkEdgesBySidewalkVertex(vertexId: Long)(implicit session: DBSession = SidewalkEdge.autoSession): List[SidewalkEdge] = DB readOnly { implicit session ⇒
+    sql"""
+       select
+        ${se.result.*}
+       from
+        ${SidewalkVertex.as(sv)}
+        left join ${SidewalkEdge.as(se)} on ${se.vertexStartId} = ${sv.id}
+       where
+        ${sv.id} = ${vertexId}
+    """.map(sidewalkEdge(se))
+      .list.apply()
+  }
+
+}
+
+object SidewalkEdgeRepository extends SidewalkEdgeRepository
 
 case class StreetCrossingEdge(override val vertexStartId: Long, override val vertexEndId: Long, keyValue: String, val id: Option[Long] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue)
 

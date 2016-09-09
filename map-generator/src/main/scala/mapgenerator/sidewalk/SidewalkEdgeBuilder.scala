@@ -3,8 +3,7 @@ package mapgenerator.sidewalk
 import base.LazyLoggerSupport
 import mapdomain.graph.{ GeoEdge, GeoVertex, GraphContainer }
 import mapdomain.math.GVector
-import mapdomain.sidewalk.SidewalkEdge.Side
-import mapdomain.sidewalk.{ SidewalkEdge, SidewalkVertex }
+import mapdomain.sidewalk.{ Side, SidewalkEdge, SidewalkVertex }
 
 import scala.collection.Map
 import scala.collection.concurrent.TrieMap
@@ -20,7 +19,7 @@ case class SidewalkEdgeBuilderManager[V <: GeoVertex](implicit graph: GraphConta
     from: SidewalkVertexBuilder,
     streetEdgeBelongTo: GeoEdge,
     segment: GVector,
-    side: SidewalkEdge.Side): SidewalkEdgeBuilder = {
+    side: Side): SidewalkEdgeBuilder = {
     _sidewalkOnCornerByKey.get(key) match {
       case Some(sidewalkEdgeBuilder @ SidewalkEdgeBuilder(_, _, Some(_), _, _, _)) ⇒
         logger.debug(s"Get a created Sidewalk Edge Builder: ${sidewalkEdgeBuilder.readable}")

@@ -21,6 +21,7 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     RampRepository.deleteAll
     PathRepository.deleteAll
     TravelInfoRepository.deleteAll
+    SidewalkEdgeRepository.deleteAll
     StreetCrossingEdgeRepository.deleteAll
     SidewalkVertexRepository.deleteAll
   }
@@ -155,8 +156,8 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
 
   it should "create sidewalk crossing edges correctly" in {
     val vertex1 = OsmVertexRepository.create(OsmVertex(5, Nil, Coordinate(12, 11)))
-    var sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1, Some(vertex1.id)))
-    var sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1, Some(vertex1.id)))
+    val sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1, Some(vertex1.id)))
+    val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1, Some(vertex1.id)))
 
     val streetCrossingEdge1Id = StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk1.id, sidewalk2.id, "key1"))
     val streetCrossingEdge1 = StreetCrossingEdgeRepository.find(streetCrossingEdge1Id)
@@ -169,6 +170,32 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     crossingEdges.size shouldBe 1
     crossingEdges.head.id.get shouldBe streetCrossingEdge1Id
     crossingEdges.head.keyValue shouldBe "key1"
+  }
+
+  it should "create sidewalk edges correctly" in {
+    val vertex1 = OsmVertexRepository.create(OsmVertex(5, Nil, Coordinate(12, 11)))
+    OsmVertexRepository.create(OsmVertex(6, Nil, Coordinate(14, 13)))
+    val sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1, Some(vertex1.id)))
+    val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1, Some(vertex1.id)))
+
+    val streetEdge = OsmStreetEdge(None, 5, 6, 10, 9)
+    val edgeId = OsmStreetEdgeRepository.create(streetEdge)
+    val osmEdge: OsmStreetEdge = OsmStreetEdgeRepository.find(edgeId)
+
+    val sidewalkEdge1Id = SidewalkEdgeRepository.create(SidewalkEdge(4, 5, "key1", osmEdge, NorthSide, None, osmEdge.id))
+    val sidewalkEdge1 = SidewalkEdgeRepository.find(sidewalkEdge1Id)
+    sidewalkEdge1.id should not be None
+    sidewalkEdge1.keyValue shouldBe "key1"
+    sidewalkEdge1.vertexStartId shouldBe sidewalk1.id
+    sidewalkEdge1.vertexEndId shouldBe sidewalk2.id
+    sidewalkEdge1.streetEdgeBelongToId shouldBe osmEdge.id
+    sidewalkEdge1.streetEdgeBelongTo.vertexStartId shouldBe 5
+    sidewalkEdge1.streetEdgeBelongTo.vertexEndId shouldBe 6
+
+    val sidewalkEdges = SidewalkEdgeRepository.findSidewalkEdgesBySidewalkVertex(sidewalk1.id)
+    sidewalkEdges.size shouldBe 1
+    sidewalkEdges.head.id.get shouldBe sidewalkEdge1Id
+    sidewalkEdges.head.keyValue shouldBe "key1"
   }
 
 }

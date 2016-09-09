@@ -3,8 +3,7 @@ package mapgenerator.sidewalk
 import base.{ FailureReporterSupport, LazyLoggerSupport, LogicError }
 import mapdomain.graph.{ Coordinate, GeoEdge, GeoVertex, GraphContainer }
 import mapdomain.math.{ GVector, VectorUtils }
-import mapdomain.sidewalk.SidewalkEdge.Side
-import mapdomain.sidewalk.{ SidewalkEdge, SidewalkGraphContainer, SidewalkVertex }
+import mapdomain.sidewalk.{ SidewalkEdge, SidewalkGraphContainer, SidewalkVertex, Side }
 import mapdomain.utils.EdgeUtils
 
 case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) extends LazyLoggerSupport with FailureReporterSupport {
