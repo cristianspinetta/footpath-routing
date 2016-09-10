@@ -7,7 +7,15 @@ import scalikejdbc._
 trait SpatialSQLSupport {
 
   def positionToSQL(coordinate: Coordinate): SQLSyntax = {
-    SQLSyntax.createUnsafely(s"PointFromText('POINT(${coordinate.longitude} ${coordinate.latitude})')")
+    SQLSyntax.createUnsafely(s"PointFromText('POINT(${coordinate.radLongitude} ${coordinate.radLatitude})')")
+  }
+
+  def distance(coordinate: Coordinate, s: SyntaxProvider[_], positionColumnName: String): SQLSyntax = {
+    SQLSyntax.createUnsafely(s"ST_Distance(point(${coordinate.radLongitude},${coordinate.radLatitude}), ${s.column(positionColumnName)})")
+  }
+
+  def orderBy(coordinate: Coordinate, s: SyntaxProvider[_], positionColumnName: String) = {
+    sqls"order by ${distance(coordinate, s, positionColumnName)}"
   }
 
   def selectLatitudeAndLongitude(s: SyntaxProvider[_]): SQLSyntax = {

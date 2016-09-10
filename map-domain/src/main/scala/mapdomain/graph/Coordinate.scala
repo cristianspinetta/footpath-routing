@@ -11,7 +11,7 @@ import scalikejdbc._
  * @param longitude: in degrees
  * @param id: optional
  */
-case class Coordinate(latitude: Double, longitude: Double, override val id: Option[Long] = None) extends BaseEntity {
+case class Coordinate(latitude: Double, longitude: Double) {
   private val φ1: Double = latitude.toRadians
 
   val radLatitude: Double = latitude.toRadians

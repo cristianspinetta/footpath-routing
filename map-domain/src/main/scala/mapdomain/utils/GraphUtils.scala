@@ -64,7 +64,7 @@ trait GraphUtils {
       nodeNumber += 1
     }
 
-    GraphContainer(nodes.toList)
+    new EagerGeoGraphContainer(nodes.toList)
   }
 
   /**
@@ -78,11 +78,11 @@ trait GraphUtils {
   def splitByConnectedGraph[V <: Vertex](graph: GraphContainer[V]): List[List[V]] = {
 
     @tailrec
-    def findNotVisited(visits: List[V], graph: GraphContainer[V], result: List[List[V]]): List[List[V]] = {
+    def findNotVisited(visits: List[V], graph: EagerGraphContainer[V, _], result: List[List[V]]): List[List[V]] = {
       graph.vertices filter (v ⇒ !visits.contains(v)) match {
         case list @ x :: xs ⇒
           val neighbours: List[V] = findNeighbours(list.head, graph)
-          findNotVisited(neighbours, GraphContainer(list), neighbours :: result)
+          findNotVisited(neighbours, new EagerGraphContainer(list), neighbours :: result)
         case Nil ⇒ result
       }
     }
@@ -103,7 +103,7 @@ trait GraphUtils {
     loop(Set(start), Nil).distinct.reverse
   }
 
-  def isGraphConnected[V <: Vertex](graph: GraphContainer[V]): Boolean = {
+  def isGraphConnected[V <: Vertex](graph: EagerGraphContainer[V]): Boolean = {
     val neighbours = findNeighbours(graph.vertices.head, graph)
     graph.vertices forall (v ⇒ neighbours contains v)
   }

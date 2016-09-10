@@ -1,7 +1,7 @@
 package mapgenerator.sidewalk
 
 import mapdomain.graph.{ Coordinate, GeoVertex, GraphContainer }
-import mapdomain.sidewalk.{ SidewalkEdge, SidewalkGraphContainer, SidewalkVertex, StreetCrossingEdge }
+import mapdomain.sidewalk.{ SidewalkEdge, EdgeSidewalkGraphContainer, SidewalkVertex, StreetCrossingEdge }
 import mapdomain.utils.GraphUtils
 import org.scalatest.{ FlatSpec, Matchers }
 
@@ -36,7 +36,7 @@ class SidewalkModuleSpec extends FlatSpec with Matchers {
 
   "The SidewalkModule" should "create all sidewalk for a GeoVertex Graph" in {
     val sidewalkModule = SidewalkModule()
-    val sidewalkGraphContainer: SidewalkGraphContainer = sidewalkModule.createSideWalks(distanceToStreet = 1)
+    val sidewalkGraphContainer: EdgeSidewalkGraphContainer = sidewalkModule.createSideWalks(distanceToStreet = 1)
     sidewalkGraphContainer.vertices.size should be(31)
     sidewalkGraphContainer.sidewalkEdges.size should be(30)
     sidewalkGraphContainer.streetCrossingEdges.size should be(28)
@@ -45,7 +45,7 @@ class SidewalkModuleSpec extends FlatSpec with Matchers {
 
   it should "get a single maximum graph that is connected" in {
     val sidewalkModule = SidewalkModule()(unconnectedGeoGraphPrototype)
-    val sidewalkGraphContainer: SidewalkGraphContainer = sidewalkModule.createSideWalks(distanceToStreet = 1)
+    val sidewalkGraphContainer: EdgeSidewalkGraphContainer = sidewalkModule.createSideWalks(distanceToStreet = 1)
     val connectedGraph = sidewalkGraphContainer.purge
     connectedGraph.sidewalkEdges.size should be(30)
     connectedGraph.streetCrossingEdges.size should be(28)

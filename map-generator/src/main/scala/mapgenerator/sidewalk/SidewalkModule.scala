@@ -1,18 +1,18 @@
 package mapgenerator.sidewalk
 
-import base.{ FailureReporterSupport, LazyLoggerSupport, LogicError }
-import mapdomain.graph.{ Coordinate, GeoEdge, GeoVertex, GraphContainer }
-import mapdomain.math.{ GVector, VectorUtils }
-import mapdomain.sidewalk.{ SidewalkEdge, SidewalkGraphContainer, SidewalkVertex, Side }
+import base.{FailureReporterSupport, LazyLoggerSupport, LogicError, MeterSupport}
+import mapdomain.graph.{Coordinate, GeoEdge, GeoVertex, GraphContainer}
+import mapdomain.math.{GVector, VectorUtils}
+import mapdomain.sidewalk.{Side, SidewalkEdge, EdgeSidewalkGraphContainer, SidewalkVertex}
 import mapdomain.utils.EdgeUtils
 
-case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) extends LazyLoggerSupport with FailureReporterSupport {
+case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) extends LazyLoggerSupport with MeterSupport with FailureReporterSupport {
 
   import mapdomain.utils.PointUtils._
   implicit protected val vertexIdGenerator = SidewalkVertexIDGenerator()
 
   def createSideWalks(distanceToStreet: Double = SidewalkModule.defaultDistanceToStreet,
-    failureTolerance: Boolean = false): SidewalkGraphContainer = {
+    failureTolerance: Boolean = false): EdgeSidewalkGraphContainer = withTimeLogging({
     logger.info(s"Creating Sidewalks for all the graph")
 
     implicit val builders = Builders(StreetCrossingBuilderManager(), SidewalkVertexBuilderManager(), SidewalkEdgeBuilderManager())
@@ -23,8 +23,8 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
       createSidewalkByStreetVertex(vertex, distanceToStreet)
     }
     val vertices: Set[SidewalkVertex] = SideWalkBuilder.build(failureTolerance)
-    SidewalkGraphContainer(vertices.toList)
-  }
+    EdgeSidewalkGraphContainer(vertices.toList)
+  }, (time: Long) => logger.info(s"Create Sidewalk Graph in $time ms."))
 
   protected def createSidewalkByStreetVertex(vertex: V, distanceToStreet: Double)(implicit builders: Builders[V]): Unit = {
 

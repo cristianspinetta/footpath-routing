@@ -1,56 +1,90 @@
 package mapdomain.graph
 
 import mapdomain.utils.GraphUtils
+import Stream.cons
 
-class GraphContainer[N <: Vertex](val vertices: List[N]) {
-
+trait GraphContainer[V <: Vertex] {
   /**
    * Find vertex by ID
    * @param id: Long
    * @return
    */
-  def findVertex(id: Long): Option[N] = vertices.find(_.id == id) // TODO: replace by a DB query
+  def findVertex(id: Long): Option[V]
 
-  def copy(vertices: List[N]): GraphContainer[N] = GraphContainer(vertices)
-  def copy(): GraphContainer[N] = GraphContainer(vertices)
+  def neighbours(vertex: V): Seq[V]
+}
+
+trait LazyGraphContainer[V <: Vertex] extends GraphContainer[V]
+
+class EagerGraphContainer[V <: Vertex, G <: GraphContainer[V]](val vertices: List[V], constructor: List[V] ⇒ G) extends GraphContainer[V] { self: G ⇒
+
+  //  type Self <: GraphContainer[V]
+  //  type Constructor = (List[V]) ⇒ G
+  //  val constructor: Constructor
+
+  /**
+   * Find vertex by ID
+   *
+   * @param id : Long
+   * @return an option of vertex
+   */
+  def findVertex(id: Long): Option[V] = vertices.find(_.id == id)
+
+  def neighbours(vertex: V): Seq[V] = vertex.edges.flatMap(edge ⇒ findVertex(edge.vertexEndId) toSeq)
 
   /**
    * Create a new GraphContainer with maximal connected subgraph that this graph contains
    * @return The connected graph
    */
-  def purge: GraphContainer[N] = GraphUtils.getConnectedComponent(this, GraphContainer.apply)
+  def purge: G = GraphUtils.getConnectedComponent(this, constructor)
+
 }
 
-object GraphContainer {
+object EagerGraphContainer {
 
-  def apply[N <: Vertex](vertices: List[N]): GraphContainer[N] = new GraphContainer(vertices)
+  def apply[V <: Vertex](vertices: List[V]): EagerGraphContainer[V]
+}
 
-  def createGeoNodes(nodeData: Map[Long, (List[Long], Coordinate)]): GraphContainer[GeoVertex] = {
+trait GeoGraphContainer[V <: GeoVertex] extends GraphContainer[V] {
+  def findNearest(coordinate: Coordinate): Option[V]
+}
 
-    val nodes: List[GeoVertex] = nodeData.toList map {
-      case (nodeId, (edgeIds, nodeCoordinate)) ⇒
-        new GeoVertex(nodeId,
-          edgeIds.map(neighbourId ⇒ GeoEdge(nodeId, neighbourId, nodeCoordinate.distanceTo(nodeData(neighbourId)._2))),
-          nodeCoordinate)
-    }
+class EagerGeoGraphContainer[V <: GeoVertex](override val vertices: List[V]) extends EagerGraphContainer[V, EagerGeoGraphContainer[V]](vertices) with GeoGraphContainer[V] {
+  val constructor: Constructor = (vertices: List[V]) ⇒ new EagerGeoGraphContainer(vertices)
 
-    new GraphContainer(nodes)
-  }
-
-  def findClosestVertex[V <: GeoVertex](graph: GraphContainer[V], coordinate: Coordinate): Option[(V, Double)] = graph.vertices match {
+  // FIXME reemplazar por GeoSearch
+  override def findNearest(coordinate: Coordinate): Option[V] = vertices match {
     case Nil ⇒ None
     case list ⇒
-      val (closestVertex, distance) = list.tail.foldLeft((list.head, list.head.coordinate.distanceTo(coordinate))) {
+      val (closestVertex, _) = list.tail.foldLeft((list.head, list.head.coordinate.distanceTo(coordinate))) {
         case (before @ (partialClosest: V, distanceToBefore: Double), next: V) ⇒
           val distanceToNext: Double = next.coordinate.distanceTo(coordinate)
           if (distanceToNext < distanceToBefore) (next, distanceToNext)
           else before
       }
-      Some((closestVertex, distance))
+      Some(closestVertex)
   }
+}
 
-  def joinGraphs[V <: Vertex](graphs: List[GraphContainer[V]]) = {
+trait LazyGeoGraphContainer[V <: GeoVertex] extends LazyGraphContainer[V] with GeoGraphContainer[V]
+
+object EagerGeoGraphContainer {
+
+  def joinGraphs[V <: GeoVertex](graphs: List[EagerGeoGraphContainer[V]]): EagerGeoGraphContainer[V] = {
     val vertices: List[V] = graphs.flatMap(graph ⇒ graph.vertices)
-    GraphContainer(vertices)
+    new EagerGeoGraphContainer(vertices)
+  }
+}
+
+object GraphContainer {
+
+  def createGeoNodes(vertexData: Map[Long, (List[Long], Coordinate)]): EagerGeoGraphContainer[GeoVertex] = {
+    val vertices: List[GeoVertex] = vertexData.toList map {
+      case (nodeId, (edgeIds, nodeCoordinate)) ⇒
+        new GeoVertex(nodeId,
+          edgeIds.map(neighbourId ⇒ GeoEdge(nodeId, neighbourId, nodeCoordinate.distanceTo(vertexData(neighbourId)._2))),
+          nodeCoordinate)
+    }
+    new EagerGeoGraphContainer(vertices)
   }
 }

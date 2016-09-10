@@ -5,7 +5,10 @@ import mapdomain.publictransport.{ PathRepository, StopRepository, TravelInfoRep
 import mapdomain.sidewalk._
 import mapdomain.street.{ StreetEdge, StreetEdgeRepository, StreetVertex, StreetVertexRepository }
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
+import scalikejdbc.DB
 import scalikejdbc.config.DBs
+import scalikejdbc._
+import sqls.{ distinct, count }
 
 class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach {
 
@@ -41,7 +44,7 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     ramp.address shouldBe "Callao 523"
   }
 
-  it should "create edges correctly" in {
+  it should "create street edges correctly" in {
     StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
     StreetVertexRepository.create(StreetVertex(6, Nil, Coordinate(14, 13)))
     val streetEdge = StreetEdge(None, 5, 6, 10, 9)
@@ -55,7 +58,7 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     edge.vertexEndId shouldBe 6
   }
 
-  it should "create vertex correctly" in {
+  it should "create street vertex correctly" in {
     var vertex1 = StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
     vertex1 = StreetVertexRepository.find(vertex1.id).get
     vertex1.id shouldBe 5
@@ -76,6 +79,21 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     edges = StreetEdgeRepository.findStreetEdgesByStreetVertex(vertex2.id)
     edges.size shouldBe 1
     edges.head.id.get shouldBe thirdEdgeId
+  }
+
+  it should "create street vertex in bulk correctly" in {
+    val qunatityToInsert = 15
+    val vertices = (1 to qunatityToInsert).map(i ⇒ StreetVertex(i, Nil, Coordinate(i * 3, i * 5))).toList
+    StreetVertexRepository.createInBulk(vertices)
+
+    val v = StreetVertexRepository.v
+    val verticesCount: Int = DB readOnly { implicit session ⇒
+      withSQL {
+        select(count(distinct(v.id))).from(StreetVertex as v).where.between(v.id, 1, qunatityToInsert)
+      }.map(_.int(1)).single().apply().get
+    }
+
+    verticesCount shouldBe qunatityToInsert
   }
 
   it should "create paths correctly" in {
