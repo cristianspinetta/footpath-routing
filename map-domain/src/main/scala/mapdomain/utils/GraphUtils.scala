@@ -11,22 +11,22 @@ trait GraphUtils {
 
   def edgesToIds(edges: List[Edge]): List[Long] = edges.headOption.map(_.vertexStartId).toList ::: edges.map(_.vertexEndId)
 
-  def createGridGraphGraph(rows: Int, columns: Int, offset: Int = 0): GraphContainer[GraphVertex] = {
+  def createGridGraphGraph(rows: Int, columns: Int, offset: Int = 0): EagerGraphContainer[GraphVertex] = {
     val vertexCreator = (id: Int, row: Int, column: Int, neighbours: Iterable[NeighbourPartialCreation]) ⇒
       GraphVertex.createWithEdges(id, neighbours.toList.map(npc ⇒ npc.id))
-    createGridGraph(rows, columns, offset, vertexCreator)
+    createGridGraph(rows, columns, offset, vertexCreator, EagerGraphContainer.apply)
   }
 
-  def createGridGeoGraph(rows: Int, columns: Int, offset: Int = 0): GraphContainer[GeoVertex] = {
+  def createGridGeoGraph(rows: Int, columns: Int, offset: Int = 0): EagerGeoGraphContainer[GeoVertex] = {
     val vertexCreator = (id: Int, row: Int, column: Int, neighbours: Iterable[NeighbourPartialCreation]) ⇒
       GeoVertex.createWithEdges(id, neighbours.toList.map(npc ⇒ (npc.id.toLong, npc.coordinate)), Coordinate(row, column))
-    createGridGraph(rows, columns, offset, vertexCreator)
+    createGridGraph(rows, columns, offset, vertexCreator, EagerGeoGraphContainer.apply)
   }
 
   case class NeighbourPartialCreation(id: Int, coordinate: Coordinate)
 
-  def createGridGraph[V <: Vertex](rows: Int, columns: Int, offset: Int,
-    vertexCreator: (Int, Int, Int, Iterable[NeighbourPartialCreation]) ⇒ V): GraphContainer[V] = {
+  def createGridGraph[V <: Vertex, G <: EagerGraphContainer[V]](rows: Int, columns: Int, offset: Int,
+    vertexCreator: (Int, Int, Int, Iterable[NeighbourPartialCreation]) ⇒ V, graphCreator: (List[V]) ⇒ G): G = {
 
     val nodes = ArrayBuffer.empty[V]
     var nodeNumber = offset
@@ -64,25 +64,25 @@ trait GraphUtils {
       nodeNumber += 1
     }
 
-    new EagerGeoGraphContainer(nodes.toList)
+    graphCreator(nodes.toList)
   }
 
   /**
    * A connected component is a maximal connected subgraph of G.
    * @return The maximal connected subgraph
    */
-  def getConnectedComponent[V <: Vertex, G <: GraphContainer[V]](graph: G, creator: (List[V]) ⇒ G): G = {
-    creator(splitByConnectedGraph(graph).max(Ordering.by[List[V], Int](list ⇒ list.size)))
+  def getConnectedComponent[V <: Vertex, G <: EagerGraphContainer[V]](graph: G, creator: (List[V]) ⇒ G): G = {
+    creator(splitByConnectedGraph[V, G](graph, creator).max(Ordering.by[List[V], Int](list ⇒ list.size)))
   }
 
-  def splitByConnectedGraph[V <: Vertex](graph: GraphContainer[V]): List[List[V]] = {
+  def splitByConnectedGraph[V <: Vertex, G <: EagerGraphContainer[V]](graph: G, creator: (List[V]) ⇒ G): List[List[V]] = {
 
     @tailrec
-    def findNotVisited(visits: List[V], graph: EagerGraphContainer[V, _], result: List[List[V]]): List[List[V]] = {
+    def findNotVisited(visits: List[V], graph: G, result: List[List[V]]): List[List[V]] = {
       graph.vertices filter (v ⇒ !visits.contains(v)) match {
         case list @ x :: xs ⇒
           val neighbours: List[V] = findNeighbours(list.head, graph)
-          findNotVisited(neighbours, new EagerGraphContainer(list), neighbours :: result)
+          findNotVisited(neighbours, creator(list), neighbours :: result)
         case Nil ⇒ result
       }
     }

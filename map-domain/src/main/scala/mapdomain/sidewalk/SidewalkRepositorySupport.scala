@@ -28,7 +28,7 @@ trait SidewalkEdgeRepository {
       vertexStartId = rs.long(e.vertexStartId),
       vertexEndId = rs.long(e.vertexEndId),
       keyValue = rs.string(e.keyValue),
-      id = rs.long(e.id),
+      id = rs.longOpt(e.id),
       side = getSide(rs.int(e.side)),
       streetEdgeBelongToId = rs.long(e.streetEdgeBelongToId))
   }

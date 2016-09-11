@@ -12,15 +12,16 @@ trait GraphContainer[V <: Vertex] {
   def findVertex(id: Long): Option[V]
 
   def neighbours(vertex: V): Seq[V]
+
 }
 
 trait LazyGraphContainer[V <: Vertex] extends GraphContainer[V]
 
-class EagerGraphContainer[V <: Vertex, G <: GraphContainer[V]](val vertices: List[V], constructor: List[V] ⇒ G) extends GraphContainer[V] { self: G ⇒
+class EagerGraphContainer[V <: Vertex /*, G <: GraphContainer[V]*/ ](val vertices: List[V] /*, constructor: List[V] ⇒ G*/ ) extends GraphContainer[V] { /*self: G ⇒*/
 
-  //  type Self <: GraphContainer[V]
-  //  type Constructor = (List[V]) ⇒ G
-  //  val constructor: Constructor
+  type Self = EagerGraphContainer[V]
+  //    type Constructor = (List[V]) ⇒ Self
+  //  private def newEagerGraph(vertices: List[V]): this.type = new EagerGraphContainer[V](vertices)
 
   /**
    * Find vertex by ID
@@ -32,25 +33,23 @@ class EagerGraphContainer[V <: Vertex, G <: GraphContainer[V]](val vertices: Lis
 
   def neighbours(vertex: V): Seq[V] = vertex.edges.flatMap(edge ⇒ findVertex(edge.vertexEndId) toSeq)
 
-  /**
-   * Create a new GraphContainer with maximal connected subgraph that this graph contains
-   * @return The connected graph
-   */
-  def purge: G = GraphUtils.getConnectedComponent(this, constructor)
-
 }
 
 object EagerGraphContainer {
+  def apply[V <: Vertex](vertices: List[V]): EagerGraphContainer[V] = new EagerGraphContainer(vertices)
 
-  def apply[V <: Vertex](vertices: List[V]): EagerGraphContainer[V]
+  def joinGraphs[V <: Vertex, G <: EagerGraphContainer[V]](graphs: List[G], constructor: (List[V]) ⇒ G): G = {
+    val vertices: List[V] = graphs.flatMap(graph ⇒ graph.vertices)
+    constructor(vertices)
+  }
 }
 
 trait GeoGraphContainer[V <: GeoVertex] extends GraphContainer[V] {
   def findNearest(coordinate: Coordinate): Option[V]
 }
 
-class EagerGeoGraphContainer[V <: GeoVertex](override val vertices: List[V]) extends EagerGraphContainer[V, EagerGeoGraphContainer[V]](vertices) with GeoGraphContainer[V] {
-  val constructor: Constructor = (vertices: List[V]) ⇒ new EagerGeoGraphContainer(vertices)
+class EagerGeoGraphContainer[V <: GeoVertex](override val vertices: List[V]) extends EagerGraphContainer[V](vertices) with GeoGraphContainer[V] {
+  //  val constructor: Constructor = (vertices: List[V]) ⇒ new EagerGeoGraphContainer(vertices)
 
   // FIXME reemplazar por GeoSearch
   override def findNearest(coordinate: Coordinate): Option[V] = vertices match {
@@ -70,10 +69,7 @@ trait LazyGeoGraphContainer[V <: GeoVertex] extends LazyGraphContainer[V] with G
 
 object EagerGeoGraphContainer {
 
-  def joinGraphs[V <: GeoVertex](graphs: List[EagerGeoGraphContainer[V]]): EagerGeoGraphContainer[V] = {
-    val vertices: List[V] = graphs.flatMap(graph ⇒ graph.vertices)
-    new EagerGeoGraphContainer(vertices)
-  }
+  def apply[V <: GeoVertex](vertices: List[V]): EagerGeoGraphContainer[V] = new EagerGeoGraphContainer(vertices)
 }
 
 object GraphContainer {

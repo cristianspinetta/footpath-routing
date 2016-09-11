@@ -6,9 +6,9 @@ import base.LazyLoggerSupport
 import conf.ApiEnvConfig
 import mapdomain.graph.GraphContainer
 import mapdomain.sidewalk._
-import mapdomain.street.{ StreetEdge, StreetVertex }
+import mapdomain.street.{EagerStreetGraphContainer, StreetEdge, StreetVertex}
 import mapgenerator.sidewalk.SidewalkModule
-import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
+import mapgenerator.source.features.{RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV}
 import mapgenerator.source.osm._
 import mapgenerator.street.StreetGraphModule
 
@@ -29,7 +29,7 @@ object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
 
   private lazy val streetGraphModule: StreetGraphModule = StreetGraphModule(osmModule)
 
-  lazy val streetGraph: GraphContainer[StreetVertex] = streetGraphModule.createGraph.purge
+  lazy val streetGraph: EagerStreetGraphContainer = streetGraphModule.createGraph.purgeStreets
 
   private lazy val sidewalkModule = SidewalkModule()(streetGraph)
 
@@ -40,7 +40,7 @@ object GraphProvider extends LazyLoggerSupport with ApiEnvConfig {
     edge ← vertex.edges
   } yield edge
 
-  lazy val sidewalkGraph: EdgeSidewalkGraphContainer = sidewalkModule.createSideWalks(failureTolerance = true).purge
+  lazy val sidewalkGraph: EagerSidewalkGraphContainer = sidewalkModule.createSideWalks(failureTolerance = true).purgeSidewalks
 
   lazy val sidewalks = sidewalkGraph.sidewalkEdges
   lazy val streetCrossingEdges = sidewalkGraph.streetCrossingEdges

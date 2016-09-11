@@ -9,7 +9,6 @@ import scalikejdbc._
  *
  * @param latitude: in degrees
  * @param longitude: in degrees
- * @param id: optional
  */
 case class Coordinate(latitude: Double, longitude: Double) {
   private val φ1: Double = latitude.toRadians
@@ -93,6 +92,8 @@ object Coordinate extends SQLSyntaxSupport[Coordinate] {
   val radius: Double = 6371 // Km
 
   override val tableName = "Coordinate"
+
+  def byRadians(latitude: Double, longitude: Double): Coordinate = Coordinate(latitude.toDegrees, longitude.toDegrees)
 
   def fromPoint(point: Point): Coordinate = Coordinate(point.y, point.x)
 

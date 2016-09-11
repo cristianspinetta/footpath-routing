@@ -1,6 +1,7 @@
 package mapdomain.sidewalk
 
 import mapdomain.graph._
+import mapdomain.utils.GraphUtils
 
 trait SidewalkGraphContainer[V <: SidewalkVertex] extends GeoGraphContainer[V]
 
@@ -22,7 +23,11 @@ case class LazySidewalkGraphContainer() extends LazyGeoGraphContainer[SidewalkVe
 
 case class EagerSidewalkGraphContainer(override val vertices: List[SidewalkVertex]) extends EagerGeoGraphContainer(vertices) {
 
-  override val constructor: Constructor = (vertices: List[SidewalkVertex]) ⇒ EagerSidewalkGraphContainer(vertices)
+  /**
+   * Create a new EagerSidewalkGraphContainer with maximal connected subgraph that this graph contains
+   * @return The connected graph
+   */
+  def purgeSidewalks: EagerSidewalkGraphContainer = GraphUtils.getConnectedComponent(this, EagerSidewalkGraphContainer.apply)
 
   lazy val sidewalkEdges: List[SidewalkEdge] = {
     (for (vertex ← vertices; edge ← vertex.sidewalkEdges) yield (edge.keyValue, edge))

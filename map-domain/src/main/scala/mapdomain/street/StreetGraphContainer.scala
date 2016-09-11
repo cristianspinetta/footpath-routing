@@ -1,6 +1,7 @@
 package mapdomain.street
 
 import mapdomain.graph.{ Coordinate, EagerGeoGraphContainer, GeoGraphContainer, LazyGeoGraphContainer }
+import mapdomain.utils.GraphUtils
 
 trait StreetGraphContainer[V <: StreetVertex] extends GeoGraphContainer[V]
 
@@ -21,5 +22,10 @@ case class LazyStreetGraphContainer() extends LazyGeoGraphContainer[StreetVertex
 }
 
 case class EagerStreetGraphContainer(override val vertices: List[StreetVertex]) extends EagerGeoGraphContainer(vertices) {
-  override val constructor: Constructor = (vertices: List[StreetVertex]) ⇒ EagerStreetGraphContainer(vertices)
+
+  /**
+   * Create a new EagerStreetGraphContainer with maximal connected subgraph that this graph contains
+   * @return The connected graph
+   */
+  def purgeStreets: EagerStreetGraphContainer = GraphUtils.getConnectedComponent(this, EagerStreetGraphContainer.apply)
 }

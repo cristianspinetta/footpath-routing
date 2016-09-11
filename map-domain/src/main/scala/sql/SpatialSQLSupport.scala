@@ -25,7 +25,7 @@ trait SpatialSQLSupport {
   }
 
   def coordinateFromResultSet(rs: WrappedResultSet, tableAlias: String): Coordinate = {
-    Coordinate(rs.double(s"${tableAlias}_lat"), rs.double(s"${tableAlias}_lng"))
+    Coordinate.byRadians(rs.double(s"${tableAlias}_lat"), rs.double(s"${tableAlias}_lng"))
   }
 
 }

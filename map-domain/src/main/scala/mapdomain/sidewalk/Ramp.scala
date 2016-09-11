@@ -28,13 +28,13 @@ trait RampRepository extends SpatialSQLSupport {
 
   private def ramp(c: SyntaxProvider[Ramp])(rs: WrappedResultSet): Ramp = ramp(c.resultName)(rs)
 
-  private def ramp(r: ResultName[Ramp])(implicit rs: WrappedResultSet): Ramp = {
+  private def ramp(resultName: ResultName[Ramp])(implicit rs: WrappedResultSet): Ramp = {
     new Ramp(
-      coordinate = Coordinate(rs.double("lat"), rs.double("lng")),
-      id = rs.string(r.id),
-      street = rs.string(r.street),
-      number = Some(rs.int(r.number)),
-      address = rs.string(r.address))
+      coordinate = coordinateFromResultSet(rs, r.tableAliasName),
+      id = rs.string(resultName.id),
+      street = rs.string(resultName.street),
+      number = Some(rs.int(resultName.number)),
+      address = rs.string(resultName.address))
   }
 
   def create(latitude: Double, longitude: Double, id: String, street: String, number: Option[Int], address: String)(implicit session: DBSession = Ramp.autoSession): Ramp = {
@@ -52,7 +52,8 @@ trait RampRepository extends SpatialSQLSupport {
   }
 
   def find(id: String)(implicit session: DBSession = Ramp.autoSession): Option[Ramp] = withSQL {
-    select(r.resultAll).append(sqls", x(${r.column("coordinate")}) lng, y(${r.column("coordinate")}) lat")
+    select(r.resultAll)
+      .append(selectLatitudeAndLongitude(r))
       .from(Ramp as r)
       .where.eq(r.id, id)
   }.map(ramp(r)(_)).single.apply()

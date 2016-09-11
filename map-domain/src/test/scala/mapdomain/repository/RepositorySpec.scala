@@ -8,9 +8,13 @@ import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers
 import scalikejdbc.DB
 import scalikejdbc.config.DBs
 import scalikejdbc._
-import sqls.{ distinct, count }
+import sqls.{ count, distinct }
+
+import scala.math._
 
 class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach {
+
+  val precision: Double = pow(10, -8)
 
   override def beforeAll() {
     DBs.setupAll()
@@ -33,12 +37,16 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     DBs.closeAll()
   }
 
+  def coordinateAssertion(coordResult: Coordinate, coordExpect: Coordinate): Unit = {
+    coordResult.latitude should equal(coordExpect.latitude +- precision)
+    coordResult.longitude should equal(coordExpect.longitude +- precision)
+  }
+
   "With database configurated" should "create ramps correctly" in {
     var ramp: Ramp = RampRepository.create(11, 12, "16", "Callao", Some(500), "Callao 523")
     ramp.id shouldBe "16"
     ramp = RampRepository.find(ramp.id).get
-    ramp.coordinate.latitude shouldBe 11
-    ramp.coordinate.longitude shouldBe 12
+    coordinateAssertion(ramp.coordinate, Coordinate(11, 12))
     ramp.street shouldBe "Callao"
     ramp.number shouldBe Some(500)
     ramp.address shouldBe "Callao 523"
@@ -62,8 +70,7 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     var vertex1 = StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
     vertex1 = StreetVertexRepository.find(vertex1.id).get
     vertex1.id shouldBe 5
-    vertex1.coordinate.latitude shouldBe 12
-    vertex1.coordinate.longitude shouldBe 11
+    coordinateAssertion(vertex1.coordinate, Coordinate(12, 11))
 
     val vertex2 = StreetVertexRepository.create(StreetVertex(6, Nil, Coordinate(14, 13)))
     val vertex3 = StreetVertexRepository.create(StreetVertex(7, Nil, Coordinate(14, 15)))
@@ -124,8 +131,7 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     secondStop.previousStopId shouldBe firstStop.id
     secondStop.previousStop.get.cellNumber shouldBe 5
     secondStop.previousStop.get.isAccessible shouldBe false
-    secondStop.coordinate.latitude shouldBe 12l
-    secondStop.coordinate.longitude shouldBe 13l
+    coordinateAssertion(secondStop.coordinate, Coordinate(12, 13))
     secondStop.nextStopId shouldBe thirdStop.id
     secondStop.nextStop.get.cellNumber shouldBe 7
     secondStop.nextStop.get.isAccessible shouldBe true
@@ -161,21 +167,18 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
 
   it should "create sidewalks correctly" in {
     val vertex1 = StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
-    var sidewalk = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1, Some(vertex1.id)))
+    var sidewalk = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1.id))
     sidewalk = SidewalkVertexRepository.find(sidewalk.id).get
     sidewalk.id shouldBe 4
-    sidewalk.coordinate.latitude shouldBe 10
-    sidewalk.coordinate.longitude shouldBe 9
-    sidewalk.streetVertexBelongToId shouldBe Some(5)
-    sidewalk.streetVertexBelongTo.id shouldBe 5
-    sidewalk.streetVertexBelongTo.coordinate.latitude shouldBe 12
-    sidewalk.streetVertexBelongTo.coordinate.longitude shouldBe 11
+    coordinateAssertion(sidewalk.coordinate, Coordinate(10, 9))
+    sidewalk.streetVertexBelongToId shouldBe 5
+    sidewalk.streetVertexBelongToId shouldBe 5
   }
 
   it should "create sidewalk crossing edges correctly" in {
     val vertex1 = StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
-    val sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1, Some(vertex1.id)))
-    val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1, Some(vertex1.id)))
+    val sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1.id))
+    val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1.id))
 
     val streetCrossingEdge1Id = StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk1.id, sidewalk2.id, "key1"))
     val streetCrossingEdge1 = StreetCrossingEdgeRepository.find(streetCrossingEdge1Id)
@@ -193,22 +196,21 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
   it should "create sidewalk edges correctly" in {
     val vertex1 = StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
     StreetVertexRepository.create(StreetVertex(6, Nil, Coordinate(14, 13)))
-    val sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1, Some(vertex1.id)))
-    val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1, Some(vertex1.id)))
+    val sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1.id))
+    val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1.id))
 
     val streetEdge = StreetEdge(None, 5, 6, 10, 9)
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
 
-    val sidewalkEdge1Id = SidewalkEdgeRepository.create(SidewalkEdge(4, 5, "key1", savedStreetEdge, NorthSide, None, savedStreetEdge.id))
+    val sidewalkEdge1Id = SidewalkEdgeRepository.create(SidewalkEdge(4, 5, "key1", NorthSide, savedStreetEdge.id.get))
     val sidewalkEdge1 = SidewalkEdgeRepository.find(sidewalkEdge1Id)
-    sidewalkEdge1.id should not be None
+    sidewalkEdge1.id shouldBe 'defined
     sidewalkEdge1.keyValue shouldBe "key1"
     sidewalkEdge1.vertexStartId shouldBe sidewalk1.id
     sidewalkEdge1.vertexEndId shouldBe sidewalk2.id
-    sidewalkEdge1.streetEdgeBelongToId shouldBe savedStreetEdge.id
-    sidewalkEdge1.streetEdgeBelongTo.vertexStartId shouldBe 5
-    sidewalkEdge1.streetEdgeBelongTo.vertexEndId shouldBe 6
+    sidewalkEdge1.streetEdgeBelongToId shouldBe savedStreetEdge.id.get
+    sidewalkEdge1.streetEdgeBelongToId shouldBe edgeId
 
     val sidewalkEdges = SidewalkEdgeRepository.findSidewalkEdgesBySidewalkVertex(sidewalk1.id)
     sidewalkEdges.size shouldBe 1

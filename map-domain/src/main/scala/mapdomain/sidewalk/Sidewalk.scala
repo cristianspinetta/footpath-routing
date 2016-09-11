@@ -15,7 +15,7 @@ case object NorthSide extends Side
 case object SouthSide extends Side
 
 case class SidewalkEdge(override val vertexStartId: Long, override val vertexEndId: Long, keyValue: String,
-  side: Side, id: Long, streetEdgeBelongToId: Long) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue)
+  side: Side, streetEdgeBelongToId: Long, override val id: Option[Long] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue) with BaseEntity
 
 object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport with SQLSyntaxSupport[SidewalkEdge] {
 

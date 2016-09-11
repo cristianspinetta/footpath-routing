@@ -1,13 +1,14 @@
 package mapgenerator.sidewalk
 
 import base.LazyLoggerSupport
-import mapdomain.graph.{ GeoEdge, GeoVertex, GraphContainer }
+import mapdomain.graph.{GeoEdge, GeoVertex, GraphContainer}
 import mapdomain.math.GVector
-import mapdomain.sidewalk.{ Side, SidewalkEdge, SidewalkVertex }
+import mapdomain.sidewalk.{Side, SidewalkEdge, SidewalkVertex}
+import mapdomain.street.StreetEdge
 
 import scala.collection.Map
 import scala.collection.concurrent.TrieMap
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 case class SidewalkEdgeBuilderManager[V <: GeoVertex](implicit graph: GraphContainer[V], idGenerator: SidewalkVertexIDGenerator) extends LazyLoggerSupport {
 
@@ -17,7 +18,7 @@ case class SidewalkEdgeBuilderManager[V <: GeoVertex](implicit graph: GraphConta
 
   def addSideWalk(key: String,
     from: SidewalkVertexBuilder,
-    streetEdgeBelongTo: GeoEdge,
+    streetEdgeBelongTo: StreetEdge,
     segment: GVector,
     side: Side): SidewalkEdgeBuilder = {
     _sidewalkOnCornerByKey.get(key) match {
@@ -42,12 +43,12 @@ case class SidewalkEdgeBuilderManager[V <: GeoVertex](implicit graph: GraphConta
 }
 
 case class SidewalkEdgeBuilder(key: String, from: SidewalkVertexBuilder, to: Option[SidewalkVertexBuilder],
-    streetEdgeBelongTo: GeoEdge, segment: GVector, side: Side) extends LazyLoggerSupport {
+    streetEdgeBelongTo: StreetEdge, segment: GVector, side: Side) extends LazyLoggerSupport {
 
   def build(implicit idGenerator: SidewalkVertexIDGenerator): (SidewalkEdge, SidewalkVertex, SidewalkVertex) = {
     val vertexStart: SidewalkVertex = from.build
     val vertexEnd: SidewalkVertex = to.get.build
-    (SidewalkEdge(vertexStart.id, vertexEnd.id, key, streetEdgeBelongTo, side), vertexStart, vertexEnd)
+    (SidewalkEdge(vertexStart.id, vertexEnd.id, key, side, streetEdgeBelongTo.id.get), vertexStart, vertexEnd)
   }
 
   def buildFailureTolerance(implicit idGenerator: SidewalkVertexIDGenerator): Option[(SidewalkEdge, SidewalkVertex, SidewalkVertex)] = {
