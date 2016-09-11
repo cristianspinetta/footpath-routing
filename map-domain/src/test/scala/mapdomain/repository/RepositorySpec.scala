@@ -75,17 +75,24 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     val vertex2 = StreetVertexRepository.create(StreetVertex(6, Nil, Coordinate(14, 13)))
     val vertex3 = StreetVertexRepository.create(StreetVertex(7, Nil, Coordinate(14, 15)))
 
-    val firstEdgeId = StreetEdgeRepository.create(StreetEdge(None, vertex1.id, vertex2.id, 10d, 9l))
-    val secondEdgeId = StreetEdgeRepository.create(StreetEdge(None, vertex1.id, vertex3.id, 10d, 9l))
-    val thirdEdgeId = StreetEdgeRepository.create(StreetEdge(None, vertex2.id, vertex1.id, 10d, 9l))
+    StreetEdgeRepository.create(StreetEdge(None, vertex1.id, vertex2.id, 10d, 9l))
+    StreetEdgeRepository.create(StreetEdge(None, vertex2.id, vertex1.id, 10d, 9l))
+    StreetEdgeRepository.create(StreetEdge(None, vertex2.id, vertex3.id, 10d, 9l))
+    StreetEdgeRepository.create(StreetEdge(None, vertex3.id, vertex2.id, 10d, 9l))
 
-    var edges = StreetEdgeRepository.findStreetEdgesByStreetVertex(vertex1.id)
-    edges.size shouldBe 2
-    edges.map(e ⇒ e.id.get) should contain only (firstEdgeId, secondEdgeId)
+    var neighbours = StreetVertexRepository.findNeighbours(vertex2.id)
+    neighbours.size shouldBe 2
+    neighbours.sortWith(_.id < _.id)
+    neighbours.head.id shouldBe vertex1.id
+    neighbours.tail.head.id shouldBe vertex3.id
 
-    edges = StreetEdgeRepository.findStreetEdgesByStreetVertex(vertex2.id)
-    edges.size shouldBe 1
-    edges.head.id.get shouldBe thirdEdgeId
+    neighbours = StreetVertexRepository.findNeighbours(vertex1.id)
+    neighbours.size shouldBe 1
+    neighbours.head.id shouldBe vertex2.id
+
+    neighbours = StreetVertexRepository.findNeighbours(vertex3.id)
+    neighbours.size shouldBe 1
+    neighbours.head.id shouldBe vertex2.id
   }
 
   it should "create street vertex in bulk correctly" in {
