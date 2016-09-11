@@ -74,7 +74,7 @@ object EagerGeoGraphContainer {
 
 object GraphContainer {
 
-  def createGeoNodes(vertexData: Map[Long, (List[Long], Coordinate)]): EagerGeoGraphContainer[GeoVertex] = {
+  def createEagerGeoGraph(vertexData: Map[Long, (List[Long], Coordinate)]): EagerGeoGraphContainer[GeoVertex] = {
     val vertices: List[GeoVertex] = vertexData.toList map {
       case (nodeId, (edgeIds, nodeCoordinate)) ⇒
         new GeoVertex(nodeId,

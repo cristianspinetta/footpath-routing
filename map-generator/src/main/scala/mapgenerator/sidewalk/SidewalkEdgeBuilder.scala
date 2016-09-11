@@ -1,14 +1,14 @@
 package mapgenerator.sidewalk
 
 import base.LazyLoggerSupport
-import mapdomain.graph.{GeoEdge, GeoVertex, GraphContainer}
+import mapdomain.graph.{ GeoEdge, GeoVertex, GraphContainer }
 import mapdomain.math.GVector
-import mapdomain.sidewalk.{Side, SidewalkEdge, SidewalkVertex}
+import mapdomain.sidewalk.{ Side, SidewalkEdge, SidewalkVertex }
 import mapdomain.street.StreetEdge
 
 import scala.collection.Map
 import scala.collection.concurrent.TrieMap
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 case class SidewalkEdgeBuilderManager[V <: GeoVertex](implicit graph: GraphContainer[V], idGenerator: SidewalkVertexIDGenerator) extends LazyLoggerSupport {
 

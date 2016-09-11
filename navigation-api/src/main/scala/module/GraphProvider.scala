@@ -6,9 +6,9 @@ import base.LazyLoggerSupport
 import conf.ApiEnvConfig
 import mapdomain.graph.GraphContainer
 import mapdomain.sidewalk._
-import mapdomain.street.{EagerStreetGraphContainer, StreetEdge, StreetVertex}
+import mapdomain.street.{ EagerStreetGraphContainer, StreetEdge, StreetVertex }
 import mapgenerator.sidewalk.SidewalkModule
-import mapgenerator.source.features.{RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV}
+import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 import mapgenerator.source.osm._
 import mapgenerator.street.StreetGraphModule
 

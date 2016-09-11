@@ -3,6 +3,8 @@ package mapdomain.utils
 import mapdomain.graph.{ GeoEdge, GeoVertex, GraphContainer }
 import mapdomain.math.{ GVector, Line, Point }
 
+import scala.math.Ordering
+
 object EdgeUtils {
 
   def edgeToLine[V <: GeoVertex, E <: GeoEdge](edge: E)(implicit graph: GraphContainer[V]): Line = {
@@ -30,5 +32,12 @@ object EdgeUtils {
       case fst :: snd :: Nil ⇒ List(edgeGenerator(fst, snd))
       case _                 ⇒ Nil
     }
+  }
+
+  // FIXME improve this
+  def sortEdgesByAngle[V <: GeoVertex, G <: GraphContainer[V], E <: GeoEdge](from: V, edges: List[E])(implicit graph: G): List[E] = {
+    edges.sortBy(edge ⇒ { // FIXME: Ver de mejorar el ordenamiento
+      from.coordinate.angleTo(graph.findVertex(edge.vertexEndId).get.coordinate)
+    })(Ordering[Double])
   }
 }

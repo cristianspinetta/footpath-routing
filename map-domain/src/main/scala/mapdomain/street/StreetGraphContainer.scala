@@ -1,6 +1,6 @@
 package mapdomain.street
 
-import mapdomain.graph.{ Coordinate, EagerGeoGraphContainer, GeoGraphContainer, LazyGeoGraphContainer }
+import mapdomain.graph._
 import mapdomain.utils.GraphUtils
 
 trait StreetGraphContainer[V <: StreetVertex] extends GeoGraphContainer[V]

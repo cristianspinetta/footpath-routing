@@ -1,7 +1,7 @@
 package mapgenerator.street
 
 import mapdomain.graph.GraphContainer
-import mapdomain.street.{ StreetEdge, StreetVertex }
+import mapdomain.street.{ EagerStreetGraphContainer, StreetEdge, StreetVertex }
 import mapgenerator.source.osm._
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
@@ -19,9 +19,9 @@ class StreetGraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
   val osmModule: OSMModule = OSMModule(xmlReader.loadNodes, xmlReader.loadWays, xmlReader.loadRelations)
   val streetGraphModule: StreetGraphModule = StreetGraphModule(osmModule)
-  val graph: GraphContainer[StreetVertex] = streetGraphModule.createGraph
+  val graph: EagerStreetGraphContainer = streetGraphModule.createGraph
 
-  val otpVertices: ListBuffer[OTPVertex] = ListBuffer(graphJsonParser.vertices: _*)
+  val otpVertices: ArrayBuffer[OTPVertex] = ArrayBuffer(graphJsonParser.vertices: _*)
 
   /**
    * Missing Edge. Difference is OwnEdges - OTPEdges

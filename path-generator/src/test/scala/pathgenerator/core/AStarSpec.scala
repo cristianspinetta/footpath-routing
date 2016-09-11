@@ -1,6 +1,6 @@
 package pathgenerator.core
 
-import mapdomain.graph.{ Edge, GeoVertex, GraphContainer, GraphVertex }
+import mapdomain.graph._
 import pathgenerator.graph._
 import pathgenerator.testkit.BaseAStarSpec
 import mapdomain.utils.GraphUtils
@@ -16,7 +16,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
     "it runs on the Graph A" should {
       "resolve correctly the path between 1 and 4" in {
-        val graph: GraphContainer[GraphVertex] = abstractGraphPrototype
+        val graph: EagerGraphContainer[GraphVertex] = abstractGraphPrototype
 
         val source: GraphVertex = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex = graph.vertices.find(_.id == 4L).get
@@ -39,7 +39,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 18" in {
-        val graph: GraphContainer[GraphVertex] = abstractGraphPrototype
+        val graph: EagerGraphContainer[GraphVertex] = abstractGraphPrototype
 
         val source: GraphVertex = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex = graph.vertices.find(_.id == 18L).get
@@ -62,7 +62,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 19" in {
-        val graph: GraphContainer[GraphVertex] = abstractGraphPrototype
+        val graph: EagerGraphContainer[GraphVertex] = abstractGraphPrototype
 
         val source: GraphVertex = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex = graph.vertices.find(_.id == 19L).get
@@ -87,7 +87,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
     "it runs on the Graph A without edge 10-13" should {
 
-      val graph: GraphContainer[GraphVertex] = abstractGraphPrototype.copy(vertices =
+      val graph: EagerGraphContainer[GraphVertex] = EagerGraphContainer(vertices =
         abstractGraphPrototype.vertices.map {
           case node @ GraphVertex(10, edges) ⇒ GraphVertex.removeEdge(node, 13)
           case node                          ⇒ node
@@ -138,7 +138,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
     "it runs on the Graph A neither with edge 10-13 nor 14-18" should {
 
-      val graph: GraphContainer[GraphVertex] = abstractGraphPrototype.copy(vertices =
+      val graph: EagerGraphContainer[GraphVertex] = EagerGraphContainer(vertices =
         abstractGraphPrototype.vertices.map {
           case node @ GraphVertex(10, edges) ⇒ GraphVertex.removeEdge(node, 13)
           case node @ GraphVertex(14, edges) ⇒ GraphVertex.removeEdge(node, 18)
@@ -190,7 +190,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
     "it runs on Grid Graph with 20000 vertices" should {
       "resolve correctly the path between 1 and 16888" in {
-        val graph: GraphContainer[GraphVertex] = createGridGraphGraph(100, 200)
+        val graph: EagerGraphContainer[GraphVertex] = createGridGraphGraph(100, 200)
 
         val source: GraphVertex = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex = graph.vertices.find(_.id == 16888L).get
@@ -208,7 +208,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
     "it runs on the Graph A" should {
       "resolve correctly the path between 1 and 4" in {
-        val graph: GraphContainer[GeoVertex] = geoGraphPrototype
+        val graph: EagerGraphContainer[GeoVertex] = geoGraphPrototype
 
         val source: GeoVertex = graph.vertices.find(_.id == 1L).get
         val target: GeoVertex = graph.vertices.find(_.id == 4L).get
@@ -231,7 +231,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 13" in {
-        val graph: GraphContainer[GeoVertex] = geoGraphPrototype
+        val graph: EagerGraphContainer[GeoVertex] = geoGraphPrototype
 
         val source: GeoVertex = graph.vertices.find(_.id == 1L).get
         val target: GeoVertex = graph.vertices.find(_.id == 13L).get
@@ -254,7 +254,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 12" in {
-        val graph: GraphContainer[GeoVertex] = geoGraphPrototype
+        val graph: EagerGraphContainer[GeoVertex] = geoGraphPrototype
 
         val source: GeoVertex = graph.vertices.find(_.id == 1L).get
         val target: GeoVertex = graph.vertices.find(_.id == 12L).get

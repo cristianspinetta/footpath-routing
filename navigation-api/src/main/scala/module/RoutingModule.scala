@@ -2,8 +2,9 @@ package module
 
 import base.LazyLoggerSupport
 import conf.ApiEnvConfig
-import mapdomain.graph.{ Coordinate, GeoVertex, GraphContainer }
-import mapdomain.sidewalk.Ramp
+import mapdomain.graph._
+import mapdomain.sidewalk.{ Ramp, SidewalkVertex }
+import mapdomain.street.StreetVertex
 import pathgenerator.core.AStar
 import pathgenerator.graph._
 import mapdomain.utils.GraphUtils
@@ -16,17 +17,17 @@ trait RoutingModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfi
 
   def routing(coordinateFrom: Coordinate, coordinateTo: Coordinate, typeRouting: TypeRouting): Try[List[Coordinate]] = {
     logger.info(s"Init Search from $coordinateFrom to $coordinateTo by type routing = $typeRouting")
-    val graph: GraphContainer[_ <: GeoVertex] = typeRouting match {
+    val graph: GeoGraphContainer[_ <: GeoVertex] = typeRouting match {
       case StreetRouting ⇒ graphProvider.streetGraph
       case _             ⇒ graphProvider.sidewalkGraph
     }
     searchRouting(graph, coordinateFrom, coordinateTo)
   }
 
-  protected def searchRouting[V <: GeoVertex](graphContainer: GraphContainer[V], coordinateFrom: Coordinate,
+  protected def searchRouting[V <: GeoVertex](graphContainer: GeoGraphContainer[V], coordinateFrom: Coordinate,
     coordinateTo: Coordinate)(implicit tag: TypeTag[V]): Try[List[Coordinate]] = {
-    (GraphContainer.findClosestVertex(graphContainer, coordinateFrom), GraphContainer.findClosestVertex(graphContainer, coordinateTo)) match {
-      case (Some((fromVertex, _)), Some((toVertex, _))) ⇒
+    (graphContainer.findNearest(coordinateFrom), graphContainer.findNearest(coordinateTo)) match {
+      case (Some(fromVertex), Some(toVertex)) ⇒
         logger.info(s"Vertex From: ${fromVertex.id}. Vertex To: ${toVertex.id}")
         val aStartFactory = AStar[V, GeoHeuristic[V]](GeoHeuristic(fromVertex)) _
         aStartFactory(graphContainer, fromVertex, toVertex)
