@@ -57,7 +57,7 @@ case class SidewalkEdgeBuilder(key: String, from: SidewalkVertexBuilder, to: Opt
     } match {
       case Success(x) ⇒ Some(x)
       case Failure(exc) ⇒
-        logger.error(s"Building a Sidewalk with Failure Tolerance. Failed trying to build the following sidewalk edge: $readable")
+        logger.error(s"Building a Sidewalk with Failure Tolerance. Failed trying to build the following sidewalk edge: $readable. Reason: ${exc.getMessage}")
         None
     }
   }
