@@ -12,6 +12,9 @@ trait StreetRepositorySupport {
 trait StreetVertexRepository extends SpatialSQLSupport {
 
   val v = StreetVertex.syntax("v")
+  val edge1 = StreetEdge.syntax("edge1")
+  val edge2 = StreetEdge.syntax("edge2")
+  val neighbour = StreetVertex.syntax("neighbour")
 
   def streetVertexOnly(v: SyntaxProvider[StreetVertex])(rs: WrappedResultSet): StreetVertex = {
     StreetVertex(rs.long(v.resultName.id), Nil, coordinateFromResultSet(rs, v.tableAliasName))
@@ -52,6 +55,21 @@ trait StreetVertexRepository extends SpatialSQLSupport {
   def deleteAll(implicit session: DBSession = StreetVertex.autoSession): Unit = withSQL {
     deleteFrom(StreetVertex)
   }.update.apply()
+
+  def findNeighbours(vertexId: Long)(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex] = DB readOnly { implicit session ⇒
+    sql"""
+       select
+        distinct ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
+       from
+        ${StreetVertex.as(v)}
+        left join ${StreetEdge.as(edge1)} on ${edge1.vertexStartId} = ${v.id}
+        left join ${StreetEdge.as(edge2)} on ${edge2.vertexEndId} = ${v.id}
+        left join ${StreetVertex.as(neighbour)} on ${neighbour.id} IN (${edge1.vertexEndId}, ${edge2.vertexStartId})
+       where
+        ${v.id} = ${vertexId}
+    """.map(streetVertexOnly(neighbour))
+      .list.apply()
+  }
 
 }
 

@@ -18,7 +18,7 @@ case class LazyStreetGraphContainer() extends LazyGeoGraphContainer[StreetVertex
 
   def findNearestVertex(coordinate: Coordinate): Option[StreetVertex] = findNearest(coordinate)
 
-  override def neighbours(vertex: StreetVertex): Seq[StreetVertex] = ???
+  override def neighbours(vertex: StreetVertex): Seq[StreetVertex] = streetVertexRepository.findNeighbours(vertex.id)
 }
 
 case class EagerStreetGraphContainer(override val vertices: List[StreetVertex]) extends EagerGeoGraphContainer(vertices) {
