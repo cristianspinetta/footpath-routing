@@ -71,7 +71,7 @@ class SidewalkModuleSpec extends FlatSpec with Matchers {
     val vertices: List[SidewalkVertex] = vertexData.toList map {
       case (nodeId, (edgeIds, nodeCoordinate)) ⇒
         new SidewalkVertex(nodeId, nodeCoordinate,
-          edgeIds.map(neighbourId ⇒ SidewalkEdge(nodeId, neighbourId, s"fake-key-$nodeId-$neighbourId", NorthSide, 0)),
+          edgeIds.map(neighbourId ⇒ SidewalkEdge(nodeId, neighbourId, s"fake-key-$nodeId-$neighbourId", NorthSide, None)),
           Nil, 0)
     }
     EagerSidewalkGraphContainer(vertices)

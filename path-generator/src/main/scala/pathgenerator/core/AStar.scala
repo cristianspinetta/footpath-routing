@@ -56,7 +56,7 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
     -fScore(vertex.id)
   })
 
-  def search: Try[List[Edge]] = withTimeLoggingInMicro({
+  def search: Try[List[Edge]] = withTimeLogging({
     Try {
       loop(1)
     } recoverWith {
@@ -66,7 +66,7 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
         Failure(ex)
     }
   }, { timing: Long ⇒
-    logger.info(s"Found short path from ${startVertex.id} to ${targetVertex.id} in $timing µs.")
+    logger.info(s"Found short path from ${startVertex.id} to ${targetVertex.id} in $timing ms.")
   })
 
   @tailrec

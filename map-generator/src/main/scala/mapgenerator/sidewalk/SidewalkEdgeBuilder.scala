@@ -48,7 +48,7 @@ case class SidewalkEdgeBuilder(key: String, from: SidewalkVertexBuilder, to: Opt
   def build(implicit idGenerator: SidewalkVertexIDGenerator): (SidewalkEdge, SidewalkVertex, SidewalkVertex) = {
     val vertexStart: SidewalkVertex = from.build
     val vertexEnd: SidewalkVertex = to.get.build
-    (SidewalkEdge(vertexStart.id, vertexEnd.id, key, side, streetEdgeBelongTo.id.get), vertexStart, vertexEnd)
+    (SidewalkEdge(vertexStart.id, vertexEnd.id, key, side, streetEdgeBelongTo.id), vertexStart, vertexEnd)
   }
 
   def buildFailureTolerance(implicit idGenerator: SidewalkVertexIDGenerator): Option[(SidewalkEdge, SidewalkVertex, SidewalkVertex)] = {
@@ -58,6 +58,7 @@ case class SidewalkEdgeBuilder(key: String, from: SidewalkVertexBuilder, to: Opt
       case Success(x) ⇒ Some(x)
       case Failure(exc) ⇒
         logger.error(s"Building a Sidewalk with Failure Tolerance. Failed trying to build the following sidewalk edge: $readable. Reason: ${exc.getMessage}")
+//        exc.printStackTrace()
         None
     }
   }

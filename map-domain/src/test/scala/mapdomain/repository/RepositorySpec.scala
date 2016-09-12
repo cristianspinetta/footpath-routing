@@ -187,8 +187,8 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     val streetEdge = StreetEdge(None, 5, 6, 10, 9)
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
-    SidewalkEdgeRepository.create(SidewalkEdge(sidewalk1.id, sidewalk2.id, "key1", NorthSide, savedStreetEdge.id.get))
-    SidewalkEdgeRepository.create(SidewalkEdge(sidewalk2.id, sidewalk1.id, "key2", NorthSide, savedStreetEdge.id.get))
+    SidewalkEdgeRepository.create(SidewalkEdge(sidewalk1.id, sidewalk2.id, "key1", NorthSide, savedStreetEdge.id))
+    SidewalkEdgeRepository.create(SidewalkEdge(sidewalk2.id, sidewalk1.id, "key2", NorthSide, savedStreetEdge.id))
     StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk2.id, sidewalk3.id, "key3"))
     StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk3.id, sidewalk2.id, "key4"))
 
@@ -235,14 +235,14 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
 
-    val sidewalkEdge1Id = SidewalkEdgeRepository.create(SidewalkEdge(4, 5, "key1", NorthSide, savedStreetEdge.id.get))
+    val sidewalkEdge1Id = SidewalkEdgeRepository.create(SidewalkEdge(4, 5, "key1", NorthSide, savedStreetEdge.id))
     val sidewalkEdge1 = SidewalkEdgeRepository.find(sidewalkEdge1Id)
     sidewalkEdge1.id shouldBe 'defined
     sidewalkEdge1.keyValue shouldBe "key1"
     sidewalkEdge1.vertexStartId shouldBe sidewalk1.id
     sidewalkEdge1.vertexEndId shouldBe sidewalk2.id
-    sidewalkEdge1.streetEdgeBelongToId shouldBe savedStreetEdge.id.get
-    sidewalkEdge1.streetEdgeBelongToId shouldBe edgeId
+    sidewalkEdge1.streetEdgeBelongToId.get shouldBe savedStreetEdge.id.get
+    sidewalkEdge1.streetEdgeBelongToId.get shouldBe edgeId
 
     val sidewalkEdges = SidewalkEdgeRepository.findSidewalkEdgesBySidewalkVertex(sidewalk1.id)
     sidewalkEdges.size shouldBe 1

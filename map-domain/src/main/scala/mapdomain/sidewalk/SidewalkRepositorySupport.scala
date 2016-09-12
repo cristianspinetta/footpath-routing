@@ -30,7 +30,7 @@ trait SidewalkEdgeRepository {
       keyValue = rs.string(e.keyValue),
       id = rs.longOpt(e.id),
       side = getSide(rs.int(e.side)),
-      streetEdgeBelongToId = rs.long(e.streetEdgeBelongToId))
+      streetEdgeBelongToId = rs.longOpt(e.streetEdgeBelongToId))
   }
 
   def opt(e: SyntaxProvider[SidewalkEdge])(rs: WrappedResultSet): Option[SidewalkEdge] =
@@ -43,7 +43,7 @@ trait SidewalkEdgeRepository {
         SidewalkEdge.column.vertexEndId -> edge.vertexEndId,
         SidewalkEdge.column.keyValue -> edge.keyValue,
         SidewalkEdge.column.side -> getSideCode(edge.side),
-        SidewalkEdge.column.streetEdgeBelongToId -> edge.streetEdgeBelongToId)
+        SidewalkEdge.column.streetEdgeBelongToId -> edge.streetEdgeBelongToId.get)
     }.updateAndReturnGeneratedKey.apply()
   }
 
