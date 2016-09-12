@@ -187,10 +187,10 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
     val streetEdge = StreetEdge(None, 5, 6, 10, 9)
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
-    val sidewalkEdge1 = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk1.id, sidewalk2.id, "key1", NorthSide, savedStreetEdge.id.get))
-    val sidewalkEdge2 = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk2.id, sidewalk1.id, "key2", NorthSide, savedStreetEdge.id.get))
-    val crossingEdge1 = StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk2.id, sidewalk3.id, "key3"))
-    val crossingEdge2 = StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk3.id, sidewalk2.id, "key4"))
+    SidewalkEdgeRepository.create(SidewalkEdge(sidewalk1.id, sidewalk2.id, "key1", NorthSide, savedStreetEdge.id.get))
+    SidewalkEdgeRepository.create(SidewalkEdge(sidewalk2.id, sidewalk1.id, "key2", NorthSide, savedStreetEdge.id.get))
+    StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk2.id, sidewalk3.id, "key3"))
+    StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk3.id, sidewalk2.id, "key4"))
 
     var neighbours = SidewalkVertexRepository.findNeighbours(sidewalk2.id)
     neighbours.size shouldBe 2

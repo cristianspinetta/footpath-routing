@@ -196,7 +196,7 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
   def findNeighbours(vertexId: Long)(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = DB readOnly { implicit session ⇒
     sql"""
        select
-        ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
+        distinct ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
        from
         ${SidewalkVertex.as(s)}
         left join ${SidewalkEdge.as(sidewalkEdge1)} on ${sidewalkEdge1.vertexStartId} = ${s.id}
