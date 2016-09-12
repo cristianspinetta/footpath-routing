@@ -130,6 +130,11 @@ object StreetCrossingEdgeRepository extends StreetCrossingEdgeRepository
 trait SidewalkVertexRepository extends SpatialSQLSupport {
 
   val s = SidewalkVertex.syntax("s")
+  val sidewalkEdge1 = SidewalkEdge.syntax("sidewalkEdge1")
+  val sidewalkEdge2 = SidewalkEdge.syntax("sidewalkEdge2")
+  val crossingEdge1 = StreetCrossingEdge.syntax("crossingEdge1")
+  val crossingEdge2 = StreetCrossingEdge.syntax("crossingEdge2")
+  val neighbour = SidewalkVertex.syntax("neighbour")
 
   def sidewalkVertex(s: SyntaxProvider[SidewalkVertex])(rs: WrappedResultSet): SidewalkVertex = sidewalkVertex(s.resultName, s.tableAliasName)(rs)
 
@@ -187,6 +192,23 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
   //    //          | and x(point) >= ${bound.min.radLongitude} and x(point) <= ${bound.max.radLongitude}
   //    //          | and ST_Distance(point(${coordinate.radLongitude},${coordinate.radLongitude}), point) <= $radDistance""".stripMargin
   //    sql.map(geoNode(n)).list().apply()
+
+  def findNeighbours(vertexId: Long)(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = DB readOnly { implicit session ⇒
+    sql"""
+       select
+        ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
+       from
+        ${SidewalkVertex.as(s)}
+        left join ${SidewalkEdge.as(sidewalkEdge1)} on ${sidewalkEdge1.vertexStartId} = ${s.id}
+        left join ${SidewalkEdge.as(sidewalkEdge2)} on ${sidewalkEdge2.vertexEndId} = ${s.id}
+        left join ${StreetCrossingEdge.as(crossingEdge1)} on ${crossingEdge1.vertexStartId} = ${s.id}
+        left join ${StreetCrossingEdge.as(crossingEdge2)} on ${crossingEdge2.vertexEndId} = ${s.id}
+        left join ${SidewalkVertex.as(neighbour)} on ${neighbour.id} IN (sidewalkEdge1.vertexEndId, sidewalkEdge2.vertexStartId, crossingEdge1.vertexEndId, crossingEdge2.vertexStartId)
+       where
+        ${s.id} = ${vertexId}
+    """.map(sidewalkVertex(neighbour))
+      .list.apply()
+  }
 
   def deleteAll(implicit session: DBSession = SidewalkVertex.autoSession): Unit = withSQL {
     deleteFrom(SidewalkVertex)

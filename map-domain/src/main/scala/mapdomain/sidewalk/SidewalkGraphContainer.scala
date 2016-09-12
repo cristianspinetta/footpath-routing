@@ -18,7 +18,7 @@ case class LazySidewalkGraphContainer() extends LazyGeoGraphContainer[SidewalkVe
 
   def findNearestVertex(coordinate: Coordinate): Option[SidewalkVertex] = findNearest(coordinate)
 
-  override def neighbours(vertex: SidewalkVertex): Seq[SidewalkVertex] = ???
+  override def neighbours(vertex: SidewalkVertex): Seq[SidewalkVertex] = sidewalkVertexRepository.findNeighbours(vertex.id)
 }
 
 case class EagerSidewalkGraphContainer(override val vertices: List[SidewalkVertex]) extends EagerGeoGraphContainer(vertices) {

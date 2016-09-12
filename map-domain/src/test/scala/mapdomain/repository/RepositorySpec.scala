@@ -174,12 +174,37 @@ class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with 
 
   it should "create sidewalks correctly" in {
     val vertex1 = StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
-    var sidewalk = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1.id))
-    sidewalk = SidewalkVertexRepository.find(sidewalk.id).get
-    sidewalk.id shouldBe 4
-    coordinateAssertion(sidewalk.coordinate, Coordinate(10, 9))
-    sidewalk.streetVertexBelongToId shouldBe 5
-    sidewalk.streetVertexBelongToId shouldBe 5
+    var sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1.id))
+    sidewalk1 = SidewalkVertexRepository.find(sidewalk1.id).get
+    sidewalk1.id shouldBe 4
+    coordinateAssertion(sidewalk1.coordinate, Coordinate(10, 9))
+    sidewalk1.streetVertexBelongToId shouldBe 5
+    sidewalk1.streetVertexBelongToId shouldBe 5
+
+    val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(10, 9), Nil, Nil, vertex1.id))
+    val sidewalk3 = SidewalkVertexRepository.create(SidewalkVertex(6, Coordinate(10, 9), Nil, Nil, vertex1.id))
+
+    val streetEdge = StreetEdge(None, 5, 6, 10, 9)
+    val edgeId = StreetEdgeRepository.create(streetEdge)
+    val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
+    val sidewalkEdge1 = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk1.id, sidewalk2.id, "key1", NorthSide, savedStreetEdge.id.get))
+    val sidewalkEdge2 = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk2.id, sidewalk1.id, "key2", NorthSide, savedStreetEdge.id.get))
+    val crossingEdge1 = StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk2.id, sidewalk3.id, "key3"))
+    val crossingEdge2 = StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk3.id, sidewalk2.id, "key4"))
+
+    var neighbours = SidewalkVertexRepository.findNeighbours(sidewalk2.id)
+    neighbours.size shouldBe 2
+    neighbours.sortWith(_.id < _.id)
+    neighbours.head.id shouldBe sidewalk1.id
+    neighbours.tail.head.id shouldBe sidewalk3.id
+
+    neighbours = SidewalkVertexRepository.findNeighbours(sidewalk1.id)
+    neighbours.size shouldBe 1
+    neighbours.head.id shouldBe sidewalk2.id
+
+    neighbours = SidewalkVertexRepository.findNeighbours(sidewalk3.id)
+    neighbours.size shouldBe 1
+    neighbours.head.id shouldBe sidewalk2.id
   }
 
   it should "create sidewalk crossing edges correctly" in {
