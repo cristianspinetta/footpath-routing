@@ -90,7 +90,7 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
         ns foreach eachNeighbour(current)
 
         if (_opensQueue nonEmpty) loop(nroLoop + 1)
-        else throw new RuntimeException("failure!!")
+        else throw new RuntimeException(s"Failed searching the short path due to the open queue in A* is empty. Loop $nroLoop")
       }
     }
   }
