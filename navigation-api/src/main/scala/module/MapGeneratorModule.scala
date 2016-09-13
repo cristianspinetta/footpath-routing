@@ -24,6 +24,7 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
       val osmModule: OSMModule = OSMModule(xmlParser)
       val streetGraphModule: StreetGraphModule = StreetGraphModule(osmModule)
       val streetGraph = streetGraphModule.createGraph.purgeStreets
+      logger.debug(s"streetGraph. Vertices: ${streetGraph.vertices.size}. Street Edges: ${streetGraph.vertices.map(_.edges.size).sum}.")
       saveStreets(streetGraph)
     }, (time: Long) ⇒ logger.info(s"Created and saved the Street Graph in $time ms."))
   } flatten
@@ -36,9 +37,7 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
         for {
           vertex ← savedVertices
           edge ← vertex.edges
-        } {
-          streetEdgeRepository.create(edge)
-        }
+        } streetEdgeRepository.create(edge)
       }, (time: Long) ⇒ logger.info(s"${streetGraph.vertices.size} vertices and ${streetGraph.vertices.map(_.edges.size).sum} edges for Street Graph saved in $time ms."))
   }
 
@@ -47,6 +46,7 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
     withTimeLogging({
       val sidewalkGraph = SidewalkModule()(EagerStreetGraphContainer.createFromDB)
         .createSideWalks(failureTolerance = failureTolerance).purgeSidewalks
+      logger.debug(s"sidewalkGraph. Vertices: ${sidewalkGraph.vertices.size}. Sidewalk Edges: ${sidewalkGraph.sidewalkEdges.size}. Street Crossing Edges: ${sidewalkGraph.streetCrossingEdges.size}")
       saveSidewalks(sidewalkGraph)
     }, (time: Long) ⇒ logger.info(s"Created and saved the Sidewalks Graph in $time ms."))
   } flatten

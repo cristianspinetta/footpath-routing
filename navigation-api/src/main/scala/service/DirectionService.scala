@@ -50,7 +50,7 @@ trait DirectionService extends ApiEnvConfig {
   val logger: LoggingAdapter
 
   val routes = CorsDirectives.cors() {
-    logRequestResult("routing-request") {
+    logRequest("routing-request", akka.event.Logging.InfoLevel) {
       get {
         path("directions") {
           parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double], 'routingType ? "street").as(RoutingRequest) { routingRequest ⇒
