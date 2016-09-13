@@ -10,7 +10,7 @@ trait SpatialSQLSupport {
   }
 
   def distance(coordinate: Coordinate, s: SyntaxProvider[_], positionColumnName: String): SQLSyntax = {
-    SQLSyntax.createUnsafely(s"ST_Distance(point(${coordinate.radLongitude},${coordinate.radLatitude}), ${s.column(positionColumnName)})")
+    SQLSyntax.createUnsafely(s"ST_Distance(point(${coordinate.radLongitude},${coordinate.radLatitude}), ${s.column(positionColumnName).value})")
   }
 
   def orderByDistance(coordinate: Coordinate, s: SyntaxProvider[_], positionColumnName: String) = {
