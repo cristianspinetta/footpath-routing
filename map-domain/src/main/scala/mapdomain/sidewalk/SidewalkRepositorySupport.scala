@@ -1,16 +1,16 @@
 package mapdomain.sidewalk
 
-import mapdomain.graph.Coordinate
+import mapdomain.graph.{ BoundedGeoLocation, Coordinate }
 import scalikejdbc.{ DB, DBSession, WrappedResultSet, _ }
 import sql.SpatialSQLSupport
 
 trait SidewalkRepositorySupport {
-  val sidewalkVertexRepository = SidewalkVertexRepository
-  val sidewalkEdgeRepository = SidewalkEdgeRepository
-  val streetCrossingEdgeRepository = StreetCrossingEdgeRepository
+  protected val sidewalkVertexRepository = SidewalkVertexRepository
+  protected val sidewalkEdgeRepository = SidewalkEdgeRepository
+  protected val streetCrossingEdgeRepository = StreetCrossingEdgeRepository
 }
 
-trait SidewalkEdgeRepository {
+trait SidewalkEdgeRepository extends SpatialSQLSupport {
 
   val (se, sv) = (SidewalkEdge.syntax("se"), SidewalkVertex.syntax("sv"))
 
@@ -53,6 +53,13 @@ trait SidewalkEdgeRepository {
       .where.eq(se.id, id)
   }.map(sidewalkEdge(se)).single().apply().get
 
+  def findNearestSidewalks(coordinate: Coordinate, radius: Double)(implicit session: DBSession = SidewalkEdge.autoSession): List[SidewalkEdge] = withSQL {
+    select
+      .from(SidewalkEdge as se)
+      .leftJoin(SidewalkVertex as sv).on(se.vertexStartId, sv.id) // FIXME hacer join con vertices end, agregando un on en el left join
+      .where.append(clauseNearestByDistance(coordinate, radius, sv, "coordinate"))
+  }.map(sidewalkEdge(se)).list().apply()
+
   def deleteAll(implicit session: DBSession = SidewalkEdge.autoSession): Unit = withSQL {
     deleteFrom(SidewalkEdge)
   }.update.apply()
@@ -74,7 +81,7 @@ trait SidewalkEdgeRepository {
 
 object SidewalkEdgeRepository extends SidewalkEdgeRepository
 
-trait StreetCrossingEdgeRepository {
+trait StreetCrossingEdgeRepository extends SpatialSQLSupport {
 
   val (sce, sv) = (StreetCrossingEdge.syntax("sce"), SidewalkVertex.syntax("sv"))
 
@@ -105,6 +112,13 @@ trait StreetCrossingEdgeRepository {
       from(StreetCrossingEdge as sce)
       .where.eq(sce.id, id)
   }.map(streetCrossingEdge(sce)).single().apply().get
+
+  def findNearestSidewalks(coordinate: Coordinate, radius: Double)(implicit session: DBSession = SidewalkEdge.autoSession): List[StreetCrossingEdge] = withSQL {
+    select
+      .from(StreetCrossingEdge as sce)
+      .leftJoin(SidewalkVertex as sv).on(sce.vertexStartId, sv.id) // FIXME hacer join con vertices end, agregando un on en el left join
+      .where.append(clauseNearestByDistance(coordinate, radius, sv, "coordinate"))
+  }.map(streetCrossingEdge(sce)).list().apply()
 
   def deleteAll(implicit session: DBSession = StreetCrossingEdge.autoSession): Unit = withSQL {
     deleteFrom(StreetCrossingEdge)
@@ -165,7 +179,7 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
       .all(s)
       .append(selectLatitudeAndLongitude(s))
       .from(SidewalkVertex as s)
-      .append(orderBy(coordinate, s, "coordinate")) // FIXME limitar con un where
+      .append(orderByDistance(coordinate, s, "coordinate")) // FIXME limitar con un where
       .limit(1)
   }.map(sidewalkVertex(s)).single().apply()
   //    // angular distance in radians on a great circle

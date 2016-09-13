@@ -3,15 +3,13 @@ package module
 import base.LazyLoggerSupport
 import conf.ApiEnvConfig
 import mapdomain.graph._
-import mapdomain.sidewalk.{ Ramp, SidewalkVertex }
-import mapdomain.street.StreetVertex
+import mapdomain.utils.GraphUtils
 import pathgenerator.core.AStar
 import pathgenerator.graph._
-import mapdomain.utils.GraphUtils
 import service.{ StreetRouting, TypeRouting }
 
-import scala.util.{ Failure, Try }
 import scala.reflect.runtime.universe._
+import scala.util.{ Failure, Try }
 
 trait RoutingModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
 

@@ -15,6 +15,8 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
 
   type AreasByNodeId = mutable.ListMap[Long, mutable.Set[Way]] with mutable.MultiMap[Long, Way]
 
+  logger.info("Starting to parse the OSM elements")
+
   val noZeroLevels: Boolean = true
 
   val areaWayIds: ArrayBuffer[Long] = ArrayBuffer.empty

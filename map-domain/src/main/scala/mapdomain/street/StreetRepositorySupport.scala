@@ -16,8 +16,12 @@ trait StreetVertexRepository extends SpatialSQLSupport {
   val edge2 = StreetEdge.syntax("edge2")
   val neighbour = StreetVertex.syntax("neighbour")
 
-  def streetVertexOnly(v: SyntaxProvider[StreetVertex])(rs: WrappedResultSet): StreetVertex = {
-    StreetVertex(rs.long(v.resultName.id), Nil, coordinateFromResultSet(rs, v.tableAliasName))
+  protected def streetVertex(v: SyntaxProvider[StreetVertex], withEdges: Boolean = true)(rs: WrappedResultSet): StreetVertex = {
+    val vertex: StreetVertex = StreetVertex(rs.long(v.resultName.id), Nil, coordinateFromResultSet(rs, v.tableAliasName))
+    if (withEdges) {
+      val streetEdges: List[StreetEdge] = StreetEdgeRepository.findStreetEdgesByStreetVertex(vertex.id)
+      vertex.copy(edges = streetEdges)
+    } else vertex
   }
 
   def create(streetVertex: StreetVertex)(implicit session: DBSession = StreetVertex.autoSession): StreetVertex = {
@@ -35,28 +39,36 @@ trait StreetVertexRepository extends SpatialSQLSupport {
     streetVertices
   }
 
-  def find(id: Long)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex] = withSQL {
+  def find(id: Long, withEdges: Boolean = true)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex] = withSQL {
     select
       .all(v)
       .append(selectLatitudeAndLongitude(v))
       .from(StreetVertex as v)
       .where.eq(v.id, id)
-  }.map(streetVertexOnly(v)).single().apply()
+  }.map(streetVertex(v, withEdges)).single().apply()
 
-  def findNearest(coordinate: Coordinate)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex] = withSQL {
+  // FIXME adaptar a streaming @see https://github.com/tkawachi/scalikejdbc-stream
+  def findAll(withEdges: Boolean = true)(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex] = withSQL {
     select
       .all(v)
       .append(selectLatitudeAndLongitude(v))
       .from(StreetVertex as v)
-      .append(orderBy(coordinate, v, "coordinate")) // FIXME limitar con un where
+  }.map(streetVertex(v, withEdges)).list().apply()
+
+  def findNearest(coordinate: Coordinate, withEdges: Boolean = false)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex] = withSQL {
+    select
+      .all(v)
+      .append(selectLatitudeAndLongitude(v))
+      .from(StreetVertex as v)
+      .append(orderByDistance(coordinate, v, "coordinate")) // FIXME limitar con un where
       .limit(1)
-  }.map(streetVertexOnly(v)).single().apply()
+  }.map(streetVertex(v, withEdges)).single().apply()
 
   def deleteAll(implicit session: DBSession = StreetVertex.autoSession): Unit = withSQL {
     deleteFrom(StreetVertex)
   }.update.apply()
 
-  def findNeighbours(vertexId: Long)(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex] = DB readOnly { implicit session ⇒
+  def findNeighbours(vertexId: Long, withEdges: Boolean = false)(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex] = DB readOnly { implicit session ⇒
     sql"""
        select
         distinct ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
@@ -67,7 +79,7 @@ trait StreetVertexRepository extends SpatialSQLSupport {
         left join ${StreetVertex.as(neighbour)} on ${neighbour.id} IN (${edge1.vertexEndId}, ${edge2.vertexStartId})
        where
         ${v.id} = ${vertexId}
-    """.map(streetVertexOnly(neighbour))
+    """.map(streetVertex(neighbour, withEdges))
       .list.apply()
   }
 
@@ -75,7 +87,7 @@ trait StreetVertexRepository extends SpatialSQLSupport {
 
 object StreetVertexRepository extends StreetVertexRepository
 
-trait StreetEdgeRepository {
+trait StreetEdgeRepository extends SpatialSQLSupport {
 
   val (e, v) = (StreetEdge.syntax("e"), StreetVertex.syntax("v"))
 
@@ -109,22 +121,22 @@ trait StreetEdgeRepository {
       .where.eq(e.id, id)
   }.map(streetEdge(e)).single().apply().get
 
+  def findNearestStreets(coordinate: Coordinate, radius: Double)(implicit session: DBSession = StreetEdge.autoSession): List[StreetEdge] = withSQL {
+    select
+      .from(StreetEdge as e)
+      .leftJoin(StreetVertex as v).on(e.vertexStartId, v.id) // FIXME hacer join con vertices end, agregando un on en el left join
+      .where.append(clauseNearestByDistance(coordinate, radius, v, "coordinate"))
+  }.map(streetEdge(e)).list().apply()
+
   def deleteAll(implicit session: DBSession = StreetEdge.autoSession): Unit = withSQL {
     deleteFrom(StreetEdge)
   }.update.apply()
 
-  def findStreetEdgesByStreetVertex(vertexId: Long)(implicit session: DBSession = StreetEdge.autoSession): List[StreetEdge] = DB readOnly { implicit session ⇒
-    sql"""
-       select
-        ${e.result.*}
-       from
-        ${StreetVertex.as(v)}
-        left join ${StreetEdge.as(e)} on ${e.vertexStartId} = ${v.id}
-       where
-        ${v.id} = ${vertexId}
-    """.map(StreetEdgeRepository.streetEdge(e))
-      .list.apply()
-  }
+  def findStreetEdgesByStreetVertex(vertexId: Long)(implicit session: DBSession = StreetEdge.autoSession): List[StreetEdge] = withSQL {
+    select.
+      from(StreetEdge as e)
+      .where.eq(e.vertexStartId, vertexId)
+  }.map(streetEdge(e)).list().apply()
 
 }
 

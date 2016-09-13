@@ -12,7 +12,7 @@ import conf.ApiEnvConfig
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.Ramp
 import model.{ Edge, EdgeType, Sidewalk, Street }
-import module.{ MapModule, RoutingModule }
+import module.{ MapGeneratorModule, MapModule, RoutingModule }
 
 import scala.concurrent.{ ExecutionContextExecutor, Future }
 import scala.util.{ Failure ⇒ TFailure, Success ⇒ TSuccess }
@@ -86,6 +86,28 @@ trait DirectionService extends ApiEnvConfig {
                   complete(response)
                 }
               }
+          } ~
+          pathPrefix("private") {
+            pathPrefix("create") {
+              path("street") {
+                val response: Future[ToResponseMarshallable] = Future.successful {
+                  MapGeneratorModule.createStreets() match {
+                    case TSuccess(_)              ⇒ ""
+                    case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
+                  }
+                }
+                complete(response)
+              } ~
+                path("sidewalk") {
+                  val response: Future[ToResponseMarshallable] = Future.successful {
+                    MapGeneratorModule.createSidewalks() match {
+                      case TSuccess(_)              ⇒ ""
+                      case TFailure(exc: Throwable) ⇒ BadRequest -> exc.getMessage
+                    }
+                  }
+                  complete(response)
+                }
+            }
           }
       }
     }

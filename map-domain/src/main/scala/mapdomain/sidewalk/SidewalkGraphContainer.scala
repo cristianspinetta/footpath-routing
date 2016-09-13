@@ -1,11 +1,15 @@
 package mapdomain.sidewalk
 
+import base.LazyLoggerSupport
 import mapdomain.graph._
 import mapdomain.utils.GraphUtils
 
-trait SidewalkGraphContainer[V <: SidewalkVertex] extends GeoGraphContainer[V]
+trait SidewalkGraphContainer extends GeoGraphContainer[SidewalkVertex] {
+  def findNearestSidewalks(coordinate: Coordinate, radius: Double): List[SidewalkEdge]
+  def findNearestStreetCrossing(coordinate: Coordinate, radius: Double): List[StreetCrossingEdge]
+}
 
-case class LazySidewalkGraphContainer() extends LazyGeoGraphContainer[SidewalkVertex] with SidewalkGraphContainer[SidewalkVertex] with SidewalkRepositorySupport {
+case class LazySidewalkGraphContainer() extends LazyGeoGraphContainer[SidewalkVertex] with SidewalkGraphContainer with SidewalkRepositorySupport {
   /**
    * Find vertex by ID
    *
@@ -19,15 +23,22 @@ case class LazySidewalkGraphContainer() extends LazyGeoGraphContainer[SidewalkVe
   def findNearestVertex(coordinate: Coordinate): Option[SidewalkVertex] = findNearest(coordinate)
 
   override def neighbours(vertex: SidewalkVertex): Seq[SidewalkVertex] = sidewalkVertexRepository.findNeighbours(vertex.id)
+
+  override def findNearestSidewalks(coordinate: Coordinate, radius: Double): List[SidewalkEdge] = sidewalkEdgeRepository.findNearestSidewalks(coordinate, radius)
+  override def findNearestStreetCrossing(coordinate: Coordinate, radius: Double): List[StreetCrossingEdge] = streetCrossingEdgeRepository.findNearestSidewalks(coordinate, radius)
 }
 
-case class EagerSidewalkGraphContainer(override val vertices: List[SidewalkVertex]) extends EagerGeoGraphContainer(vertices) {
+case class EagerSidewalkGraphContainer(override val vertices: List[SidewalkVertex]) extends EagerGeoGraphContainer(vertices)
+    with SidewalkGraphContainer with LazyLoggerSupport {
 
   /**
    * Create a new EagerSidewalkGraphContainer with maximal connected subgraph that this graph contains
    * @return The connected graph
    */
-  def purgeSidewalks: EagerSidewalkGraphContainer = GraphUtils.getConnectedComponent(this, EagerSidewalkGraphContainer.apply)
+  def purgeSidewalks: EagerSidewalkGraphContainer = {
+    logger.info(s"Purge the sidewalk graph in order to get a connected graph")
+    GraphUtils.getConnectedComponent(this, EagerSidewalkGraphContainer.apply)
+  }
 
   lazy val sidewalkEdges: List[SidewalkEdge] = {
     (for (vertex ← vertices; edge ← vertex.sidewalkEdges) yield (edge.keyValue, edge))
@@ -40,5 +51,17 @@ case class EagerSidewalkGraphContainer(override val vertices: List[SidewalkVerte
       .groupBy { case (key, _) ⇒ key }
       .map { case (_, (_, edge) :: edgesTail) ⇒ edge }
       .toList
+  }
+
+  override def findNearestSidewalks(coordinate: Coordinate, radius: Double): List[SidewalkEdge] =
+    findNearestPedestrianEdges(coordinate, radius, sidewalkEdges)
+
+  override def findNearestStreetCrossing(coordinate: Coordinate, radius: Double): List[StreetCrossingEdge] =
+    findNearestPedestrianEdges(coordinate, radius, streetCrossingEdges)
+
+  protected def findNearestPedestrianEdges[E <: PedestrianEdge](coordinate: Coordinate, radius: Double, edges: List[E]): List[E] = {
+    GeoSearch.findNearestByRadius(coordinate, radius, edges,
+      (edge: E) ⇒
+        Seq(findVertex(edge.vertexStartId).get.coordinate, findVertex(edge.vertexEndId).get.coordinate))
   }
 }

@@ -6,8 +6,8 @@ import mapdomain.math.Line
 import scalikejdbc._
 
 class PedestrianEdge(override val vertexStartId: Long, override val vertexEndId: Long, key: String, override val distance: Double = 1) extends GeoEdge(vertexStartId, vertexEndId, distance) {
-  def from(implicit graphContainer: GraphContainer[SidewalkVertex]): Option[SidewalkVertex] = graphContainer.findVertex(vertexStartId)
-  def to(implicit graphContainer: GraphContainer[SidewalkVertex]): Option[SidewalkVertex] = graphContainer.findVertex(vertexEndId)
+  def from(implicit graphContainer: SidewalkGraphContainer): Option[SidewalkVertex] = graphContainer.findVertex(vertexStartId)
+  def to(implicit graphContainer: SidewalkGraphContainer): Option[SidewalkVertex] = graphContainer.findVertex(vertexEndId)
 }
 
 trait Side

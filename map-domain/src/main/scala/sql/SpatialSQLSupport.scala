@@ -1,7 +1,6 @@
 package sql
 
-import mapdomain.graph.Coordinate
-import mapdomain.publictransport.Stop
+import mapdomain.graph.{ BoundedGeoLocation, Coordinate }
 import scalikejdbc._
 
 trait SpatialSQLSupport {
@@ -14,7 +13,7 @@ trait SpatialSQLSupport {
     SQLSyntax.createUnsafely(s"ST_Distance(point(${coordinate.radLongitude},${coordinate.radLatitude}), ${s.column(positionColumnName)})")
   }
 
-  def orderBy(coordinate: Coordinate, s: SyntaxProvider[_], positionColumnName: String) = {
+  def orderByDistance(coordinate: Coordinate, s: SyntaxProvider[_], positionColumnName: String) = {
     sqls"order by ${distance(coordinate, s, positionColumnName)}"
   }
 
@@ -26,6 +25,23 @@ trait SpatialSQLSupport {
 
   def coordinateFromResultSet(rs: WrappedResultSet, tableAlias: String): Coordinate = {
     Coordinate.byRadians(rs.double(s"${tableAlias}_lat"), rs.double(s"${tableAlias}_lng"))
+  }
+
+  def clauseNearestByDistance(coordinate: Coordinate, radius: Double, s: SyntaxProvider[_], positionColumnName: String): SQLSyntax = {
+    // angular distance in radians on a great circle
+    val radDistance = radius / Coordinate.radius
+    val bound: BoundedGeoLocation = BoundedGeoLocation.boundByDistance(coordinate, radius)
+
+    if (bound.meridian180WithinDistance)
+      sqls"""
+         | (y(${s.column(positionColumnName)}) >= ${bound.min.radLatitude} and y(${s.column(positionColumnName)}) <= ${bound.max.radLatitude})
+         | and (x(${s.column(positionColumnName)}) >= ${bound.min.radLongitude} or x(${s.column(positionColumnName)}) <= ${bound.max.radLongitude})
+         | and ${distance(coordinate, s, positionColumnName)} <= $radDistance""".stripMargin
+    else
+      sqls"""
+         | (y(${s.column(positionColumnName)}) >= ${bound.min.radLatitude} and y(${s.column(positionColumnName)}) <= ${bound.max.radLatitude})
+         | and (x(${s.column(positionColumnName)}) >= ${bound.min.radLongitude} and x(${s.column(positionColumnName)}) <= ${bound.max.radLongitude})
+         | and ${distance(coordinate, s, positionColumnName)} <= $radDistance""".stripMargin
   }
 
 }
