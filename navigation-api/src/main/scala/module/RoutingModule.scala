@@ -13,9 +13,9 @@ import scala.util.{ Failure, Try }
 
 trait RoutingModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
 
-  def routing(coordinateFrom: Coordinate, coordinateTo: Coordinate, typeRouting: TypeRouting): Try[List[Coordinate]] = {
-    logger.info(s"Init Search from $coordinateFrom to $coordinateTo by type routing = $typeRouting")
-    val graph: GeoGraphContainer[_ <: GeoVertex] = typeRouting match {
+  def routing(coordinateFrom: Coordinate, coordinateTo: Coordinate, routingType: TypeRouting): Try[List[Coordinate]] = {
+    logger.info(s"Init Search from $coordinateFrom to $coordinateTo by type routing = $routingType")
+    val graph: GeoGraphContainer[_ <: GeoVertex] = routingType match {
       case StreetRouting ⇒ graphProvider.streetGraph
       case _             ⇒ graphProvider.sidewalkGraph
     }

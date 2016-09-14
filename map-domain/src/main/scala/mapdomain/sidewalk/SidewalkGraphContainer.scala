@@ -22,7 +22,7 @@ case class LazySidewalkGraphContainer() extends LazyGeoGraphContainer[SidewalkVe
 
   def findNearestVertex(coordinate: Coordinate): Option[SidewalkVertex] = findNearest(coordinate)
 
-  override def neighbours(vertex: SidewalkVertex): Seq[SidewalkVertex] = sidewalkVertexRepository.findNeighbours(vertex.id)
+  override def neighbours(vertex: SidewalkVertex): List[SidewalkVertex] = sidewalkVertexRepository.findNeighbours(vertex.id)
 
   override def findNearestSidewalks(coordinate: Coordinate, radius: Double): List[SidewalkEdge] = sidewalkEdgeRepository.findNearestSidewalks(coordinate, radius)
   override def findNearestStreetCrossing(coordinate: Coordinate, radius: Double): List[StreetCrossingEdge] = streetCrossingEdgeRepository.findNearestSidewalks(coordinate, radius)
@@ -63,5 +63,19 @@ case class EagerSidewalkGraphContainer(override val vertices: List[SidewalkVerte
     GeoSearch.findNearestByRadius(coordinate, radius, edges,
       (edge: E) ⇒
         Seq(findVertex(edge.vertexStartId).get.coordinate, findVertex(edge.vertexEndId).get.coordinate))
+  }
+
+  override def neighbours(vertex: SidewalkVertex): List[SidewalkVertex] = {
+    // FIXME meter los neighbours en un cache, por ejemplo usar un TrieMap con vertex.id como key y neighbourIds como value
+    val neighbourIds: List[Long] = vertex.edges.map(edge ⇒ if (edge.vertexStartId == vertex.id) edge.vertexEndId else edge.vertexStartId)
+    neighbourIds.flatMap(id ⇒ findVertex(id) toList)
+  }
+}
+
+object EagerSidewalkGraphContainer extends LazyLoggerSupport {
+
+  def createFromDB: EagerSidewalkGraphContainer = {
+    logger.info("Getting Sidewalk Graph from the DB")
+    EagerSidewalkGraphContainer(SidewalkVertexRepository.findAll)
   }
 }

@@ -65,16 +65,11 @@ trait SidewalkEdgeRepository extends SpatialSQLSupport {
   }.update.apply()
 
   def findSidewalkEdgesBySidewalkVertex(vertexId: Long)(implicit session: DBSession = SidewalkEdge.autoSession): List[SidewalkEdge] = DB readOnly { implicit session ⇒
-    sql"""
-       select
-        ${se.result.*}
-       from
-        ${SidewalkVertex.as(sv)}
-        left join ${SidewalkEdge.as(se)} on ${se.vertexStartId} = ${sv.id}
-       where
-        ${sv.id} = ${vertexId}
-    """.map(sidewalkEdge(se))
-      .list.apply()
+    withSQL {
+      select
+        .from(SidewalkEdge as se)
+        .where.eq(se.vertexStartId, vertexId)
+    }.map(sidewalkEdge(se)).list.apply()
   }
 
 }
@@ -125,16 +120,11 @@ trait StreetCrossingEdgeRepository extends SpatialSQLSupport {
   }.update.apply()
 
   def findCrossingEdgesBySidewalkVertex(vertexId: Long)(implicit session: DBSession = StreetCrossingEdge.autoSession): List[StreetCrossingEdge] = DB readOnly { implicit session ⇒
-    sql"""
-       select
-        ${sce.result.*}
-       from
-        ${SidewalkVertex.as(sv)}
-        left join ${StreetCrossingEdge.as(sce)} on ${sce.vertexStartId} = ${sv.id}
-       where
-        ${sv.id} = ${vertexId}
-    """.map(streetCrossingEdge(sce))
-      .list.apply()
+    withSQL {
+      select
+        .from(StreetCrossingEdge as sce)
+        .where.eq(sce.vertexStartId, vertexId)
+    }.map(streetCrossingEdge(sce)).list.apply()
   }
 
 }
@@ -150,7 +140,14 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
   val crossingEdge2 = StreetCrossingEdge.syntax("crossingEdge2")
   val neighbour = SidewalkVertex.syntax("neighbour")
 
-  def sidewalkVertex(s: SyntaxProvider[SidewalkVertex])(rs: WrappedResultSet): SidewalkVertex = sidewalkVertex(s.resultName, s.tableAliasName)(rs)
+  def sidewalkVertex(s: SyntaxProvider[SidewalkVertex], withEdges: Boolean = true)(rs: WrappedResultSet): SidewalkVertex = {
+    val vertex: SidewalkVertex = sidewalkVertex(s.resultName, s.tableAliasName)(rs)
+    if (withEdges) {
+      val sidewalkEdges: List[SidewalkEdge] = SidewalkEdgeRepository.findSidewalkEdgesBySidewalkVertex(vertex.id)
+      val streetCrossingEdges: List[StreetCrossingEdge] = StreetCrossingEdgeRepository.findCrossingEdgesBySidewalkVertex(vertex.id)
+      vertex.copy(sidewalkEdges = sidewalkEdges, streetCrossingEdges = streetCrossingEdges)
+    } else vertex
+  }
 
   private def sidewalkVertex(v: ResultName[SidewalkVertex], tableAlias: String)(rs: WrappedResultSet): SidewalkVertex =
     SidewalkVertex(rs.long(v.id), coordinateFromResultSet(rs, tableAlias), Nil, Nil, rs.long(v.streetVertexBelongToId))
@@ -174,6 +171,14 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
       .where.eq(s.id, id)
   }.map(sidewalkVertex(s)).single().apply()
 
+  // FIXME adaptar a streaming @see https://github.com/tkawachi/scalikejdbc-stream
+  def findAll(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = withSQL {
+    select
+      .all(s)
+      .append(selectLatitudeAndLongitude(s))
+      .from(SidewalkVertex as s)
+  }.map(sidewalkVertex(s)).list().apply()
+
   def findNearest(coordinate: Coordinate)(implicit session: DBSession = SidewalkVertex.autoSession): Option[SidewalkVertex] = withSQL {
     select
       .all(s)
@@ -182,30 +187,6 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
       .append(orderByDistance(coordinate, s, "coordinate")) // FIXME limitar con un where
       .limit(1)
   }.map(sidewalkVertex(s)).single().apply()
-  //    // angular distance in radians on a great circle
-  //    val radDistance = distance / Coordinate.radius
-  //
-  //    val bound: BoundedGeoLocation = BoundedGeoLocation.boundByDistance(coordinate, distance)
-  //
-  //    val sql = if (bound.meridian180WithinDistance)
-  //      sql"""select x(point) lng, y(point) lat from geo_3_node
-  //            |where
-  //            | (y(point) >= ${bound.min.radLatitude} and y(point) <= ${bound.max.radLatitude})
-  //            | and (x(point) >= ${bound.min.radLongitude} or x(point) <= ${bound.max.radLongitude})
-  //            | and ST_Distance(point(${coordinate.radLongitude},${coordinate.radLatitude}), point) <= $radDistance""".stripMargin
-  //    else
-  //      sql"""select x(point) lng, y(point) lat from geo_3_node
-  //            |where
-  //            | (y(point) >= ${bound.min.radLatitude} and y(point) <= ${bound.max.radLatitude})
-  //            | and (x(point) >= ${bound.min.radLongitude} and x(point) <= ${bound.max.radLongitude})
-  //            | and ST_Distance(point(${coordinate.radLongitude},${coordinate.radLatitude}), point) <= $radDistance""".stripMargin
-  //
-  //    //    sql"""select x(point) lng, y(point) lat from geo_node
-  //    //          |where
-  //    //          | y(point) >= ${bound.min.radLatitude} and y(point) <= ${bound.max.radLatitude}
-  //    //          | and x(point) >= ${bound.min.radLongitude} and x(point) <= ${bound.max.radLongitude}
-  //    //          | and ST_Distance(point(${coordinate.radLongitude},${coordinate.radLongitude}), point) <= $radDistance""".stripMargin
-  //    sql.map(geoNode(n)).list().apply()
 
   def findNeighbours(vertexId: Long)(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = DB readOnly { implicit session ⇒
     sql"""

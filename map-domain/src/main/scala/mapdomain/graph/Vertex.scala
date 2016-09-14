@@ -6,7 +6,6 @@ trait Vertex {
   val id: Long
   val edges: List[Edge]
 
-  def neighbours[V <: Vertex](graph: GraphContainer[V]): List[V] = edges.flatMap(edge ⇒ graph.findVertex(edge.vertexEndId) toList)
   def getEdgesFor(vertexId: Long): Option[Edge] = edges.find(_.vertexEndId == vertexId)
   def distanceToNeighbour(vertexId: Long): Double
 }

@@ -35,7 +35,7 @@ trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
   }
 
   def ramps(coordinate: Coordinate, radius: Double): Try[Vector[Ramp]] = Try {
-    GeoSearch.findNearestByRadius(coordinate, radius, graphProvider.ramps, (ramp: Ramp) ⇒ Seq(ramp.coordinate))
+    GeoSearch.findNearestByRadius(coordinate, radius, RampProvider.ramps, (ramp: Ramp) ⇒ Seq(ramp.coordinate))
   }
 
 }

@@ -6,20 +6,20 @@ import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 
-class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: Vertex, targetNode: Vertex,
-    estFurtherCostFunc: Vertex ⇒ Int) {
+class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: V, targetNode: V,
+    estFurtherCostFunc: V ⇒ Int) {
 
   // priority queue orders by highest value, so cost is negated.
-  val ordering = Ordering.by[MetaInformedState, Int] {
+  val ordering = Ordering.by[MetaInformedState[V], Int] {
     case MetaInformedState(_, cost, estFurtherCost) ⇒ -(cost + estFurtherCost).toInt
     case _ ⇒ 0
   }
 
   // The set of tentative vertices to be evaluated, initially containing the start vertex
-  private val _opens = mutable.PriorityQueue[MetaInformedState](MetaInformedState(startNode, 0, 0))(ordering)
+  private val _opens = mutable.PriorityQueue[MetaInformedState[V]](MetaInformedState(startNode, 0, 0))(ordering)
 
   // The set of vertices already evaluated.
-  private val _visited = mutable.Set[Vertex]()
+  private val _visited = mutable.Set[V]()
 
   // The map of navigated vertices.
   private val _cameFrom: TrieMap[Vertex, Vertex] = TrieMap.empty
@@ -27,7 +27,7 @@ class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: Vertex, 
   def search: List[Edge] = loop(1, None)
 
   @tailrec
-  private def loop(loopCount: Int, fromNode: Option[Vertex]): List[Edge] = {
+  private def loop(loopCount: Int, fromNode: Option[V]): List[Edge] = {
     if (_opens isEmpty) Nil
     else {
       val current = _opens.dequeue()
@@ -41,8 +41,8 @@ class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: Vertex, 
     }
   }
 
-  private def enqueueNeighbours(node: Vertex, cost: Long) {
-    val neighbours = node neighbours gMap
+  private def enqueueNeighbours(node: V, cost: Long) {
+    val neighbours = gMap neighbours node
     val nonVisitedNeighbours = neighbours filter (v ⇒ !_visited.contains(v))
     _visited ++= nonVisitedNeighbours
 
@@ -61,4 +61,4 @@ class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: Vertex, 
 
 }
 
-case class MetaInformedState(node: Vertex, cost: Long, estFurtherCost: Long)
+case class MetaInformedState[V <: Vertex](node: V, cost: Long, estFurtherCost: Long)

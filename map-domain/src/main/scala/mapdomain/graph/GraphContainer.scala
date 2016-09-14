@@ -11,17 +11,15 @@ trait GraphContainer[V <: Vertex] {
    */
   def findVertex(id: Long): Option[V]
 
-  def neighbours(vertex: V): Seq[V]
+  def neighbours(vertex: V): List[V]
 
 }
 
 trait LazyGraphContainer[V <: Vertex] extends GraphContainer[V]
 
-class EagerGraphContainer[V <: Vertex /*, G <: GraphContainer[V]*/ ](val vertices: List[V] /*, constructor: List[V] ⇒ G*/ ) extends GraphContainer[V] { /*self: G ⇒*/
+class EagerGraphContainer[V <: Vertex](val vertices: List[V]) extends GraphContainer[V] {
 
   type Self = EagerGraphContainer[V]
-  //    type Constructor = (List[V]) ⇒ Self
-  //  private def newEagerGraph(vertices: List[V]): this.type = new EagerGraphContainer[V](vertices)
 
   /**
    * Find vertex by ID
@@ -31,7 +29,7 @@ class EagerGraphContainer[V <: Vertex /*, G <: GraphContainer[V]*/ ](val vertice
    */
   def findVertex(id: Long): Option[V] = vertices.find(_.id == id)
 
-  def neighbours(vertex: V): Seq[V] = vertex.edges.flatMap(edge ⇒ findVertex(edge.vertexEndId) toSeq)
+  override def neighbours(vertex: V): List[V] = vertex.edges.flatMap(edge ⇒ findVertex(edge.vertexEndId) toList)
 
 }
 

@@ -12,6 +12,9 @@ object ApiEnvConfig extends EnvConfig with LazyLoggerSupport {
   val OSM = OSMConfiguration(envConfiguration.config.getConfig("osm"))
   val Ramp = RampConfiguration(envConfiguration.config.getConfig("ramp"))
   val HTTP = HTTPConfiguration(envConfiguration.config.getConfig("http"))
+  val Graph = GraphConfiguration(envConfiguration.config.getConfig("graph"))
+
+  logger.info(s"Configuration for env ${envConfiguration.currentEnvironment} loads OK")
 
 }
 
@@ -27,4 +30,8 @@ case class RampConfiguration(config: Config) {
 case class HTTPConfiguration(config: Config) {
   val interface: String = config.getString("interface")
   val port: Int = config.getInt("port")
+}
+
+case class GraphConfiguration(config: Config) {
+  val inMemory: Boolean = config.getBoolean("in-memory")
 }

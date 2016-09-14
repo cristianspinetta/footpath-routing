@@ -80,12 +80,13 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
 
       logger.debug(s"visit vertex ${current.id}")
 
-      if (current.id == targetVertex.id)
+      if (current.id == targetVertex.id) {
+        logger.info(s"Reached the target vertex in $nroLoop loops.")
         reconstructPath(_cameFrom, targetVertex)
-      else {
+      } else {
         _closed.add(current)
 
-        val ns: List[N] = current.neighbours(gMap)
+        val ns: List[N] = gMap neighbours current
 
         ns foreach eachNeighbour(current)
 
@@ -139,6 +140,7 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
   }
 
   private def logCurrentState(nroLoop: Int): Unit = {
+    if (nroLoop % 100 == 0) logger.info(s"Loop $nroLoop looking for the target vertex.")
     logger.debug(s"-----------------------------------")
     logger.debug(s"Initialize loop #$nroLoop")
     logger.debug(s"-----------------------------------")

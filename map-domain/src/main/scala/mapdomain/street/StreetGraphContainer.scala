@@ -21,7 +21,7 @@ case class LazyStreetGraphContainer() extends LazyGeoGraphContainer[StreetVertex
 
   def findNearestVertex(coordinate: Coordinate): Option[StreetVertex] = findNearest(coordinate)
 
-  override def neighbours(vertex: StreetVertex): Seq[StreetVertex] = streetVertexRepository.findNeighbours(vertex.id)
+  override def neighbours(vertex: StreetVertex): List[StreetVertex] = streetVertexRepository.findNeighbours(vertex.id)
 
   override def findNearestStreets(coordinate: Coordinate, radius: Double): List[StreetEdge] = streetEdgeRepository.findNearestStreets(coordinate, radius)
 }
@@ -53,7 +53,7 @@ case class EagerStreetGraphContainer(override val vertices: List[StreetVertex]) 
 
 object EagerStreetGraphContainer extends LazyLoggerSupport {
   def createFromDB: EagerStreetGraphContainer = {
-    logger.info("Getting an Eager Street Graph from the DB")
-    EagerStreetGraphContainer(StreetVertexRepository.findAll(withEdges = true))
+    logger.info("Getting Street Graph from the DB")
+    EagerStreetGraphContainer(StreetVertexRepository.findAll)
   }
 }

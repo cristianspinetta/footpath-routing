@@ -92,7 +92,7 @@ trait GraphUtils {
 
   def findNeighbours[V <: Vertex](start: V, graph: GraphContainer[V]): List[V] = {
     def childrenNotVisited(vertex: V, visited: List[V]) =
-      vertex.neighbours(graph) filter (x ⇒ !visited.contains(x)) toSet
+      graph.neighbours(vertex) filter (x ⇒ !visited.contains(x)) toSet
 
     @tailrec
     def loop(stack: Set[V], visited: List[V]): List[V] = {
