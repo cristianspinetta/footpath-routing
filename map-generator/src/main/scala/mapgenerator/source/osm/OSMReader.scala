@@ -2,6 +2,7 @@ package mapgenerator.source.osm
 
 import java.net.URL
 
+import base.LazyLoggerSupport
 import mapgenerator.source.osm.model._
 import org.joda.time.DateTime
 
@@ -67,9 +68,19 @@ class OSMReaderByXml(osm: Elem) extends OSMReader {
   }
 }
 
-object OSMReaderByXml {
+object OSMReaderByXml extends LazyLoggerSupport {
 
-  def apply(url: URL): OSMReaderByXml = new OSMReaderByXml(XML.load(url.getPath))
+  def apply(url: URL): OSMReaderByXml = {
+    logLoading(url.getPath)
+    new OSMReaderByXml(XML.load(url.getPath))
+  }
 
-  def apply(systemFilePath: String): OSMReaderByXml = new OSMReaderByXml(XML.load(systemFilePath))
+  def apply(systemFilePath: String): OSMReaderByXml = {
+    logLoading(systemFilePath)
+    new OSMReaderByXml(XML.load(systemFilePath))
+  }
+
+  private def logLoading(path: String): Unit = {
+    logger.info(s"Loading OSM file in format xml from $path")
+  }
 }

@@ -52,6 +52,9 @@ object Settings extends Version {
     )
   )
 
+  lazy val assemblySettings = Assembly.settings
+  lazy val notAggregateInAssembly = Assembly.notAggregateInAssembly
+
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
     ScalariformKeys.preferences in Compile := formattingPreferences,
     ScalariformKeys.preferences in Test := formattingPreferences

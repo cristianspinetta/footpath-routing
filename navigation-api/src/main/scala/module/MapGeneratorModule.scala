@@ -19,12 +19,12 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
     // FIXME Check that streets doen't exist.
     logger.info(s"Starting to create the streets")
     withTimeLogging({
-      val osmURL: URL = getClass.getResource(configuration.OSM.sourceFilePath)
+      val osmURL: String = configuration.OSM.sourceFilePath
       val xmlParser: OSMReaderByXml = OSMReaderByXml(osmURL)
       val osmModule: OSMModule = OSMModule(xmlParser)
       val streetGraphModule: StreetGraphModule = StreetGraphModule(osmModule)
       val streetGraph = streetGraphModule.createGraph.purgeStreets
-      logger.debug(s"streetGraph. Vertices: ${streetGraph.vertices.size}. Street Edges: ${streetGraph.vertices.map(_.edges.size).sum}.")
+      logger.debug(s"StreetGraph. Vertices: ${streetGraph.vertices.size}. Street Edges: ${streetGraph.vertices.map(_.edges.size).sum}.")
       saveStreets(streetGraph)
     }, (time: Long) ⇒ logger.info(s"Created and saved the Street Graph in $time ms."))
   } flatten

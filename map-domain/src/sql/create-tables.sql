@@ -1,4 +1,4 @@
-use `EASY_TRAVEL`;
+use `EASY_TRAVEL`; -- Or other DB
 
 CREATE TABLE IF NOT EXISTS `street_vertex` (
                 `id` bigint(20) NOT NULL,
