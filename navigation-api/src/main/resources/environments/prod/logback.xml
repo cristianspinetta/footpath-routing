@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <included>
 
-    <!--<statusListener class="ch.qos.logback.core.status.NopStatusListener"/>-->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
 
     <appender name="fileRolling" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logApi.log</file>

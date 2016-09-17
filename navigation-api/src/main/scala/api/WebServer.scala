@@ -4,19 +4,19 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ Config, ConfigFactory }
 import conf.ApiEnvConfig
-import scalikejdbc.config.DBs
+import scalikejdbc.config._
 import service.DirectionService
-
-import scala.io.StdIn
 
 object WebServer extends App with DirectionService with ApiEnvConfig {
   override implicit val system = ActorSystem()
   override implicit val executor = system.dispatcher
   override implicit val materializer = ActorMaterializer()
 
-  DBs.setupAll()
+  new DBs with TypesafeConfigReader with StandardTypesafeConfig with NoEnvPrefix {
+    override lazy val config: Config = configuration.envConfiguration.config
+  }.setupAll()
 
   override val logger = Logging(system, getClass)
 

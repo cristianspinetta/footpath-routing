@@ -14,6 +14,7 @@ object Settings extends Version {
     javaOptions in run := Seq(
       "-Duser.timezone=GMT-0",
       "-DenvironmentOverride=./environment-override.conf",
+      "-Denvironment=dev",
       "-Dcom.sun.management.jmxremote.ssl=false",
       "-Dcom.sun.management.jmxremote.authenticate=false",
       "-Dcom.sun.management.jmxremote.port=29290",
