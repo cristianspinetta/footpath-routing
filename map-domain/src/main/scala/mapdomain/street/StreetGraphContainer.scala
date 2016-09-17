@@ -1,6 +1,6 @@
 package mapdomain.street
 
-import base.LazyLoggerSupport
+import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph._
 import mapdomain.utils.GraphUtils
 
@@ -27,7 +27,7 @@ case class LazyStreetGraphContainer() extends LazyGeoGraphContainer[StreetVertex
 }
 
 case class EagerStreetGraphContainer(override val vertices: List[StreetVertex]) extends EagerGeoGraphContainer(vertices)
-    with StreetGraphContainer with LazyLoggerSupport {
+    with StreetGraphContainer with LazyLoggerSupport with MeterSupport {
 
   lazy val streets: List[StreetEdge] = for {
     vertex ← vertices
@@ -45,10 +45,10 @@ case class EagerStreetGraphContainer(override val vertices: List[StreetVertex]) 
    * Create a new EagerStreetGraphContainer with maximal connected subgraph that this graph contains
    * @return The connected graph
    */
-  def purgeStreets: EagerStreetGraphContainer = {
+  def purgeStreets: EagerStreetGraphContainer = withTimeLogging({
     logger.info(s"Purge the street graph in order to get a connected graph")
     GraphUtils.getConnectedComponent(this, EagerStreetGraphContainer.apply)
-  }
+  }, (time: Long) ⇒ logger.info(s"Street graph was purged in $time ms."))
 }
 
 object EagerStreetGraphContainer extends LazyLoggerSupport {

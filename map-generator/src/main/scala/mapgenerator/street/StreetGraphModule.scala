@@ -20,9 +20,14 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
   def createGraph: EagerStreetGraphContainer = {
     logger.info("Starting to create a Street Graph from the OSM Module")
     withTimeLogging({
-      for (way ← osmModule.streetWays) processStreetWay(way)
+      osmModule.streetWays.foldLeft(0) {
+        case (counter, way) ⇒
+          if (counter % 1000 == 0) logger.info(s"$counter ways parsed.")
+          processStreetWay(way)
+          counter + 1
+      }
       EagerStreetGraphContainer(createdStreetVertex.toList)
-    }, (time: Long) ⇒ logger.info(s"Create Street Graph in $time ms."))
+    }, (time: Long) ⇒ logger.info(s"Created Street Graph in $time ms."))
   }
 
   private def processStreetWay(way: Way): Unit = {
@@ -42,7 +47,10 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
       var startEndpointOpt: Option[StreetVertex] = None
       var endEndpointOpt: Option[StreetVertex] = None
 
-      val coupleWays: List[List[OSMNode]] = wayUniqueNodes.sliding(2).toList
+      val coupleWays: List[List[OSMNode]] = wayUniqueNodes match {
+        case head :: second :: tail ⇒ wayUniqueNodes.sliding(2).toList
+        case _                      ⇒ Nil
+      }
 
       for ((vector, index) ← coupleWays.zipWithIndex) {
 

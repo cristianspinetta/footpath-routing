@@ -22,7 +22,7 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
       val osmModule: OSMModule = OSMModule(xmlParser)
       val streetGraphModule: StreetGraphModule = StreetGraphModule(osmModule)
       val streetGraph = streetGraphModule.createGraph.purgeStreets
-      logger.debug(s"StreetGraph. Vertices: ${streetGraph.vertices.size}. Street Edges: ${streetGraph.vertices.map(_.edges.size).sum}.")
+      logger.debug(s"StreetGraph created. Vertices: ${streetGraph.vertices.size}. Street Edges: ${streetGraph.vertices.map(_.edges.size).sum}.")
       saveStreets(streetGraph)
     }, (time: Long) ⇒ logger.info(s"Created and saved the Street Graph in $time ms."))
   } flatten
@@ -31,7 +31,9 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
     logger.info(s"Persist the street graph on the DB")
     withTimeLogging(
       DB localTx { implicit session ⇒
+        logger.info(s"Inserting street vertices...")
         val savedVertices = streetVertexRepository createInBulk streetGraph.vertices
+        logger.info(s"Inserting street edges...")
         for {
           vertex ← savedVertices
           edge ← vertex.edges
@@ -44,7 +46,7 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
     withTimeLogging({
       val sidewalkGraph = SidewalkModule()(EagerStreetGraphContainer.createFromDB)
         .createSideWalks(failureTolerance = failureTolerance).purgeSidewalks
-      logger.debug(s"sidewalkGraph. Vertices: ${sidewalkGraph.vertices.size}. Sidewalk Edges: ${sidewalkGraph.sidewalkEdges.size}. Street Crossing Edges: ${sidewalkGraph.streetCrossingEdges.size}")
+      logger.debug(s"sidewalkGraph created. Vertices: ${sidewalkGraph.vertices.size}. Sidewalk Edges: ${sidewalkGraph.sidewalkEdges.size}. Street Crossing Edges: ${sidewalkGraph.streetCrossingEdges.size}")
       saveSidewalks(sidewalkGraph)
     }, (time: Long) ⇒ logger.info(s"Created and saved the Sidewalks Graph in $time ms."))
   } flatten
@@ -53,8 +55,11 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
     logger.info(s"Persist the sidewalk graph on the DB")
     withTimeLogging(
       DB localTx { implicit session ⇒
+        logger.info(s"Inserting sidewalk vertices...")
         sidewalkGraph.vertices foreach sidewalkVertexRepository.create
+        logger.info(s"Inserting sidewalk edges...")
         sidewalkGraph.sidewalkEdges foreach sidewalkEdgeRepository.create
+        logger.info(s"Inserting street crossing edges...")
         sidewalkGraph.streetCrossingEdges foreach streetCrossingEdgeRepository.create
       }, (time: Long) ⇒
         logger.info(s"${sidewalkGraph.vertices.size} vertices, ${sidewalkGraph.sidewalkEdges.size} sidewalk edges and " +

@@ -1,13 +1,12 @@
 package mapgenerator.street
 
-import mapdomain.graph.GraphContainer
 import mapdomain.street.{ EagerStreetGraphContainer, StreetEdge, StreetVertex }
 import mapgenerator.source.osm._
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
 import org.scalatest.{ FlatSpec, Matchers }
 
-import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
+import scala.collection.mutable.ArrayBuffer
 
 class StreetGraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 

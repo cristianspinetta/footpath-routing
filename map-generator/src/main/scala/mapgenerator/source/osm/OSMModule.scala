@@ -1,6 +1,6 @@
 package mapgenerator.source.osm
 
-import base.LazyLoggerSupport
+import base.{ LazyLoggerSupport, MeterSupport }
 import enums.StreetTraversalPermission
 import mapgenerator.source.osm.model._
 
@@ -277,8 +277,10 @@ case class OSMModule(nodes: Seq[OSMNode], ways: Seq[Way], relations: Seq[Relatio
 
 }
 
-object OSMModule extends LazyLoggerSupport {
-  def apply(reader: OSMReader): OSMModule = new OSMModule(reader.loadNodes, reader.loadWays, reader.loadRelations)
+object OSMModule extends LazyLoggerSupport with MeterSupport {
+  def apply(reader: OSMReader): OSMModule = withTimeLogging({
+    new OSMModule(reader.loadNodes, reader.loadWays, reader.loadRelations)
+  }, (time: Long) ⇒ logger.info(s"Parsed OSM file in $time ms."))
 
   def getPermissionsForWay(way: Way, defPermission: StreetTraversalPermission): StreetTraversalPermission = {
     var partialPermission: StreetTraversalPermission = getPermissionsForEntity(way, defPermission)

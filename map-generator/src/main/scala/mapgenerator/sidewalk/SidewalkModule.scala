@@ -20,6 +20,7 @@ case class SidewalkModule(implicit graph: EagerStreetGraphContainer) extends Laz
     var verticesVisited = 0
     for (vertex ← graph.vertices if vertex.edges.nonEmpty) { // FIXME a temporary workaround: vertex.edges.nonEmpty
       verticesVisited += 1
+      if (verticesVisited % 1000 == 0) logger.info(s"$verticesVisited vertices visited.")
       logger.debug(s"Visiting vertex id = ${vertex.id}, number = $verticesVisited. Vertex: $vertex")
       createSidewalkByStreetVertex(vertex, distanceToStreet)
     }

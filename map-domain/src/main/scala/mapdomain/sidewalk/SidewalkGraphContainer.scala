@@ -1,6 +1,6 @@
 package mapdomain.sidewalk
 
-import base.LazyLoggerSupport
+import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph._
 import mapdomain.utils.GraphUtils
 
@@ -29,24 +29,24 @@ case class LazySidewalkGraphContainer() extends LazyGeoGraphContainer[SidewalkVe
 }
 
 case class EagerSidewalkGraphContainer(override val vertices: List[SidewalkVertex]) extends EagerGeoGraphContainer(vertices)
-    with SidewalkGraphContainer with LazyLoggerSupport {
+    with SidewalkGraphContainer with LazyLoggerSupport with MeterSupport {
 
   /**
    * Create a new EagerSidewalkGraphContainer with maximal connected subgraph that this graph contains
    * @return The connected graph
    */
-  def purgeSidewalks: EagerSidewalkGraphContainer = {
+  def purgeSidewalks: EagerSidewalkGraphContainer = withTimeLogging({
     logger.info(s"Purge the sidewalk graph in order to get a connected graph")
     GraphUtils.getConnectedComponent(this, EagerSidewalkGraphContainer.apply)
-  }
+  }, (time: Long) => logger.info(s"Sidewalk graph was purged in $time ms."))
 
-  lazy val sidewalkEdges: List[SidewalkEdge] = {
+  lazy val sidewalkEdges: List[SidewalkEdge] = { // FIXME esto quedo medio cualquiera, reveer!
     (for (vertex ← vertices; edge ← vertex.sidewalkEdges) yield (edge.keyValue, edge))
       .groupBy { case (key, _) ⇒ key }
       .map { case (_, (_, edge) :: edgesTail) ⇒ edge }
       .toList
   }
-  lazy val streetCrossingEdges: List[StreetCrossingEdge] = {
+  lazy val streetCrossingEdges: List[StreetCrossingEdge] = { // FIXME esto quedo medio cualquiera, reveer!
     (for (vertex ← vertices; edge ← vertex.streetCrossingEdges) yield (edge.keyValue, edge))
       .groupBy { case (key, _) ⇒ key }
       .map { case (_, (_, edge) :: edgesTail) ⇒ edge }

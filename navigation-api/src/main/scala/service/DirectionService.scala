@@ -73,10 +73,11 @@ trait DirectionService extends ApiEnvConfig {
           parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double],
             'routingType ? "street").as(RoutingRequest) { routingRequest ⇒
               val response: Future[ToResponseMarshallable] = Future.successful {
-                RoutingModule.routing(
+                val list = RoutingModule.routing(
                   coordinateFrom = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
                   coordinateTo = Coordinate(routingRequest.toLat, routingRequest.toLng),
-                  routingType = routingRequest.routingTypeO) get
+                  routingType = routingRequest.routingTypeO).get
+                RoutingResponse(list.map(coor ⇒ Coordinate(coor.latitude, coor.longitude)))
               }
               complete(response)
             }
@@ -85,7 +86,8 @@ trait DirectionService extends ApiEnvConfig {
             path("edges") {
               parameters('edgeType.as[String], 'radius ? 1.0D, 'lat.as[Double], 'lng.as[Double]).as(EdgeRequest) { edgeRequest ⇒
                 val response: Future[ToResponseMarshallable] = Future.successful {
-                  MapModule.edges(EdgeType(edgeRequest.edgeType), Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius) get
+                  val list = MapModule.edges(EdgeType(edgeRequest.edgeType), Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius).get
+                  EdgeResponse(list.toList)
                 }
                 complete(response)
               }
@@ -93,7 +95,8 @@ trait DirectionService extends ApiEnvConfig {
               path("ramps") {
                 parameters('lat.as[Double], 'lng.as[Double], 'radius ? 1.0D).as(RampRequest) { rampRequest: RampRequest ⇒
                   val response: Future[ToResponseMarshallable] = Future.successful {
-                    MapModule.ramps(Coordinate(rampRequest.lat, rampRequest.lng), rampRequest.radius) get
+                    val list = MapModule.ramps(Coordinate(rampRequest.lat, rampRequest.lng), rampRequest.radius).get
+                    RampResponse(list)
                   }
                   complete(response)
                 }
