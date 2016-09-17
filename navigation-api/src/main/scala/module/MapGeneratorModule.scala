@@ -1,7 +1,5 @@
 package module
 
-import java.net.URL
-
 import base.{ LazyLoggerSupport, MeterSupport }
 import conf.ApiEnvConfig
 import mapdomain.sidewalk.{ EagerSidewalkGraphContainer, SidewalkRepositorySupport }
