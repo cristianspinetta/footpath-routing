@@ -1,5 +1,7 @@
 package mapgenerator.sidewalk
 
+import java.util.concurrent.atomic.AtomicLong
+
 import base.{ FailureReporterSupport, LazyLoggerSupport, LogicError, MeterSupport }
 import mapdomain.graph.{ Coordinate, GeoEdge, GeoVertex, GraphContainer }
 import mapdomain.math.{ GVector, VectorUtils }
@@ -17,10 +19,10 @@ case class SidewalkModule(implicit graph: EagerStreetGraphContainer) extends Laz
     logger.info(s"Creating Sidewalks for all the graph")
 
     implicit val builders = Builders(StreetCrossingBuilderManager(), SidewalkVertexBuilderManager(), SidewalkEdgeBuilderManager())
-    var verticesVisited = 0
+    val verticesVisited = new AtomicLong(0)
     for (vertex ← graph.vertices if vertex.edges.nonEmpty) { // FIXME a temporary workaround: vertex.edges.nonEmpty
-      verticesVisited += 1
-      if (verticesVisited % 1000 == 0) logger.info(s"$verticesVisited vertices visited.")
+      val visited = verticesVisited.incrementAndGet()
+      if (visited % 1000 == 0) logger.info(s"$verticesVisited vertices visited.")
       logger.debug(s"Visiting vertex id = ${vertex.id}, number = $verticesVisited. Vertex: $vertex")
       createSidewalkByStreetVertex(vertex, distanceToStreet)
     }

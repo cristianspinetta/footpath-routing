@@ -46,17 +46,20 @@ object Projects extends Build {
         akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
-    .settings(settingsForPlayground: _*)
+    .settings(playgroundSettings: _*)
     .settings(mainClass in (Compile, run) := Some("api.WebServer"))
     .settings(mainClass in assembly := Some("api.WebServer"))
 
   lazy val mapDomain = Project("map-domain", file("map-domain"))
     .dependsOn(commonLibrary)
+    .configs(BenchmarkConfig)
+    .settings(inConfig(BenchmarkConfig)(Defaults.testSettings): _*)
+    .settings(benchmarkSettings: _*)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
-      compile(typesafeConfig, logbackCore, logbackClassic, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, h2Connector) ++
-        test(scalatest, mockito, scalacheck))
+        compile(typesafeConfig, logbackCore, logbackClassic, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, h2Connector) ++
+        test(scalatest, mockito, scalacheck, scalaMeter))
     .settings(noPublishing: _*)
     .settings(notAggregateInAssembly: _*)
 
@@ -80,7 +83,7 @@ object Projects extends Build {
         test(scalatest, mockito))
     .settings(noPublishing: _*)
     .settings(notAggregateInAssembly: _*)
-    .settings(settingsForPlayground: _*)
+    .settings(playgroundSettings: _*)
     .settings(mainClass in (Compile, run) := Some("api.WebServer"))
 
   val noPublishing = Seq(publish := (), publishLocal := (), publishArtifact := false)

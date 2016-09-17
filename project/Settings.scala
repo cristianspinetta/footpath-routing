@@ -6,7 +6,7 @@ import scalariform.formatter.preferences._
 
 object Settings extends Version {
 
-  lazy val basicSettings: Seq[Setting[_]] = Defaults.defaultSettings ++ Seq(
+  lazy val basicSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
     scalaVersion := ScalaVersion,
     resolvers ++= Dependencies.resolutionRepos,
     version <<= version in ThisBuild,
@@ -61,10 +61,14 @@ object Settings extends Version {
     ScalariformKeys.preferences in Test := formattingPreferences
   )
 
-  lazy val settingsForPlayground: Seq[Setting[_]] = Seq(
+  lazy val playgroundSettings: Seq[Setting[_]] = Seq(
     connectInput in run := true,
     cancelable in Global := true
   )
+
+  lazy val BenchmarkConfig = Benchmark.BenchConfig
+
+  lazy val benchmarkSettings = Benchmark.settings
 
   def formattingPreferences =
     FormattingPreferences()

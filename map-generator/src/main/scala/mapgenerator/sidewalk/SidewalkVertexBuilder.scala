@@ -5,15 +5,15 @@ import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.SidewalkVertex
 import mapdomain.street.StreetVertex
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.concurrent.TrieMap
 
 case class SidewalkVertexIDGenerator() extends IDGeneratorLong
 
 case class SidewalkVertexBuilderManager() {
 
-  val _builders = ArrayBuffer[(BuilderKey, SidewalkVertexBuilder)]()
+  val _builders = new TrieMap[BuilderKey, SidewalkVertexBuilder]
 
-  def create(coordinate: Coordinate, streetVertexBelongTo: StreetVertex, key1: String, key2: String): SidewalkVertexBuilder = {
+  def create(coordinate: Coordinate, streetVertexBelongTo: StreetVertex, key1: String, key2: String): SidewalkVertexBuilder = this.synchronized {
     _builders.find { case (BuilderKey(k1, k2), builder) ⇒ (k1 == key1 && k2 == key2) || (k1 == key2 && k2 == key1) } match {
       case Some((_, builder)) ⇒ builder
       case None ⇒

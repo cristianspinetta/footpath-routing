@@ -46,7 +46,7 @@ trait GeoGraphContainer[V <: GeoVertex] extends GraphContainer[V] {
   def findNearest(coordinate: Coordinate): Option[V]
 }
 
-class EagerGeoGraphContainer[V <: GeoVertex](override val vertices: List[V]) extends EagerGraphContainer[V](vertices) with GeoGraphContainer[V] {
+class EagerGeoGraphContainer[V <: GeoVertex](vertices: List[V]) extends EagerGraphContainer[V](vertices) with GeoGraphContainer[V] {
   //  val constructor: Constructor = (vertices: List[V]) ⇒ new EagerGeoGraphContainer(vertices)
 
   // FIXME reemplazar por GeoSearch

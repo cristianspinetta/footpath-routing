@@ -20,7 +20,7 @@ case class SidewalkEdgeBuilderManager[V <: GeoVertex](implicit graph: GraphConta
     from: SidewalkVertexBuilder,
     streetEdgeBelongTo: StreetEdge,
     segment: GVector,
-    side: Side): SidewalkEdgeBuilder = {
+    side: Side): SidewalkEdgeBuilder = this.synchronized {
     _sidewalkOnCornerByKey.get(key) match {
       case Some(sidewalkEdgeBuilder @ SidewalkEdgeBuilder(_, _, Some(_), _, _, _)) ⇒
         logger.debug(s"Get a created Sidewalk Edge Builder: ${sidewalkEdgeBuilder.readable}")
