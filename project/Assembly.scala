@@ -28,9 +28,11 @@ object Assembly {
         "Can-Retransform-Classes" -> "true")
     },
     assemblyMergeStrategy in assembly := {
-      case PathList(ps @ _*) if ps.last == "application.conf" => MergeStrategy.concat
+      case PathList(ps@_*) if ps.last == "application.conf" => MergeStrategy.concat
       case PathList(ps@_*) if ps.last == "asm-license.txt" => MergeStrategy.concat
       case PathList(ps@_*) if ps.last == "logback.xml" => MergeStrategy.first
+      case PathList(ps@_*) if ps.last.toLowerCase endsWith ".osm" => MergeStrategy.discard
+      case PathList(ps@_*) if ps.last.toLowerCase endsWith ".csv" => MergeStrategy.discard
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)

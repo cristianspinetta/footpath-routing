@@ -91,3 +91,6 @@ CREATE TABLE IF NOT EXISTS `sidewalk_edge` (
   FOREIGN KEY (`vertexEndId`) REFERENCES `sidewalk_vertex` (`id`),
   FOREIGN KEY (`streetEdgeBelongToId`) REFERENCES `street_edge` (`id`)
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+CREATE SPATIAL INDEX street_vertex_coordinate_index ON `street_vertex` (`coordinate`);
+CREATE SPATIAL INDEX sidewalk_vertex_coordinate_index ON `sidewalk_vertex` (`coordinate`);

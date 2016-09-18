@@ -5,7 +5,8 @@ import mapdomain.graph._
 import mapdomain.math.Line
 import scalikejdbc._
 
-class PedestrianEdge(override val vertexStartId: Long, override val vertexEndId: Long, key: String, override val distance: Double = 1) extends GeoEdge(vertexStartId, vertexEndId, distance) {
+class PedestrianEdge(override val vertexStartId: Long, override val vertexEndId: Long, key: String, override val distance: Double = 1,
+                     val id: Option[Long] = None) extends GeoEdge(vertexStartId, vertexEndId, distance) with BaseEntity {
   def from(implicit graphContainer: SidewalkGraphContainer): Option[SidewalkVertex] = graphContainer.findVertex(vertexStartId)
   def to(implicit graphContainer: SidewalkGraphContainer): Option[SidewalkVertex] = graphContainer.findVertex(vertexEndId)
 }
@@ -15,7 +16,7 @@ case object NorthSide extends Side
 case object SouthSide extends Side
 
 case class SidewalkEdge(override val vertexStartId: Long, override val vertexEndId: Long, keyValue: String,
-  side: Side, streetEdgeBelongToId: Option[Long], override val id: Option[Long] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue) with BaseEntity
+                        side: Side, streetEdgeBelongToId: Option[Long], override val id: Option[Long] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue)
 
 object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport with SQLSyntaxSupport[SidewalkEdge] {
 
@@ -39,7 +40,8 @@ object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport with S
 
 }
 
-case class StreetCrossingEdge(override val vertexStartId: Long, override val vertexEndId: Long, keyValue: String, val id: Option[Long] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue)
+case class StreetCrossingEdge(override val vertexStartId: Long, override val vertexEndId: Long, keyValue: String,
+                              override val id: Option[Long] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue)
 
 object StreetCrossingEdge extends SQLSyntaxSupport[StreetCrossingEdge] {
 
