@@ -37,6 +37,7 @@ java \
     -verbose:gc \
     -XX:+PrintGCDetails \
     -XX:+PrintGCTimeStamps \
+    -XX:+PrintGCDateStamps \
     -Xloggc:./gc.log \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=./dumps/heap-dump.hprof \

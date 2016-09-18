@@ -1,7 +1,5 @@
 package mapdomain.graph
 
-import scala.math._
-
 trait Vertex {
   val id: Long
   val edges: List[Edge]

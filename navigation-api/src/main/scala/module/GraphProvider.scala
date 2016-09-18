@@ -8,6 +8,7 @@ import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014
 
 trait GraphSupport extends ApiEnvConfig {
   val graphProvider: GraphProvider = if (configuration.Graph.inMemory) GraphProviderInMemory else GraphProviderDB
+  val graphProviderDB: GraphProvider = GraphProviderDB
 }
 object GraphSupport extends GraphSupport
 

@@ -1,6 +1,6 @@
 package mapdomain.utils
 
-import mapdomain.graph.{ EagerGeoGraphContainer, EagerGraphContainer, GeoVertex, GraphContainer }
+import mapdomain.graph._
 import org.scalatest.{ FlatSpec, Matchers }
 
 import scala.math._
@@ -23,7 +23,11 @@ class GraphUtilsSpec extends FlatSpec with Matchers {
   it should "obtain the maximal connected graph" in {
     val graph: EagerGeoGraphContainer[GeoVertex] = EagerGraphContainer.joinGraphs(List(geoGraph20, geoGraph10, geoGraph15, geoGraph3), EagerGeoGraphContainer.apply)
     val connectedGraph = GraphUtils.getConnectedComponent[GeoVertex, EagerGeoGraphContainer[GeoVertex]](graph, EagerGeoGraphContainer.apply)
-    connectedGraph.vertices.size should be(20 * 20)
+    val vertexIds = connectedGraph.vertices.map(_.id).distinct
+    vertexIds.size should be(20 * 20)
+    geoGraph20.vertices foreach { vertex ⇒
+      vertexIds should contain(vertex.id)
+    }
   }
 
 }

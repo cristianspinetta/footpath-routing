@@ -3,7 +3,10 @@ package mapdomain.utils
 import mapdomain.graph._
 
 import scala.annotation.tailrec
+import scala.collection.Map
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
+import scala.math.Ordering
 
 trait GraphUtils {
 
@@ -68,9 +71,9 @@ trait GraphUtils {
   }
 
   /**
-   * A connected component is a maximal connected subgraph of G.
-   * @return The maximal connected subgraph
-   */
+    * A connected component is a maximal connected subgraph of G.
+    * @return The maximal connected subgraph
+    */
   def getConnectedComponent[V <: Vertex, G <: EagerGraphContainer[V]](graph: G, creator: (List[V]) ⇒ G): G = {
     creator(splitByConnectedGraph[V, G](graph, creator).max(Ordering.by[List[V], Int](list ⇒ list.size)))
   }
@@ -78,34 +81,43 @@ trait GraphUtils {
   def splitByConnectedGraph[V <: Vertex, G <: EagerGraphContainer[V]](graph: G, creator: (List[V]) ⇒ G): List[List[V]] = {
 
     @tailrec
-    def findNotVisited(visits: List[V], graph: G, result: List[List[V]]): List[List[V]] = {
-      graph.vertices filter (v ⇒ !visits.contains(v)) match {
+    def findNotVisited(visits: TrieMap[Long, V], graph: G, result: List[List[V]]): List[List[V]] = {
+      graph.vertices filter (v ⇒ !visits.contains(v.id)) match {
         case list @ x :: xs ⇒
-          val neighbours: List[V] = findNeighbours(list.head, graph)
-          findNotVisited(neighbours, creator(list), neighbours :: result)
+          val neighbours: TrieMap[Long, V] = findNeighbours(list.head, graph)
+          findNotVisited(neighbours, creator(list), neighbours.values.toList :: result)
         case Nil ⇒ result
       }
     }
 
-    findNotVisited(Nil, graph, Nil)
+    findNotVisited(TrieMap.empty, graph, Nil)
   }
 
-  def findNeighbours[V <: Vertex](start: V, graph: GraphContainer[V]): List[V] = {
-    def childrenNotVisited(vertex: V, visited: List[V]) =
-      graph.neighbours(vertex) filter (x ⇒ !visited.contains(x)) toSet
+  def findNeighbours[V <: Vertex](start: V, graph: GraphContainer[V]): TrieMap[Long, V] = {
+    def childrenNotVisited(vertex: V, visited: TrieMap[Long, V]): TrieMap[Long, V] = {
+      val notVisited = new TrieMap[Long, V]()
+      graph.neighbours(vertex).foreach((x: V) ⇒ if (!visited.contains(x.id)) notVisited += (x.id -> x))
+      notVisited
+    }
 
     @tailrec
-    def loop(stack: Set[V], visited: List[V]): List[V] = {
+    def loop(stack: TrieMap[Long, V], visited: TrieMap[Long, V]): TrieMap[Long, V] = {
       if (stack isEmpty) visited
-      else loop(childrenNotVisited(stack.head, visited) ++ stack.tail,
-        stack.head :: visited)
+      else loop(childrenNotVisited(stack.head._2, visited) ++= stack.tail,
+        visited += stack.head)
     }
-    loop(Set(start), Nil).distinct.reverse
+    loop(new TrieMap[Long, V]() += (start.id -> start), TrieMap.empty)
   }
 
   def isGraphConnected[V <: Vertex](graph: EagerGraphContainer[V]): Boolean = {
-    val neighbours = findNeighbours(graph.vertices.head, graph)
-    graph.vertices forall (v ⇒ neighbours contains v)
+    val neighbours: TrieMap[Long, V] = findNeighbours(graph.vertices.head, graph)
+    graph.vertices forall (v ⇒ neighbours contains v.id)
+  }
+
+  def verticesToMap[V <: Vertex](vertices: Traversable[V]): Map[Long, V] = {
+    val map = new TrieMap[Long, V]()
+    vertices.foreach(v => map += (v.id -> v))
+    map.readOnlySnapshot()
   }
 
 }
