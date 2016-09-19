@@ -58,4 +58,4 @@ java \
 
 * **For unit tests:** `sbt test`
 * **For benchmarks:** `sbt map-domain/bench:test`
-* **For db with local MariaDB:** `sbt test`
+* **For DB with local MariaDB:** `sbt test`
