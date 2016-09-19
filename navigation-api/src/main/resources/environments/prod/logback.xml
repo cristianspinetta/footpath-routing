@@ -4,7 +4,7 @@
     <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
 
     <appender name="fileRolling" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>navigation-api.log</file>
+        <file>logs/navigation-api.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover -->
             <fileNamePattern>logs/navigation-api.%d{yyyy-MM-dd}.log</fileNamePattern>
