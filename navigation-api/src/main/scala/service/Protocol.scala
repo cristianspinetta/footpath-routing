@@ -35,7 +35,7 @@ object Protocol extends DefaultJsonProtocol {
   }
 
   implicit val RampFormat = jsonFormat6(Ramp.apply)
-  implicit val EdgeFormat = jsonFormat2(Edge.apply)
+  implicit val EdgeFormat = jsonFormat3(Edge.apply)
   implicit val StreetFormat = jsonFormat3(Street.apply)
   implicit val SidewalkFormat = jsonFormat2(Sidewalk.apply)
   implicit val EdgeRequestFormat = jsonFormat4(EdgeRequest.apply)

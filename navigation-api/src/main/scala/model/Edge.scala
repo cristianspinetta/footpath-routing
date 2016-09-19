@@ -2,17 +2,7 @@ package model
 
 import mapdomain.graph.Coordinate
 
-case class Edge(from: Coordinate, to: Coordinate)
-
-object Edge {
-
-  def pointToEdge(coordinates: Seq[Coordinate]): List[Edge] = {
-    coordinates.sliding(2).toList.flatMap {
-      case fst :: snd :: Nil ⇒ List(Edge(fst, snd))
-      case _                 ⇒ List.empty
-    }
-  }
-}
+case class Edge(id: String, from: Coordinate, to: Coordinate)
 
 trait EdgeType
 case object StreetEdgeType extends EdgeType
