@@ -1,7 +1,7 @@
 package mapdomain.sidewalk
 
 import mapdomain.graph.{ BoundedGeoLocation, Coordinate }
-import scalikejdbc.{ DB, DBSession, WrappedResultSet, _ }
+import scalikejdbc._
 import sql.SpatialSQLSupport
 
 trait SidewalkRepositorySupport {
@@ -30,7 +30,8 @@ trait SidewalkEdgeRepository extends SpatialSQLSupport {
       keyValue = rs.string(e.keyValue),
       id = rs.longOpt(e.id),
       side = getSide(rs.int(e.side)),
-      streetEdgeBelongToId = rs.longOpt(e.streetEdgeBelongToId))
+      streetEdgeBelongToId = rs.longOpt(e.streetEdgeBelongToId),
+      isAccessible = rs.boolean(e.isAccessible))
   }
 
   def opt(e: SyntaxProvider[SidewalkEdge])(rs: WrappedResultSet): Option[SidewalkEdge] =
@@ -43,8 +44,22 @@ trait SidewalkEdgeRepository extends SpatialSQLSupport {
         SidewalkEdge.column.vertexEndId -> edge.vertexEndId,
         SidewalkEdge.column.keyValue -> edge.keyValue,
         SidewalkEdge.column.side -> getSideCode(edge.side),
-        SidewalkEdge.column.streetEdgeBelongToId -> edge.streetEdgeBelongToId.get)
+        SidewalkEdge.column.streetEdgeBelongToId -> edge.streetEdgeBelongToId.get,
+        SidewalkEdge.column.isAccessible -> edge.isAccessible)
     }.updateAndReturnGeneratedKey.apply()
+  }
+
+  def save(edge: SidewalkEdge)(implicit session: DBSession = SidewalkEdge.autoSession): SidewalkEdge = {
+    withSQL {
+      update(SidewalkEdge).set(
+        SidewalkEdge.column.vertexStartId -> edge.vertexStartId,
+        SidewalkEdge.column.vertexEndId -> edge.vertexEndId,
+        SidewalkEdge.column.keyValue -> edge.keyValue,
+        SidewalkEdge.column.side -> getSideCode(edge.side),
+        SidewalkEdge.column.streetEdgeBelongToId -> edge.streetEdgeBelongToId.get,
+        SidewalkEdge.column.isAccessible -> edge.isAccessible).where.eq(SidewalkEdge.column.id, edge.id)
+    }.update.apply()
+    edge
   }
 
   def find(id: Long)(implicit session: DBSession = SidewalkEdge.autoSession): SidewalkEdge = withSQL {
@@ -194,10 +209,10 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
         distinct ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
        from
         ${SidewalkVertex.as(s)}
-        left join ${SidewalkEdge.as(sidewalkEdge1)} on ${sidewalkEdge1.vertexStartId} = ${s.id}
-        left join ${SidewalkEdge.as(sidewalkEdge2)} on ${sidewalkEdge2.vertexEndId} = ${s.id}
-        left join ${StreetCrossingEdge.as(crossingEdge1)} on ${crossingEdge1.vertexStartId} = ${s.id}
-        left join ${StreetCrossingEdge.as(crossingEdge2)} on ${crossingEdge2.vertexEndId} = ${s.id}
+        left join ${SidewalkEdge.as(sidewalkEdge1)} on ${sidewalkEdge1.vertexStartId} = ${s.id} and ${sidewalkEdge1.isAccessible} = true
+        left join ${SidewalkEdge.as(sidewalkEdge2)} on ${sidewalkEdge2.vertexEndId} = ${s.id} and ${sidewalkEdge2.isAccessible} = true
+        left join ${StreetCrossingEdge.as(crossingEdge1)} on ${crossingEdge1.vertexStartId} = ${vertexId}
+        left join ${StreetCrossingEdge.as(crossingEdge2)} on ${crossingEdge2.vertexEndId} = ${vertexId}
         left join ${SidewalkVertex.as(neighbour)} on ${neighbour.id} IN (sidewalkEdge1.vertexEndId, sidewalkEdge2.vertexStartId, crossingEdge1.vertexEndId, crossingEdge2.vertexStartId)
        where
         ${s.id} = ${vertexId}

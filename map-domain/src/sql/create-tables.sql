@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS `ramp` (
                	`number` int DEFAULT NULL,
                	`address` varchar(255) DEFAULT NULL,
                 `coordinate` Point NOT NULL,
+                `isAccessible` boolean DEFAULT true,
                 PRIMARY KEY (`id`),
                 SPATIAL INDEX(coordinate)
                ) ENGINE=Aria DEFAULT CHARSET=utf8;
@@ -36,7 +37,6 @@ CREATE TABLE IF NOT EXISTS `path` (
 CREATE TABLE IF NOT EXISTS `stop` (
        	`id` bigint(20) NOT NULL AUTO_INCREMENT,
        	`coordinate` Point NOT NULL,
-       	`cellNumber` int DEFAULT NULL,
        	`nextStopId` bigint(20) DEFAULT NULL,
        	`previousStopId` bigint(20) DEFAULT NULL,
        	`pathId` bigint(20) DEFAULT NULL,
@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS `sidewalk_edge` (
   `keyValue` VARCHAR(255) DEFAULT NULL,
   `streetEdgeBelongToId` bigint(20) NOT NULL,
   `side` int NOT NULL,
+  `isAccessible` boolean DEFAULT true,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`vertexStartId`) REFERENCES `sidewalk_vertex` (`id`),
   FOREIGN KEY (`vertexEndId`) REFERENCES `sidewalk_vertex` (`id`),
