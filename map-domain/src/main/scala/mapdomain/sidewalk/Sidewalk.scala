@@ -15,7 +15,7 @@ case object NorthSide extends Side
 case object SouthSide extends Side
 
 case class SidewalkEdge(override val vertexStartId: Long, override val vertexEndId: Long, keyValue: String,
-  side: Side, streetEdgeBelongToId: Option[Long], override val id: Option[Long] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue) with BaseEntity
+  side: Side, streetEdgeBelongToId: Option[Long], override val id: Option[Long] = None, var isAccessible: Boolean = true) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue) with BaseEntity
 
 object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport with SQLSyntaxSupport[SidewalkEdge] {
 
@@ -23,7 +23,7 @@ object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport with S
 
   override val useSnakeCaseColumnName = false
 
-  override val columns = Seq("id", "vertexStartId", "vertexEndId", "keyValue", "side", "streetEdgeBelongToId")
+  override val columns = Seq("id", "vertexStartId", "vertexEndId", "keyValue", "side", "streetEdgeBelongToId", "isAccessible")
 
   def sideByEdges(streetLine: Line, sidewalkLine: Line): Side = withFailureLogging({
     if (Line.compareParallelsByAltitude(streetLine, sidewalkLine) == 1) SouthSide
