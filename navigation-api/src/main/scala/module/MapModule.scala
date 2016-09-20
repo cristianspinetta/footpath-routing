@@ -3,7 +3,8 @@ package module
 import base.LazyLoggerSupport
 import conf.ApiEnvConfig
 import mapdomain.graph.{ Coordinate, GeoSearch }
-import mapdomain.sidewalk.{ PedestrianEdge, Ramp, SidewalkGraphContainer, SidewalkVertex }
+import mapdomain.sidewalk.{ PedestrianEdge, Ramp, SidewalkGraphContainer }
+import mapdomain.street.StreetGraphContainer
 import model._
 
 import scala.util.Try
@@ -14,16 +15,17 @@ trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
     logger.info(s"Getting edges. Type: $edgeType")
     edgeType match {
       case StreetEdgeType ⇒
-        graphs.street.findNearestStreets(startPosition, radius)
+        implicit val streetGraph: StreetGraphContainer = graphs.streetDB
+        streetGraph.findNearestStreets(startPosition, radius)
           .map(street ⇒
             Edge(
               id = street.id.map(_.toString).getOrElse(""),
-              from = graphs.street.findVertex(street.vertexStartId).get.coordinate,
-              to = graphs.street.findVertex(street.vertexEndId).get.coordinate))
+              from = streetGraph.findVertex(street.vertexStartId).get.coordinate,
+              to = streetGraph.findVertex(street.vertexEndId).get.coordinate))
       case SidewalkEdgeType ⇒
-        implicit val sidewalkGraph: SidewalkGraphContainer = graphs.sidewalk
-        val nearestEdges: List[PedestrianEdge] = graphs.sidewalk.findNearestSidewalks(startPosition, radius) ++:
-          graphs.sidewalk.findNearestStreetCrossing(startPosition, radius)
+        implicit val sidewalkGraph: SidewalkGraphContainer = graphs.sidewalkDB
+        val nearestEdges: List[PedestrianEdge] = sidewalkGraph.findNearestSidewalks(startPosition, radius) ++:
+          sidewalkGraph.findNearestStreetCrossing(startPosition, radius)
         nearestEdges.map(edge ⇒ Edge(edge.id.map(_.toString).getOrElse(""), edge.from.get.coordinate, edge.to.get.coordinate))(collection.breakOut)
       //      case WayEdgeType ⇒
       //        implicit val graph: GraphContainer[StreetVertex] = graphProvider.streetGraph

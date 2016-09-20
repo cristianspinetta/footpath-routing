@@ -1,7 +1,7 @@
 package module
 
 import base.LazyLoggerSupport
-import conf.{ ApiEnvConfig, SidewalkGraphConf, StreetGraphConf}
+import conf.{ ApiEnvConfig, SidewalkGraphConf, StreetGraphConf }
 import mapdomain.sidewalk._
 import mapdomain.street.{ EagerStreetGraphContainer, LazyStreetGraphContainer, StreetGraphContainer }
 import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
@@ -15,9 +15,9 @@ trait GraphSupport extends ApiEnvConfig {
     sidewalkDB = SidewalkGraphFactory.createDB)
 
   case class GraphSet(street: StreetGraphContainer,
-                              sidewalk: SidewalkGraphContainer,
-                              streetDB: StreetGraphContainer,
-                              sidewalkDB: SidewalkGraphContainer)
+    sidewalk: SidewalkGraphContainer,
+    streetDB: StreetGraphContainer,
+    sidewalkDB: SidewalkGraphContainer)
 }
 object GraphSupport extends GraphSupport
 
