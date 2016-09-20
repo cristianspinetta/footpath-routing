@@ -1,30 +1,57 @@
 package module
 
 import base.LazyLoggerSupport
-import conf.ApiEnvConfig
+import conf.{ ApiEnvConfig, SidewalkGraphConf, StreetGraphConf}
 import mapdomain.sidewalk._
 import mapdomain.street.{ EagerStreetGraphContainer, LazyStreetGraphContainer, StreetGraphContainer }
 import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 
 trait GraphSupport extends ApiEnvConfig {
-  val graphProvider: GraphProvider = if (configuration.Graph.inMemory) GraphProviderInMemory else GraphProviderDB
-  val graphProviderDB: GraphProvider = GraphProviderDB
+
+  val graphs: GraphSet = GraphSet(
+    street = StreetGraphFactory.createFromConfig(configuration.Graph.street),
+    sidewalk = SidewalkGraphFactory.createFromConfig(configuration.Graph.sidewalk),
+    streetDB = StreetGraphFactory.createDB,
+    sidewalkDB = SidewalkGraphFactory.createDB)
+
+  case class GraphSet(street: StreetGraphContainer,
+                              sidewalk: SidewalkGraphContainer,
+                              streetDB: StreetGraphContainer,
+                              sidewalkDB: SidewalkGraphContainer)
 }
 object GraphSupport extends GraphSupport
 
-sealed trait GraphProvider {
-  implicit val streetGraph: StreetGraphContainer
-  implicit val sidewalkGraph: SidewalkGraphContainer
+object StreetGraphFactory {
+  def createFromConfig(config: StreetGraphConf): StreetGraphContainer = if (config.inMemory) createInMemory else createDB
+  def createDB: StreetGraphContainer = StreetGraphProviderDB.streetGraph
+  def createInMemory: StreetGraphContainer = StreetGraphProviderInMemory.streetGraph
 }
 
-private object GraphProviderDB extends GraphProvider with LazyLoggerSupport {
-  override implicit val streetGraph: StreetGraphContainer = LazyStreetGraphContainer()
-  override implicit val sidewalkGraph: SidewalkGraphContainer = LazySidewalkGraphContainer()
+object SidewalkGraphFactory {
+  def createFromConfig(config: SidewalkGraphConf): SidewalkGraphContainer = if (config.inMemory) createInMemory else createDB
+  def createDB: SidewalkGraphContainer = SidewalkGraphProviderDB.sidewalkGraph
+  def createInMemory: SidewalkGraphContainer = SidewalkGraphProviderInMemory.sidewalkGraph
 }
 
-private object GraphProviderInMemory extends GraphProvider with LazyLoggerSupport {
-  override implicit val streetGraph: StreetGraphContainer = EagerStreetGraphContainer.createFromDB
-  override implicit val sidewalkGraph: SidewalkGraphContainer = EagerSidewalkGraphContainer.createFromDB
+sealed trait StreetGraphProvider {
+  def streetGraph: StreetGraphContainer
+}
+sealed trait SidewalkGraphProvider {
+  def sidewalkGraph: SidewalkGraphContainer
+}
+
+private object StreetGraphProviderDB extends StreetGraphProvider with LazyLoggerSupport {
+  override val streetGraph: StreetGraphContainer = LazyStreetGraphContainer()
+}
+private object StreetGraphProviderInMemory extends StreetGraphProvider with LazyLoggerSupport {
+  override val streetGraph: StreetGraphContainer = EagerStreetGraphContainer.createFromDB
+}
+
+private object SidewalkGraphProviderDB extends SidewalkGraphProvider with LazyLoggerSupport {
+  override val sidewalkGraph: SidewalkGraphContainer = LazySidewalkGraphContainer()
+}
+private object SidewalkGraphProviderInMemory extends SidewalkGraphProvider with LazyLoggerSupport {
+  override val sidewalkGraph: SidewalkGraphContainer = EagerSidewalkGraphContainer.createFromDB
 }
 
 object RampProvider extends ApiEnvConfig {

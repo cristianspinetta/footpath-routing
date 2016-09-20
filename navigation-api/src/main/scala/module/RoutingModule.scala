@@ -16,8 +16,8 @@ trait RoutingModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfi
   def routing(coordinateFrom: Coordinate, coordinateTo: Coordinate, routingType: TypeRouting): Try[List[Coordinate]] = {
     logger.info(s"Init Search from $coordinateFrom to $coordinateTo by type routing = $routingType")
     val graph: GeoGraphContainer[_ <: GeoVertex] = routingType match {
-      case StreetRouting ⇒ graphProvider.streetGraph
-      case _             ⇒ graphProvider.sidewalkGraph
+      case StreetRouting ⇒ graphs.street
+      case _             ⇒ graphs.sidewalk
     }
     searchRouting(graph, coordinateFrom, coordinateTo)
   }

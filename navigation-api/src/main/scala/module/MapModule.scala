@@ -14,14 +14,16 @@ trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
     logger.info(s"Getting edges. Type: $edgeType")
     edgeType match {
       case StreetEdgeType ⇒
-        graphProviderDB.streetGraph.findNearestStreets(startPosition, radius)
+        graphs.street.findNearestStreets(startPosition, radius)
           .map(street ⇒
-            Edge(street.id.map(_.toString).getOrElse(""), graphProvider.streetGraph.findVertex(street.vertexStartId).get.coordinate,
-              graphProvider.streetGraph.findVertex(street.vertexEndId).get.coordinate))
+            Edge(
+              id = street.id.map(_.toString).getOrElse(""),
+              from = graphs.street.findVertex(street.vertexStartId).get.coordinate,
+              to = graphs.street.findVertex(street.vertexEndId).get.coordinate))
       case SidewalkEdgeType ⇒
-        implicit val sidewalkGraph: SidewalkGraphContainer = graphProviderDB.sidewalkGraph
-        val nearestEdges: List[PedestrianEdge] = graphProviderDB.sidewalkGraph.findNearestSidewalks(startPosition, radius) ++:
-          graphProviderDB.sidewalkGraph.findNearestStreetCrossing(startPosition, radius)
+        implicit val sidewalkGraph: SidewalkGraphContainer = graphs.sidewalk
+        val nearestEdges: List[PedestrianEdge] = graphs.sidewalk.findNearestSidewalks(startPosition, radius) ++:
+          graphs.sidewalk.findNearestStreetCrossing(startPosition, radius)
         nearestEdges.map(edge ⇒ Edge(edge.id.map(_.toString).getOrElse(""), edge.from.get.coordinate, edge.to.get.coordinate))(collection.breakOut)
       //      case WayEdgeType ⇒
       //        implicit val graph: GraphContainer[StreetVertex] = graphProvider.streetGraph

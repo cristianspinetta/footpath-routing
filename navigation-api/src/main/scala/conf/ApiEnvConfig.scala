@@ -32,6 +32,14 @@ case class HTTPConfiguration(config: Config) {
   val port: Int = config.getInt("port")
 }
 
-case class GraphConfiguration(config: Config) {
+case class GraphConfiguration(private val config: Config) {
+  val street = StreetGraphConf(config.getConfig("street"))
+  val sidewalk = SidewalkGraphConf(config.getConfig("sidewalk"))
+}
+
+case class StreetGraphConf(private val config: Config) {
+  val inMemory: Boolean = config.getBoolean("in-memory")
+}
+case class SidewalkGraphConf(private val config: Config) {
   val inMemory: Boolean = config.getBoolean("in-memory")
 }
