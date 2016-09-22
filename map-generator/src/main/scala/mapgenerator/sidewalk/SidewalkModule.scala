@@ -3,19 +3,19 @@ package mapgenerator.sidewalk
 import java.util.concurrent.atomic.AtomicLong
 
 import base.{ FailureReporterSupport, LazyLoggerSupport, LogicError, MeterSupport }
-import mapdomain.graph.{ Coordinate, GeoEdge, GeoVertex, GraphContainer }
+import mapdomain.graph.Coordinate
 import mapdomain.math.{ GVector, VectorUtils }
 import mapdomain.sidewalk._
-import mapdomain.street.{ EagerStreetGraphContainer, StreetEdge, StreetVertex }
+import mapdomain.street.{ InMemoryStreetGraphContainer, StreetEdge, StreetVertex }
 import mapdomain.utils.EdgeUtils
 
-case class SidewalkModule(implicit graph: EagerStreetGraphContainer) extends LazyLoggerSupport with MeterSupport with FailureReporterSupport {
+case class SidewalkModule(implicit graph: InMemoryStreetGraphContainer) extends LazyLoggerSupport with MeterSupport with FailureReporterSupport {
 
   import mapdomain.utils.PointUtils._
   implicit protected val vertexIdGenerator = SidewalkVertexIDGenerator()
 
   def createSideWalks(distanceToStreet: Double = SidewalkModule.defaultDistanceToStreet,
-    failureTolerance: Boolean = false): EagerSidewalkGraphContainer = withTimeLogging({
+    failureTolerance: Boolean = false): InMemorySidewalkGraphContainer = withTimeLogging({
     logger.info(s"Creating Sidewalks for all the graph")
 
     implicit val builders = Builders(StreetCrossingBuilderManager(), SidewalkVertexBuilderManager(), SidewalkEdgeBuilderManager())
@@ -27,7 +27,7 @@ case class SidewalkModule(implicit graph: EagerStreetGraphContainer) extends Laz
       createSidewalkByStreetVertex(vertex, distanceToStreet)
     }
     val vertices: Set[SidewalkVertex] = SideWalkBuilder.build(failureTolerance)
-    EagerSidewalkGraphContainer(vertices.toList)
+    InMemorySidewalkGraphContainer(vertices.toList)
   }, (time: Long) ⇒ logger.info(s"Create Sidewalk Graph in $time ms."))
 
   protected def createSidewalkByStreetVertex(vertex: StreetVertex, distanceToStreet: Double)(implicit builders: Builders[StreetVertex]): Unit = {

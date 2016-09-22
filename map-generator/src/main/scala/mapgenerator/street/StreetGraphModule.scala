@@ -17,7 +17,7 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
 
   private val multiLevelNodes = TrieMap[Long, Map[OSMLevel, StreetVertex]]()
 
-  def createGraph: EagerStreetGraphContainer = {
+  def createGraph: InMemoryStreetGraphContainer = {
     logger.info("Starting to create a Street Graph from the OSM Module")
     withTimeLogging({
       osmModule.streetWays.foldLeft(0) {
@@ -26,7 +26,7 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
           processStreetWay(way)
           counter + 1
       }
-      EagerStreetGraphContainer(createdStreetVertex.toList)
+      InMemoryStreetGraphContainer(createdStreetVertex.toList)
     }, (time: Long) ⇒ logger.info(s"Created Street Graph in $time ms."))
   }
 

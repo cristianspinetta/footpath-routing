@@ -3,7 +3,7 @@ package module
 import base.LazyLoggerSupport
 import conf.{ ApiEnvConfig, SidewalkGraphConf, StreetGraphConf }
 import mapdomain.sidewalk._
-import mapdomain.street.{ EagerStreetGraphContainer, LazyStreetGraphContainer, StreetGraphContainer }
+import mapdomain.street._
 import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 
 trait GraphSupport extends ApiEnvConfig {
@@ -44,14 +44,14 @@ private object StreetGraphProviderDB extends StreetGraphProvider with LazyLogger
   override val streetGraph: StreetGraphContainer = LazyStreetGraphContainer()
 }
 private object StreetGraphProviderInMemory extends StreetGraphProvider with LazyLoggerSupport {
-  override val streetGraph: StreetGraphContainer = EagerStreetGraphContainer.createFromDB
+  override val streetGraph: StreetGraphContainer = InMemoryStreetGraphContainer.createFromDB
 }
 
 private object SidewalkGraphProviderDB extends SidewalkGraphProvider with LazyLoggerSupport {
   override val sidewalkGraph: SidewalkGraphContainer = LazySidewalkGraphContainer()
 }
 private object SidewalkGraphProviderInMemory extends SidewalkGraphProvider with LazyLoggerSupport {
-  override val sidewalkGraph: SidewalkGraphContainer = EagerSidewalkGraphContainer.createFromDB
+  override val sidewalkGraph: SidewalkGraphContainer = InMemorySidewalkGraphContainer.createFromDB
 }
 
 object RampProvider extends ApiEnvConfig {

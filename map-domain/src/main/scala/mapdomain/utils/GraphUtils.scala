@@ -14,22 +14,22 @@ trait GraphUtils {
 
   def edgesToIds(edges: List[Edge]): List[Long] = edges.headOption.map(_.vertexStartId).toList ::: edges.map(_.vertexEndId)
 
-  def createGridGraphGraph(rows: Int, columns: Int, offset: Int = 0): EagerGraphContainer[GraphVertex] = {
+  def createGridGraphGraph(rows: Int, columns: Int, offset: Int = 0): InMemoryGraphContainer[GraphVertex] = {
     val vertexCreator = (id: Int, row: Int, column: Int, neighbours: Iterable[NeighbourPartialCreation]) ⇒
       GraphVertex.createWithEdges(id, neighbours.toList.map(npc ⇒ npc.id))
-    createGridGraph(rows, columns, offset, vertexCreator, EagerGraphContainer.apply)
+    createGridGraph(rows, columns, offset, vertexCreator, InMemoryGraphContainer.apply)
   }
 
-  def createGridGeoGraph(rows: Int, columns: Int, offset: Int = 0): EagerGeoGraphContainer[GeoVertex] = {
+  def createGridGeoGraph(rows: Int, columns: Int, offset: Int = 0): InMemoryGeoGraphContainer[GeoVertex] = {
     val vertexCreator = (id: Int, row: Int, column: Int, neighbours: Iterable[NeighbourPartialCreation]) ⇒
       GeoVertex.createWithEdges(id, neighbours.toList.map(npc ⇒ (npc.id.toLong, npc.coordinate)), Coordinate(row, column))
-    createGridGraph(rows, columns, offset, vertexCreator, EagerGeoGraphContainer.apply)
+    createGridGraph(rows, columns, offset, vertexCreator, InMemoryGeoGraphContainer.apply)
   }
 
   case class NeighbourPartialCreation(id: Int, coordinate: Coordinate)
 
-  def createGridGraph[V <: Vertex, G <: EagerGraphContainer[V]](rows: Int, columns: Int, offset: Int,
-    vertexCreator: (Int, Int, Int, Iterable[NeighbourPartialCreation]) ⇒ V, graphCreator: (List[V]) ⇒ G): G = {
+  def createGridGraph[V <: Vertex, G <: InMemoryGraphContainer[V]](rows: Int, columns: Int, offset: Int,
+                                                                   vertexCreator: (Int, Int, Int, Iterable[NeighbourPartialCreation]) ⇒ V, graphCreator: (List[V]) ⇒ G): G = {
 
     val nodes = ArrayBuffer.empty[V]
     var nodeNumber = offset
@@ -74,11 +74,11 @@ trait GraphUtils {
     * A connected component is a maximal connected subgraph of G.
     * @return The maximal connected subgraph
     */
-  def getConnectedComponent[V <: Vertex, G <: EagerGraphContainer[V]](graph: G, creator: (List[V]) ⇒ G): G = {
+  def getConnectedComponent[V <: Vertex, G <: InMemoryGraphContainer[V]](graph: G, creator: (List[V]) ⇒ G): G = {
     creator(splitByConnectedGraph[V, G](graph, creator).max(Ordering.by[List[V], Int](list ⇒ list.size)))
   }
 
-  def splitByConnectedGraph[V <: Vertex, G <: EagerGraphContainer[V]](graph: G, creator: (List[V]) ⇒ G): List[List[V]] = {
+  def splitByConnectedGraph[V <: Vertex, G <: InMemoryGraphContainer[V]](graph: G, creator: (List[V]) ⇒ G): List[List[V]] = {
 
     @tailrec
     def findNotVisited(visits: TrieMap[Long, V], graph: G, result: List[List[V]]): List[List[V]] = {
@@ -109,7 +109,7 @@ trait GraphUtils {
     loop(new TrieMap[Long, V]() += (start.id -> start), TrieMap.empty)
   }
 
-  def isGraphConnected[V <: Vertex](graph: EagerGraphContainer[V]): Boolean = {
+  def isGraphConnected[V <: Vertex](graph: InMemoryGraphContainer[V]): Boolean = {
     val neighbours: TrieMap[Long, V] = findNeighbours(graph.vertices.head, graph)
     graph.vertices forall (v ⇒ neighbours contains v.id)
   }

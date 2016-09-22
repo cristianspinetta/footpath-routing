@@ -1,26 +1,43 @@
 package mapdomain.sidewalk
 
-import base.{ LazyLoggerSupport, MeterSupport }
+import base.{LazyLoggerSupport, MeterSupport}
 import mapdomain.graph._
 import mapdomain.utils.GraphUtils
+
+import scala.collection.concurrent.TrieMap
 
 trait SidewalkGraphContainer extends GeoGraphContainer[SidewalkVertex] {
   def findNearestSidewalks(coordinate: Coordinate, radius: Double): List[SidewalkEdge]
   def findNearestStreetCrossing(coordinate: Coordinate, radius: Double): List[StreetCrossingEdge]
+  def vertices: List[SidewalkVertex]
 }
 
-case class LazySidewalkGraphContainer() extends LazyGeoGraphContainer[SidewalkVertex] with SidewalkGraphContainer with SidewalkRepositorySupport {
+case class LazySidewalkGraphContainer() extends SidewalkGraphContainer with SidewalkRepositorySupport {
+
+  protected val vertexById = new TrieMap[Long, SidewalkVertex]()
+  protected val totalVertices: Long = sidewalkVertexRepository.totalVertices
+
+  override def vertices: List[SidewalkVertex] = {
+    if (totalVertices != vertexById.size) {
+      vertexById.keys
+    }
+    SidewalkVertexRepository.findAll
+  }
   /**
    * Find vertex by ID
    *
    * @param id : Long
    * @return
    */
-  override def findVertex(id: Long): Option[SidewalkVertex] = SidewalkVertexRepository.find(id)
+  override def findVertex(id: Long): Option[SidewalkVertex] = {
+    vertexById.get(id) orElse {
+      val maybeVertex: Option[SidewalkVertex] = SidewalkVertexRepository.find(id)
+      maybeVertex foreach (v ⇒ vertexById += (v.id -> v))
+      maybeVertex
+    }
+  }
 
   override def findNearest(coordinate: Coordinate): Option[SidewalkVertex] = sidewalkVertexRepository.findNearest(coordinate)
-
-  def findNearestVertex(coordinate: Coordinate): Option[SidewalkVertex] = findNearest(coordinate)
 
   override def neighbours(vertex: SidewalkVertex): List[SidewalkVertex] = sidewalkVertexRepository.findNeighbours(vertex.id)
 
@@ -28,17 +45,9 @@ case class LazySidewalkGraphContainer() extends LazyGeoGraphContainer[SidewalkVe
   override def findNearestStreetCrossing(coordinate: Coordinate, radius: Double): List[StreetCrossingEdge] = streetCrossingEdgeRepository.findNearestSidewalks(coordinate, radius)
 }
 
-case class EagerSidewalkGraphContainer(override val vertices: List[SidewalkVertex]) extends EagerGeoGraphContainer(vertices)
-    with SidewalkGraphContainer with LazyLoggerSupport with MeterSupport {
+case class InMemorySidewalkGraphContainer(vertices: List[SidewalkVertex]) extends SidewalkGraphContainer with InMemoryGraphContainer[SidewalkVertex] with LazyLoggerSupport with MeterSupport {
 
-  /**
-   * Create a new EagerSidewalkGraphContainer with maximal connected subgraph that this graph contains
-   * @return The connected graph
-   */
-  def purgeSidewalks: EagerSidewalkGraphContainer = withTimeLogging({
-    logger.info(s"Purge the sidewalk graph in order to get a connected graph")
-    GraphUtils.getConnectedComponent(this, EagerSidewalkGraphContainer.apply)
-  }, (time: Long) => logger.info(s"Sidewalk graph was purged in $time ms."))
+  protected val totalVertices: Long = vertices.size
 
   lazy val sidewalkEdges: List[SidewalkEdge] = { // FIXME esto quedo medio cualquiera, reveer!
     (for (vertex ← vertices; edge ← vertex.sidewalkEdges) yield (edge.keyValue, edge))
@@ -70,12 +79,31 @@ case class EagerSidewalkGraphContainer(override val vertices: List[SidewalkVerte
     val neighbourIds: List[Long] = vertex.edges.map(edge ⇒ if (edge.vertexStartId == vertex.id) edge.vertexEndId else edge.vertexStartId)
     neighbourIds.flatMap(id ⇒ findVertex(id) toList)
   }
+
+  override def findNearest(coordinate: Coordinate): Option[SidewalkVertex] = GeoGraphContainer.findNearest(vertices, coordinate)
+
+  /**
+    * Find vertex by ID
+    *
+    * @param id : Long
+    * @return
+    */
+  override def findVertex(id: Long): Option[SidewalkVertex] = vertexById.get(id)
+
+  /**
+   * Create a new InMemorySidewalkGraphContainer with maximal connected subgraph that this graph contains
+   * @return The connected graph
+   */
+  def purgeSidewalks: InMemorySidewalkGraphContainer = withTimeLogging({
+    logger.info(s"Purge the sidewalk graph in order to get a connected graph")
+    GraphUtils.getConnectedComponent(this, InMemorySidewalkGraphContainer.apply)
+  }, (time: Long) => logger.info(s"Sidewalk graph was purged in $time ms."))
 }
 
-object EagerSidewalkGraphContainer extends LazyLoggerSupport {
+object InMemorySidewalkGraphContainer extends LazyLoggerSupport {
 
-  def createFromDB: EagerSidewalkGraphContainer = {
+  def createFromDB: InMemorySidewalkGraphContainer = {
     logger.info("Getting Sidewalk Graph from the DB")
-    EagerSidewalkGraphContainer(SidewalkVertexRepository.findAll)
+    InMemorySidewalkGraphContainer(SidewalkVertexRepository.findAll)
   }
 }

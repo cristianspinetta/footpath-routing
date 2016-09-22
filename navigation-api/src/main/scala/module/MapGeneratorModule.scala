@@ -2,8 +2,8 @@ package module
 
 import base.{ LazyLoggerSupport, MeterSupport }
 import conf.ApiEnvConfig
-import mapdomain.sidewalk.{ EagerSidewalkGraphContainer, SidewalkRepositorySupport }
-import mapdomain.street.{ EagerStreetGraphContainer, StreetRepositorySupport }
+import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, SidewalkRepositorySupport }
+import mapdomain.street.{ InMemoryStreetGraphContainer, StreetRepositorySupport }
 import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
@@ -27,7 +27,7 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
     }, (time: Long) ⇒ logger.info(s"Created and saved the Street Graph in $time ms."))
   } flatten
 
-  private def saveStreets(streetGraph: EagerStreetGraphContainer): Try[_] = Try {
+  private def saveStreets(streetGraph: InMemoryStreetGraphContainer): Try[_] = Try {
     logger.info(s"Persist the street graph on the DB")
     withTimeLogging(
       DB localTx { implicit session ⇒
@@ -44,14 +44,14 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
   def createSidewalks(failureTolerance: Boolean = true) = Try {
     logger.info(s"Starting to create the sidewalks")
     withTimeLogging({
-      val sidewalkGraph = SidewalkModule()(EagerStreetGraphContainer.createFromDB)
+      val sidewalkGraph = SidewalkModule()(InMemoryStreetGraphContainer.createFromDB)
         .createSideWalks(failureTolerance = failureTolerance).purgeSidewalks
       logger.debug(s"sidewalkGraph created. Vertices: ${sidewalkGraph.vertices.size}. Sidewalk Edges: ${sidewalkGraph.sidewalkEdges.size}. Street Crossing Edges: ${sidewalkGraph.streetCrossingEdges.size}")
       saveSidewalks(sidewalkGraph)
     }, (time: Long) ⇒ logger.info(s"Created and saved the Sidewalks Graph in $time ms."))
   } flatten
 
-  private def saveSidewalks(sidewalkGraph: EagerSidewalkGraphContainer): Try[_] = Try {
+  private def saveSidewalks(sidewalkGraph: InMemorySidewalkGraphContainer): Try[_] = Try {
     logger.info(s"Persist the sidewalk graph on the DB")
     withTimeLogging(
       DB localTx { implicit session ⇒

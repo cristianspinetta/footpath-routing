@@ -4,30 +4,61 @@ import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph._
 import mapdomain.utils.GraphUtils
 
+import scala.collection.concurrent.TrieMap
+
 trait StreetGraphContainer extends GeoGraphContainer[StreetVertex] {
   def findNearestStreets(coordinate: Coordinate, radius: Double): List[StreetEdge]
+  def vertices: List[StreetVertex]
 }
 
-case class LazyStreetGraphContainer() extends LazyGeoGraphContainer[StreetVertex] with StreetGraphContainer with StreetRepositorySupport {
+case class LazyStreetGraphContainer() extends StreetGraphContainer with StreetRepositorySupport {
+
+  protected val vertexById = new TrieMap[Long, StreetVertex]()
+  protected val totalVertices: Long = streetVertexRepository.totalVertices
+
+  override def vertices: List[StreetVertex] = {
+    if (totalVertices != vertexById.size) {
+      vertexById.keys
+    }
+    StreetVertexRepository.findAll
+  }
+
+  override def findNearestStreets(coordinate: Coordinate, radius: Double): List[StreetEdge] = streetEdgeRepository.findNearestStreets(coordinate, radius)
+
+  override def findNearest(coordinate: Coordinate): Option[StreetVertex] = streetVertexRepository.findNearest(coordinate)
+
   /**
    * Find vertex by ID
    *
    * @param id : Long
    * @return
    */
-  override def findVertex(id: Long): Option[StreetVertex] = StreetVertexRepository.find(id)
+  override def findVertex(id: Long): Option[StreetVertex] = {
+    vertexById.get(id) orElse {
+      val maybeVertex: Option[StreetVertex] = StreetVertexRepository.find(id)
+      maybeVertex foreach (v ⇒ vertexById += (v.id -> v))
+      maybeVertex
+    }
+  }
 
-  override def findNearest(coordinate: Coordinate): Option[StreetVertex] = streetVertexRepository.findNearest(coordinate)
-
-  def findNearestVertex(coordinate: Coordinate): Option[StreetVertex] = findNearest(coordinate)
-
-  override def neighbours(vertex: StreetVertex): List[StreetVertex] = streetVertexRepository.findNeighbours(vertex.id)
-
-  override def findNearestStreets(coordinate: Coordinate, radius: Double): List[StreetEdge] = streetEdgeRepository.findNearestStreets(coordinate, radius)
+  override def neighbours(vertex: StreetVertex): List[StreetVertex] = streetVertexRepository.findNeighbours(vertex.id) // FIXME usar mapa para cachear
 }
 
-case class EagerStreetGraphContainer(override val vertices: List[StreetVertex]) extends EagerGeoGraphContainer(vertices)
-    with StreetGraphContainer with LazyLoggerSupport with MeterSupport {
+case class InMemoryStreetGraphContainer(vertices: List[StreetVertex]) extends StreetGraphContainer with InMemoryGeoGraphContainer[StreetVertex] with LazyLoggerSupport with MeterSupport {
+
+  protected val totalVertices: Long = vertices.size
+
+  override def findNearest(coordinate: Coordinate): Option[StreetVertex] = GeoGraphContainer.findNearest(vertices, coordinate)
+
+  /**
+   * Find vertex by ID
+   *
+   * @param id : Long
+   * @return
+   */
+  override def findVertex(id: Long): Option[StreetVertex] = vertexById.get(id)
+
+  override def neighbours(vertex: StreetVertex): List[StreetVertex] = GeoGraphContainer.neighbours(vertex)(this)
 
   lazy val streets: List[StreetEdge] = for {
     vertex ← vertices
@@ -42,18 +73,19 @@ case class EagerStreetGraphContainer(override val vertices: List[StreetVertex]) 
   }
 
   /**
-   * Create a new EagerStreetGraphContainer with maximal connected subgraph that this graph contains
+   * Create a new InMemoryStreetGraphContainer with maximal connected subgraph that this graph contains
    * @return The connected graph
    */
-  def purgeStreets: EagerStreetGraphContainer = withTimeLogging({
+  def purgeStreets: InMemoryStreetGraphContainer = withTimeLogging({
     logger.info(s"Purge the street graph in order to get a connected graph")
-    GraphUtils.getConnectedComponent(this, EagerStreetGraphContainer.apply)
+    GraphUtils.getConnectedComponent(this, InMemoryStreetGraphContainer.apply)
   }, (time: Long) ⇒ logger.info(s"Street graph was purged in $time ms."))
 }
 
-object EagerStreetGraphContainer extends LazyLoggerSupport {
-  def createFromDB: EagerStreetGraphContainer = {
+object InMemoryStreetGraphContainer extends LazyLoggerSupport {
+
+  def createFromDB: InMemoryStreetGraphContainer = {
     logger.info("Getting Street Graph from the DB")
-    EagerStreetGraphContainer(StreetVertexRepository.findAll)
+    InMemoryStreetGraphContainer(StreetVertexRepository.findAll)
   }
 }

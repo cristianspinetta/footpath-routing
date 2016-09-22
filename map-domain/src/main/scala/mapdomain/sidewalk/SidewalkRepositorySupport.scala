@@ -1,7 +1,8 @@
 package mapdomain.sidewalk
 
-import mapdomain.graph.{ BoundedGeoLocation, Coordinate }
+import mapdomain.graph.Coordinate
 import scalikejdbc._
+import scalikejdbc.interpolation.SQLSyntax._
 import sql.SpatialSQLSupport
 
 trait SidewalkRepositorySupport {
@@ -83,7 +84,7 @@ trait SidewalkEdgeRepository extends SpatialSQLSupport {
     withSQL {
       select
         .from(SidewalkEdge as se)
-        .where.eq(se.vertexStartId, vertexId)
+        .where.eq(se.vertexStartId, vertexId).or.eq(se.vertexEndId, vertexId)
     }.map(sidewalkEdge(se)).list.apply()
   }
 
@@ -138,7 +139,7 @@ trait StreetCrossingEdgeRepository extends SpatialSQLSupport {
     withSQL {
       select
         .from(StreetCrossingEdge as sce)
-        .where.eq(sce.vertexStartId, vertexId)
+        .where.eq(sce.vertexStartId, vertexId).or.eq(sce.vertexEndId, vertexId)
     }.map(streetCrossingEdge(sce)).list.apply()
   }
 
@@ -194,6 +195,14 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
       .from(SidewalkVertex as s)
   }.map(sidewalkVertex(s)).list().apply()
 
+  def findAllWithoutOf(ids: List[Long])(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = withSQL {
+    select
+      .all(s)
+      .append(selectLatitudeAndLongitude(s))
+      .from(SidewalkVertex as s)
+      .where.notIn(s.id, ids)
+  }.map(sidewalkVertex(s)).list().apply()
+
   def findNearest(coordinate: Coordinate)(implicit session: DBSession = SidewalkVertex.autoSession): Option[SidewalkVertex] = withSQL {
     select
       .all(s)
@@ -219,6 +228,11 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
     """.map(sidewalkVertex(neighbour))
       .list.apply()
   }
+
+  def totalVertices(implicit session: DBSession = SidewalkVertex.autoSession): Long = withSQL {
+    select(count)
+      .from(SidewalkVertex as s)
+  }.map(_.long(1)).single().apply().get
 
   def deleteAll(implicit session: DBSession = SidewalkVertex.autoSession): Unit = withSQL {
     deleteFrom(SidewalkVertex)

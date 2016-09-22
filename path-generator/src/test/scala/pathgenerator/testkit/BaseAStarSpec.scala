@@ -4,7 +4,7 @@ import mapdomain.graph._
 
 trait BaseAStarSpec {
 
-  protected val abstractGraphPrototype: EagerGraphContainer[GraphVertex] = EagerGraphContainer(List(
+  protected val abstractGraphPrototype: InMemoryGraphContainer[GraphVertex] = InMemoryGraphContainer(List(
     GraphVertex.createWithEdges(1, List(2, 6)),
     GraphVertex.createWithEdges(2, List(1, 3)),
     GraphVertex.createWithEdges(3, List(2, 7, 4)),
@@ -25,7 +25,7 @@ trait BaseAStarSpec {
     GraphVertex.createWithEdges(18, List(13, 14, 19)),
     GraphVertex.createWithEdges(19, List(17, 18))))
 
-  protected val geoGraphPrototype: EagerGeoGraphContainer[GeoVertex] = GraphContainer.createEagerGeoGraph(Map(
+  protected val geoGraphPrototype: InMemoryGeoGraphContainer[GeoVertex] = GraphContainer.createEagerGeoGraph(Map(
     1L -> (List(2L, 6L), Coordinate(1, 1)),
     2L -> (List(1L, 3L, 4L), Coordinate(3, 1)),
     3L -> (List(2L), Coordinate(3, 4)),

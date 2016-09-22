@@ -3,6 +3,7 @@ package mapdomain.street
 import mapdomain.graph.Coordinate
 import scalikejdbc.{ DBSession, WrappedResultSet, _ }
 import sql.SpatialSQLSupport
+import sqls.count
 
 trait StreetRepositorySupport {
   val streetVertexRepository = StreetVertexRepository
@@ -55,6 +56,14 @@ trait StreetVertexRepository extends SpatialSQLSupport {
       .from(StreetVertex as v)
   }.map(streetVertex(v)).list().apply()
 
+  def findAllWithoutOf(ids: List[Long])(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex] = withSQL {
+    select
+      .all(v)
+      .append(selectLatitudeAndLongitude(v))
+      .from(StreetVertex as v)
+      .where.notIn(v.id, ids)
+  }.map(streetVertex(v)).list().apply()
+
   def findNearest(coordinate: Coordinate)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex] = withSQL {
     select
       .all(v)
@@ -82,6 +91,11 @@ trait StreetVertexRepository extends SpatialSQLSupport {
     """.map(streetVertex(neighbour))
       .list.apply()
   }
+
+  def totalVertices(implicit session: DBSession = StreetVertex.autoSession): Long = withSQL {
+    select(count)
+      .from(StreetVertex as v)
+  }.map(_.long(1)).single().apply().get
 
 }
 

@@ -5,7 +5,7 @@ import org.scalatest.{ FlatSpec, Matchers }
 
 class GeoVertexSpec extends FlatSpec with Matchers {
 
-  implicit val geoGraphPrototype: EagerGeoGraphContainer[GeoVertex] = GraphContainer.createEagerGeoGraph(Map(
+  implicit val geoGraphPrototype: InMemoryGeoGraphContainer[GeoVertex] = GraphContainer.createEagerGeoGraph(Map(
     1L -> (List(2L, 6L), Coordinate(1, 1)),
     2L -> (List(1L, 3L, 4L), Coordinate(3, 1)),
     3L -> (List(2L), Coordinate(3, 4)),
