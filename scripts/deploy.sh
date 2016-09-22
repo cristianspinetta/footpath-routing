@@ -3,7 +3,7 @@
 echo "checking if I'm standing in project's root"
 cat navigation-api/version.sbt
 if [ $? -eq 0 ]; then
-    echo "I am, checking if repository has changes"
+    echo $'\nI am, checking if repository has changes'
     if git diff-index --quiet HEAD --; then
         echo "executing build... "
         sbt clean test navigation-api/assembly
@@ -15,5 +15,5 @@ if [ $? -eq 0 ]; then
         echo "project has uncommited changes! commit them to continue, I'm guessing you don't want to deploy unversioned changes... or do you? D:"
     fi
 else
-    echo "please, cd to project's root directory to execute this script. thank you very much for your patience."
+    echo $'\nplease, cd to project\'s root directory to execute this script. thank you very much for your patience.'
 fi
