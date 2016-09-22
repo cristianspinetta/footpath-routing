@@ -67,9 +67,11 @@ object Settings extends Version {
     cancelable in Global := true
   )
 
-  lazy val BenchmarkConfig = Benchmark.BenchConfig
+  lazy val DBTestsConfig = TestsSettings.DBTestsConfig
+  lazy val testsSettings: Seq[Setting[_]] = inConfig(DBTestsConfig)(Defaults.testTasks) ++ TestsSettings.testsSettings
 
-  lazy val benchmarkSettings = Benchmark.settings
+  lazy val BenchmarkConfig = Benchmark.BenchConfig
+  lazy val benchmarkSettings = inConfig(BenchmarkConfig)(Defaults.testSettings) ++ Benchmark.settings
 
   def formattingPreferences =
     FormattingPreferences()

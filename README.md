@@ -57,5 +57,5 @@ java \
 ### Running tests
 
 * **Unit tests:** `sbt test`
-* **Benchmarks:** `sbt map-domain/bench:test`
-* **DB with local MariaDB:** `sbt test`
+* **Benchmarks:** `sbt bench:test`
+* **DB with local MariaDB:** `sbt bdt:test`

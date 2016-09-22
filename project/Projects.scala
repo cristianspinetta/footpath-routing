@@ -52,8 +52,8 @@ object Projects extends Build {
 
   lazy val mapDomain = Project("map-domain", file("map-domain"))
     .dependsOn(commonLibrary)
-    .configs(BenchmarkConfig)
-    .settings(inConfig(BenchmarkConfig)(Defaults.testSettings): _*)
+    .configs(BenchmarkConfig, DBTestsConfig)
+    .settings(testsSettings: _*)
     .settings(benchmarkSettings: _*)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)

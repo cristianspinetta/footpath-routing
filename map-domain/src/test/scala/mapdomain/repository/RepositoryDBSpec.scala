@@ -12,7 +12,7 @@ import sqls.{ count, distinct }
 
 import scala.math._
 
-class RepositorySpec extends FlatSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach {
+class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach {
 
   val precision: Double = pow(10, -8)
 
