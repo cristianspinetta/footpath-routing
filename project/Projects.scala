@@ -19,9 +19,9 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
-      compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j, akkaTestKit,
+      compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j,
         scalaReflect) ++
-        test(scalatest, mockito))
+        test(scalatest, mockito, akkaTestKit))
     .settings(noPublishing: _*)
     .settings(notAggregateInAssembly: _*)
 
@@ -30,9 +30,9 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
-      compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j, akkaTestKit,
+      compile(typesafeConfig, slf4jApi ,logbackCore, logbackClassic, akkaActor, akkaSlf4j,
         jodaTime, scalaReflect, scalaXml, json4sJackson) ++
-        test(scalatest, mockito, scalacheck))
+        test(scalatest, mockito, scalacheck, akkaTestKit))
     .settings(noPublishing: _*)
     .settings(notAggregateInAssembly: _*)
 
@@ -43,8 +43,8 @@ object Projects extends Build {
     .settings(assemblySettings: _*)
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi, logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental,
-        akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
-        test(scalatest, mockito))
+        akkaHttpSprayJsonExperimental, akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
+        test(scalatest, mockito, akkaHttpTestKit))
     .settings(noPublishing: _*)
     .settings(playgroundSettings: _*)
     .settings(mainClass in (Compile, run) := Some("api.WebServer"))
@@ -58,7 +58,7 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
-        compile(typesafeConfig, logbackCore, logbackClassic, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, h2Connector) ++
+        compile(typesafeConfig, logbackCore, logbackClassic, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
         test(scalatest, mockito, scalacheck, scalaMeter))
     .settings(noPublishing: _*)
     .settings(notAggregateInAssembly: _*)
@@ -78,9 +78,8 @@ object Projects extends Build {
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi, logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental,
-        scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp,
-        akkaHttpSprayJsonExperimental, akkaHttpTestKit, akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
-        test(scalatest, mockito))
+        akkaHttpSprayJsonExperimental, akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
+        test(scalatest, mockito, akkaHttpTestKit))
     .settings(noPublishing: _*)
     .settings(notAggregateInAssembly: _*)
     .settings(playgroundSettings: _*)

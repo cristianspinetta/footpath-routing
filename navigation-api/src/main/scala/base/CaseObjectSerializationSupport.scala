@@ -9,9 +9,9 @@ import scala.reflect.ClassTag
  */
 trait CaseObjectSerializationSupport extends DefaultJsonProtocol {
 
-  def caseObjectJsonFormat[T: ClassTag](objects: T*)(implicit tag: ClassTag[T]) = new RootJsonFormat[T] {
+  def caseObjectJsonFormat[T: ClassTag](objects: T*)(implicit tag: ClassTag[T]) = new RootJsonFormatExtended[T] {
     /** A mapping from object names to the objects */
-    private val mapping = objects.map(obj ⇒ key(obj) -> obj).toMap
+    val mapping: Map[String, T] = objects.map(obj ⇒ key(obj) -> obj).toMap
 
     override def read(json: JsValue): T = (json match {
       case JsString(value) ⇒ mapping.get(value)
@@ -27,6 +27,10 @@ trait CaseObjectSerializationSupport extends DefaultJsonProtocol {
 }
 
 object CaseObjectSerializationSupport extends CaseObjectSerializationSupport
+
+trait RootJsonFormatExtended[T] extends RootJsonFormat[T] {
+  val mapping: Map[String, T]
+}
 
 object SimpleClassNameExtractor {
   def extractSimpleClassName(input: String) = input.split("\\.").last.split("\\$").last

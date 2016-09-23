@@ -1,6 +1,6 @@
 package mapdomain.sidewalk
 
-import base.{LazyLoggerSupport, MeterSupport}
+import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph._
 import mapdomain.utils.GraphUtils
 
@@ -100,10 +100,10 @@ case class InMemorySidewalkGraphContainer(vertices: List[SidewalkVertex]) extend
   }, (time: Long) => logger.info(s"Sidewalk graph was purged in $time ms."))
 }
 
-object InMemorySidewalkGraphContainer extends LazyLoggerSupport {
+object InMemorySidewalkGraphContainer extends LazyLoggerSupport with MeterSupport {
 
-  def createFromDB: InMemorySidewalkGraphContainer = {
-    logger.info("Getting Sidewalk Graph from the DB")
+  def createFromDB: InMemorySidewalkGraphContainer = withTimeLogging({
+    logger.info("Getting Sidewalk Graph from DB")
     InMemorySidewalkGraphContainer(SidewalkVertexRepository.findAll)
-  }
+  }, (time: Long) => logger.info(s"Loading Sidewalk Graph from DB finished in $time ms."))
 }

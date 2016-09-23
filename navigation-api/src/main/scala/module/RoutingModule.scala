@@ -6,7 +6,7 @@ import mapdomain.graph._
 import mapdomain.utils.GraphUtils
 import pathgenerator.core.AStar
 import pathgenerator.graph._
-import service.{ StreetRouting, TypeRouting }
+import model.{ StreetRouting, TypeRouting }
 
 import scala.reflect.runtime.universe._
 import scala.util.{ Failure, Try }

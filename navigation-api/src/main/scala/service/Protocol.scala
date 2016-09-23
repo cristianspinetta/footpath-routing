@@ -1,48 +1,20 @@
 package service
 
-import mapdomain.graph.Coordinate
-import mapdomain.sidewalk.Ramp
-import model.{ Edge, Sidewalk, Street }
+import base.CaseObjectSerializationSupport
+import model.{ RouteFormatter, _ }
 import spray.json._
 
-object Protocol extends DefaultJsonProtocol {
+trait Protocol extends DefaultJsonProtocol with CaseObjectSerializationSupport with ModelFormatter with RouteFormatter {
 
-  implicit object CoordinateFormat extends RootJsonFormat[Coordinate] {
-    def write(c: Coordinate) = JsObject(
-      "lat" -> JsNumber(c.latitude),
-      "lng" -> JsNumber(c.longitude))
-
-    def read(value: JsValue) = value.asJsObject.getFields("lat", "lng") match {
-      case Seq(JsNumber(latitude), JsNumber(longitude)) ⇒
-        Coordinate(latitude.toDouble, longitude.toDouble)
-      case _ ⇒ throw DeserializationException("Coordinate expected")
-    }
-  }
-
-  implicit object RoutingRequestFormat extends RootJsonFormat[RoutingRequest] {
-    def write(routingRequest: RoutingRequest) = JsObject(
-      "fromLng" -> JsNumber(routingRequest.fromLng),
-      "fromLat" -> JsNumber(routingRequest.fromLat),
-      "toLng" -> JsNumber(routingRequest.toLng),
-      "toLat" -> JsNumber(routingRequest.toLat),
-      "routingType" -> JsString(routingRequest.routingType.toString))
-
-    def read(value: JsValue) = value.asJsObject.getFields("fromLng", "fromLat", "toLng", "toLat", "routingType") match {
-      case Seq(JsNumber(fromLng), JsNumber(fromLat), JsNumber(toLng), JsNumber(toLat), JsString(routingType)) ⇒
-        RoutingRequest(fromLng.toDouble, fromLat.toDouble, toLng.toDouble, toLat.toDouble, routingType)
-      case _ ⇒ throw DeserializationException("Coordinate expected")
-    }
-  }
-
-  implicit val RampFormat = jsonFormat6(Ramp.apply)
-  implicit val EdgeFormat = jsonFormat3(Edge.apply)
-  implicit val StreetFormat = jsonFormat3(Street.apply)
-  implicit val SidewalkFormat = jsonFormat2(Sidewalk.apply)
   implicit val EdgeRequestFormat = jsonFormat4(EdgeRequest.apply)
+  implicit val RoutingRequestFormat = jsonFormat5(RoutingRequest.apply)
   implicit val RampRequestFormat = jsonFormat3(RampRequest.apply)
   implicit val RoutingResponseFormat = jsonFormat1(RoutingResponse.apply)
   implicit val StreetResponseFormat = jsonFormat1(StreetResponse.apply)
   implicit val RampResponseFormat = jsonFormat1(RampResponse.apply)
   implicit val SidewalkResponseFormat = jsonFormat1(SidewalkResponse.apply)
   implicit val EdgeResponseFormat = jsonFormat1(EdgeResponse.apply)
+
 }
+
+object Protocol extends Protocol

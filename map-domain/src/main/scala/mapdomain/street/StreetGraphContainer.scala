@@ -82,10 +82,10 @@ case class InMemoryStreetGraphContainer(vertices: List[StreetVertex]) extends St
   }, (time: Long) ⇒ logger.info(s"Street graph was purged in $time ms."))
 }
 
-object InMemoryStreetGraphContainer extends LazyLoggerSupport {
+object InMemoryStreetGraphContainer extends LazyLoggerSupport with MeterSupport {
 
-  def createFromDB: InMemoryStreetGraphContainer = {
-    logger.info("Getting Street Graph from the DB")
+  def createFromDB: InMemoryStreetGraphContainer = withTimeLogging({
+    logger.info("Getting Street Graph from DB")
     InMemoryStreetGraphContainer(StreetVertexRepository.findAll)
-  }
+  }, (time: Long) ⇒ logger.info(s"Loading Street Graph finished from DB in $time ms."))
 }

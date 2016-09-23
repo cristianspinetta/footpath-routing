@@ -13,33 +13,19 @@ import ch.megard.akka.http.cors.CorsDirectives
 import conf.ApiEnvConfig
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.Ramp
-import model.{ Edge, EdgeType, Sidewalk, Street }
+import model._
 import module.{ MapGeneratorModule, MapModule, RoutingModule }
 
 import scala.concurrent.{ ExecutionContextExecutor, Future }
-import scala.util.{ Failure ⇒ TFailure, Success ⇒ TSuccess }
 
-final case class RoutingRequest(fromLng: Double, fromLat: Double, toLng: Double, toLat: Double, routingType: String) {
-  val routingTypeO: TypeRouting = TypeRouting(routingType)
-}
-final case class EdgeRequest(edgeType: String, radius: Double, lat: Double, lng: Double)
+final case class RoutingRequest(fromLng: Double, fromLat: Double, toLng: Double, toLat: Double, routingType: TypeRouting)
+final case class EdgeRequest(edgeType: EdgeType, radius: Double, lat: Double, lng: Double)
 final case class RampRequest(lat: Double, lng: Double, radius: Double)
 final case class RoutingResponse(path: Iterable[Coordinate])
 final case class StreetResponse(streets: Iterable[Street])
 final case class SidewalkResponse(sidewalks: Iterable[Sidewalk])
 final case class EdgeResponse(edges: Iterable[Edge])
 final case class RampResponse(ramps: Vector[Ramp])
-
-sealed trait TypeRouting { val key: String }
-case object StreetRouting extends TypeRouting { val key = "street" }
-case object SidewalkRouting extends TypeRouting { val key = "sidewalk" }
-
-object TypeRouting {
-  def apply(typeRouting: String): TypeRouting = typeRouting match {
-    case StreetRouting.key ⇒ StreetRouting
-    case _                 ⇒ SidewalkRouting
-  }
-}
 
 trait DirectionService extends ApiEnvConfig {
   implicit val system: ActorSystem
@@ -70,23 +56,22 @@ trait DirectionService extends ApiEnvConfig {
     logRequest("routing-request", akka.event.Logging.InfoLevel) {
       get {
         path("directions") {
-          parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double],
-            'routingType ? "street").as(RoutingRequest) { routingRequest ⇒
-              val response: Future[ToResponseMarshallable] = Future.successful {
-                val list = RoutingModule.routing(
-                  coordinateFrom = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
-                  coordinateTo = Coordinate(routingRequest.toLat, routingRequest.toLng),
-                  routingType = routingRequest.routingTypeO).get
-                RoutingResponse(list.map(coor ⇒ Coordinate(coor.latitude, coor.longitude)))
-              }
-              complete(response)
+          parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double], 'routingType.as[TypeRouting]).as(RoutingRequest) { routingRequest ⇒
+            val response: Future[ToResponseMarshallable] = Future.successful {
+              val list = RoutingModule.routing(
+                coordinateFrom = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
+                coordinateTo = Coordinate(routingRequest.toLat, routingRequest.toLng),
+                routingType = routingRequest.routingType).get
+              RoutingResponse(list.map(coor ⇒ Coordinate(coor.latitude, coor.longitude)))
             }
+            complete(response)
+          }
         } ~
           pathPrefix("map") {
             path("edges") {
-              parameters('edgeType.as[String], 'radius ? 1.0D, 'lat.as[Double], 'lng.as[Double]).as(EdgeRequest) { edgeRequest ⇒
+              parameters('edgeType.as[EdgeType], 'radius ? 1.0D, 'lat.as[Double], 'lng.as[Double]).as(EdgeRequest) { edgeRequest ⇒
                 val response: Future[ToResponseMarshallable] = Future.successful {
-                  val list = MapModule.edges(EdgeType(edgeRequest.edgeType), Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius).get
+                  val list = MapModule.edges(edgeRequest.edgeType, Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius).get
                   EdgeResponse(list.toList)
                 }
                 complete(response)
