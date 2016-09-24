@@ -33,7 +33,7 @@ LOG_FOLDER="logs"
 APP_NAME="Easy Travel API"
 APP_LOG="${LOG_FOLDER}/app.log"
 HEALTH_CHECK="./scripts/health-check.py"
-HEALTH_CHECK_PORT="9000"
+HEALTH_CHECK_PORT="8080"
 HEALTH_CHECK_URI="/health-check"
 
 PID_FILE="pidFile"
