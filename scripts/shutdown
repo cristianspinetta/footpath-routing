@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_DIR="/home/cristian/Documents/Development/test/easy-travel/"
+BASE_DIR="/home/ubuntu/app/"
 
 cd "${BASE_DIR}"
 
