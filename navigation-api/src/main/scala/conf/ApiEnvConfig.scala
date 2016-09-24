@@ -3,6 +3,9 @@ package conf
 import base.LazyLoggerSupport
 import com.typesafe.config.Config
 
+import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
+
 trait ApiEnvConfig {
   lazy val configuration = ApiEnvConfig
 }
@@ -33,6 +36,8 @@ case class HTTPConfiguration(config: Config) {
 }
 
 case class GraphConfiguration(private val config: Config) {
+  val javaDuration = config.getDuration("loading-timeout")
+  val loadingTimeout = Duration(javaDuration.getSeconds, TimeUnit.SECONDS)
   val street = StreetGraphConf(config.getConfig("street"))
   val sidewalk = SidewalkGraphConf(config.getConfig("sidewalk"))
 }

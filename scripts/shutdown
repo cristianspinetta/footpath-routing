@@ -1,0 +1,20 @@
+#!/bin/bash
+
+BASE_DIR="/home/cristian/Documents/Development/test/easy-travel/"
+
+cd "${BASE_DIR}"
+
+pidFile="pidFile"
+shutdownTimeout=5 # in seconds
+PID=$(cat "$pidFile" 2> /dev/null)
+
+if [ -n "$PID" ]; then
+  kill $PID 2> /dev/null && { kill $PID && echo "Kill signal sent to application with pid $PID"; } ||
+  { echo "Application with pid $PID was not running. No need to shutdown it"; rm "pidFile"; }
+
+  kill $PID 2> /dev/null && { echo "Waiting ${shutdownTimeout} seconds before force shutdown..."; sleep "${shutdownTimeout}"; } &&
+  { kill $PID 2> /dev/null && { echo "Application with pid $PID doesn't respond to kill -> kill -9 $PID"; kill -9 $PID; } ||
+  echo "Application with pid $PID stopped gracefully"; }
+else
+  echo "Pid not found. Can't shutdown application. Is it really running?"
+fi

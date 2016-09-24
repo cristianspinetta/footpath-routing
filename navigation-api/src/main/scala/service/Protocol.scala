@@ -9,7 +9,6 @@ trait Protocol extends DefaultJsonProtocol with CaseObjectSerializationSupport w
   implicit val EdgeRequestFormat = jsonFormat4(EdgeRequest.apply)
   implicit val RoutingRequestFormat = jsonFormat5(RoutingRequest.apply)
   implicit val RampRequestFormat = jsonFormat3(RampRequest.apply)
-  implicit val RoutingResponseFormat = jsonFormat1(RoutingResponse.apply)
   implicit val StreetResponseFormat = jsonFormat1(StreetResponse.apply)
   implicit val RampResponseFormat = jsonFormat1(RampResponse.apply)
   implicit val SidewalkResponseFormat = jsonFormat1(SidewalkResponse.apply)

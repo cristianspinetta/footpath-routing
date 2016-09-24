@@ -7,7 +7,7 @@ import spray.json.DefaultJsonProtocol
 
 case class Route(path: List[Path])
 
-case class Path(position: List[Coordinate], description: PathDescription)
+case class Path(path: List[Coordinate], description: PathDescription)
 
 case class PathDescription(`type`: PathType, from: String, to: String)
 
@@ -33,8 +33,10 @@ object TypeRouting {
 
 trait RouteFormatter extends DefaultJsonProtocol with CaseObjectSerializationSupport with ModelFormatter {
 
+  //  implicit val SidewalkRoutingFormat = caseObjectJsonFormat[SidewalkRouting.type](SidewalkRouting)
   implicit val TypeRoutingFormat = caseObjectJsonFormat[TypeRouting](StreetRouting, SidewalkRouting)
   implicit val TypeRoutingUnmarshaller = Unmarshaller.strict[String, TypeRouting](TypeRouting.keyMap)
+  //  implicit val SidewalkRoutingUnmarshaller = Unmarshaller.strict[String, SidewalkRouting.type](Map(TypeRouting.keyMap.find(_._2 == SidewalkRouting).get._1 -> SidewalkRouting))
 
   implicit val PathTypeFormat = caseObjectJsonFormat[PathType](WalkPath, BusPath)
   implicit val PathDescriptionFormat = jsonFormat3(PathDescription.apply)

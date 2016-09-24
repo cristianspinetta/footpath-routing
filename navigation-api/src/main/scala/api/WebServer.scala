@@ -9,6 +9,8 @@ import conf.ApiEnvConfig
 import scalikejdbc.config._
 import service.DirectionService
 
+import scala.util.{ Failure, Success }
+
 object WebServer extends App with DirectionService with ApiEnvConfig {
   override implicit val system = ActorSystem()
   override implicit val executor = system.dispatcher
@@ -26,6 +28,11 @@ object WebServer extends App with DirectionService with ApiEnvConfig {
   val bindingFuture = Http().bindAndHandle(routes, interface, port)
 
   bindingFuture foreach { binder ⇒
+
+    init().onComplete {
+      case Success(_)   ⇒ logger.info(s"WebServer initialized successfully.")
+      case Failure(exc) ⇒ logger.error(exc, s"WebServer failed to initialize.")
+    }
 
     logger.info(s"Server online at http://$interface:$port/...")
 

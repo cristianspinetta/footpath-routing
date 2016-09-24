@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# USAGE: ./startup -e {prod | dev} -o {path to environment-override.conf}
+
+BASE_DIR="/home/ubuntu/app/"
+ENVIRONMENT_OVERRIDE="environment-override.conf"
+ENVIRONMENT="prod"
+HEALTH_CHECK_TIMEOUT=360
+
+## TODO add validation of arguments
+while getopts "e:o:b:h:" opt; do
+  case "$opt" in
+    e)
+      ENVIRONMENT=$OPTARG
+      ;;
+    o)
+      ENVIRONMENT_OVERRIDE=$OPTARG
+      ;;
+    b)
+      BASE_DIR=$OPTARG
+      ;;
+    h)
+      HEALTH_CHECK_TIMEOUT=$OPTARG
+  esac
+done
+
+JAR_FILE="${BASE_DIR}footpath-routing-api.jar"
+
+cd $(dirname ${JAR_FILE}) # From here the local path is of the jar path
+
+HEAP_DUMP_FILE="dumps/heap-dump.hprof"
+LOG_FOLDER="logs"
+APP_NAME="Easy Travel API"
+APP_LOG="${LOG_FOLDER}/app.log"
+HEALTH_CHECK="./scripts/health-check.py"
+HEALTH_CHECK_PORT="9000"
+HEALTH_CHECK_URI="/health-check"
+
+PID_FILE="pidFile"
+
+pid=$(cat $PID_FILE 2> /dev/null)
+if kill -0 $pid > /dev/null 2>&1; then
+  echo "Application is still running with pid $pid. Can't perform a new startup. Check the pid and shutdown the application before starting it again."
+  exit 1
+fi
+
+echo "Starting application..."
+
+if [ ! -d ${LOG_FOLDER} ]
+  then mkdir "${LOG_FOLDER}"
+fi
+
+java \
+    -Duser.timezone=GMT-0 \
+    -DenvironmentOverride="${ENVIRONMENT_OVERRIDE}" \
+    -Denvironment="${ENVIRONMENT}" \
+    -Dcom.sun.management.jmxremote.ssl=false \
+    -Dcom.sun.management.jmxremote.authenticate=false \
+    -Dcom.sun.management.jmxremote.port=29290 \
+    -Xms600m \
+    -Xmx700m \
+    -verbose:gc \
+    -XX:+PrintGCDetails \
+    -XX:+PrintGCTimeStamps \
+    -XX:+PrintGCDateStamps \
+    -Xloggc:./logs/gc.log \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:HeapDumpPath=./dumps/heap-dump.hprof \
+    -XX:-OmitStackTraceInFastThrow \
+    -XX:+DisableExplicitGC \
+    -XX:+TieredCompilation \
+    -XX:+UseConcMarkSweepGC \
+    -XX:CMSInitiatingOccupancyFraction=40 \
+    -XX:+UseCMSInitiatingOccupancyOnly \
+    -XX:+CMSScavengeBeforeRemark \
+    -XX:NewRatio=1 \
+    -jar "${JAR_FILE}" > "${APP_LOG}" 2>&1 &
+
+javaStatus=$?
+finalStatus=$((javaStatus))
+
+if [ $javaStatus -eq 0 ] ; then
+
+    pid=$!
+    echo $pid > ${PID_FILE}
+    pidFileAbsolute=$(readlink -f $PID_FILE)
+
+    eval "$HEALTH_CHECK 'http://localhost:${HEALTH_CHECK_PORT}${HEALTH_CHECK_URI}' $HEALTH_CHECK_TIMEOUT '${pidFileAbsolute}'"
+    
+    healthCheckStatus=$?
+    finalStatus=$((healthCheckStatus))
+    
+    if [ $healthCheckStatus -eq 0 ] ; then
+      echo "${APP_NAME} started successfully [PID: $pid]"
+    else
+      echo "${APP_NAME} could not responde its health check ok in $HEALTH_CHECK_TIMEOUT seconds. [PID: $pid]"
+    fi
+else
+    echo "${APP_NAME} could not start."
+fi
+
+exit $finalStatus;
