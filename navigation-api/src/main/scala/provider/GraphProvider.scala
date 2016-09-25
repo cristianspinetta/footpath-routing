@@ -1,7 +1,7 @@
-package module
+package provider
 
 import base.LazyLoggerSupport
-import conf.{ ApiEnvConfig, SidewalkGraphConf, StreetGraphConf }
+import base.conf.{ ApiEnvConfig, SidewalkGraphConf, StreetGraphConf }
 import mapdomain.sidewalk._
 import mapdomain.street._
 import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
@@ -13,6 +13,7 @@ trait GraphSupport extends ApiEnvConfig {
 
   def graphs: GraphSet = GraphSupport.getGraphSet
 }
+
 object GraphSupport extends GraphSupport with LazyLoggerSupport {
 
   @volatile private var _graphSet: Option[GraphSet] = None
@@ -90,11 +91,3 @@ private object SidewalkGraphProviderInMemory extends SidewalkGraphProvider with 
   override val sidewalkGraph: SidewalkGraphContainer = InMemorySidewalkGraphContainer.createFromDB
 }
 
-object RampProvider extends ApiEnvConfig {
-
-  private lazy val rampPath2014: String = configuration.Ramp.sourceFile2014Path
-  private lazy val rampPath2011: String = configuration.Ramp.sourceFile2011Path
-  private lazy val rampParser: RampLoader = RampLoaderByCSV(Seq((rampPath2014, RampLoader2014), (rampPath2011, RampLoader2011)))
-
-  lazy val ramps: Vector[Ramp] = rampParser.loadRamps
-}

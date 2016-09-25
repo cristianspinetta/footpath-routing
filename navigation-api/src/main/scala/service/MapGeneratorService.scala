@@ -1,7 +1,7 @@
-package module
+package service
 
 import base.{ LazyLoggerSupport, MeterSupport }
-import conf.ApiEnvConfig
+import base.conf.ApiEnvConfig
 import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, SidewalkRepositorySupport }
 import mapdomain.street._
 import mapgenerator.sidewalk.SidewalkModule
@@ -12,7 +12,7 @@ import scalikejdbc.DB
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
-object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with StreetRepositorySupport with SidewalkRepositorySupport {
+object MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with StreetRepositorySupport with SidewalkRepositorySupport {
 
   def createStreets(): Try[_] = Try {
     // FIXME Check that streets doen't exist.

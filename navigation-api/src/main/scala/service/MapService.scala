@@ -1,15 +1,16 @@
-package module
+package service
 
 import base.LazyLoggerSupport
-import conf.ApiEnvConfig
+import base.conf.ApiEnvConfig
 import mapdomain.graph.{ Coordinate, GeoSearch }
 import mapdomain.sidewalk.{ PedestrianEdge, Ramp, SidewalkGraphContainer }
 import mapdomain.street.StreetGraphContainer
 import model._
+import provider.{ GraphSupport, RampProvider }
 
 import scala.util.Try
 
-trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
+trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
 
   def edges(edgeType: EdgeType, startPosition: Coordinate, radius: Double): Try[Iterable[Edge]] = Try {
     logger.info(s"Getting edges. Type: $edgeType")
@@ -25,12 +26,6 @@ trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
         val nearestEdges: List[PedestrianEdge] = graphs.sidewalkDB.findNearestSidewalks(startPosition, radius) ++:
           graphs.sidewalkDB.findNearestStreetCrossing(startPosition, radius)
         nearestEdges.map(edge ⇒ Edge(edge.id.map(_.toString).getOrElse(""), edge.from(graphs.sidewalk).get.coordinate, edge.to(graphs.sidewalk).get.coordinate))(collection.breakOut)
-      //      case WayEdgeType ⇒
-      //        implicit val graph: GraphContainer[StreetVertex] = graphProvider.streetGraph
-      //        graphProvider.osmModule.streetWays.toList.flatMap(way ⇒ Edge.pointToEdge(Way.getPath(way)(graphProvider.streetGraph)))
-      //      case WayAreaEdgeType ⇒
-      //        implicit val graph: GraphContainer[StreetVertex] = graphProvider.streetGraph
-      //        graphProvider.osmModule.areaWays.toList.flatMap(way ⇒ Edge.pointToEdge(Way.getPath(way)(graphProvider.streetGraph)))
       case _ ⇒ Nil
     }
   }
@@ -41,4 +36,4 @@ trait MapModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
 
 }
 
-object MapModule extends MapModule
+object MapService extends MapService

@@ -1,77 +1,122 @@
 package module
 
-import base.LazyLoggerSupport
-import conf.ApiEnvConfig
-import mapdomain.graph._
-import mapdomain.sidewalk.SidewalkVertex
-import mapdomain.street.StreetVertex
-import mapdomain.utils.GraphUtils
-import pathgenerator.core.AStar
-import pathgenerator.graph._
+import akka.actor.ActorSystem
+import akka.event.LoggingAdapter
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
+import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.{ ExceptionHandler, MethodRejection, RejectionHandler }
+import akka.stream.Materializer
+import ch.megard.akka.http.cors.CorsDirectives
+import base.conf.ApiEnvConfig
+import mapdomain.graph.Coordinate
 import model._
+import provider.GraphSupport
+import service.{ MapGeneratorService, MapService, RoutingService }
+import scalikejdbc.ConnectionPool
+import spray.json._
 
-import scala.reflect.runtime.universe._
-import scala.util.{Failure, Try}
+import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
 
-trait RoutingModule extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
+trait RoutingModule extends ApiEnvConfig {
+  implicit val system: ActorSystem
+  implicit def executor: ExecutionContextExecutor
+  implicit val materializer: Materializer
 
-  def routing(coordinateFrom: Coordinate, coordinateTo: Coordinate, routingType: TypeRouting): Try[Route] = {
-    logger.info(s"Init Search from $coordinateFrom to $coordinateTo by type routing = $routingType")
-    routingType match {
-      case StreetRouting ⇒
-        searchRouting(graphs.street, coordinateFrom, coordinateTo, createRoutingPathByStreet).map(path => Route(List(path)))
-      case _             ⇒
-        searchRouting(graphs.sidewalk, coordinateFrom, coordinateTo, createRoutingPathByWalk).map(path => Route(List(path)))
+  import Protocol._
+
+  val logger: LoggingAdapter
+
+  def init() = Future {
+    val graphFut = Future(GraphSupport.getGraphSet) // Load graph
+    Await.result(graphFut, configuration.Graph.loadingTimeout)
+  }
+
+  val routes = CorsDirectives.cors() {
+    logRequest("routing-request", akka.event.Logging.InfoLevel) {
+      get {
+        path("route") {
+          parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double] /*, 'routingType.as[TypeRouting] ? SidewalkRouting*/ ).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
+            val response: Future[ToResponseMarshallable] = Future.successful {
+              RoutingService.searchRouteByType(
+                coordinateFrom = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
+                coordinateTo = Coordinate(routingRequest.toLat, routingRequest.toLng),
+                routingType = routingRequest.routingType).get
+            }
+            complete(response)
+          }
+        } ~
+          path("health-check") {
+            val dbStatus: Either[String, String] = if (ConnectionPool.isInitialized()) Right("DB connected")
+            else Left("DB is not connected")
+            val graphStatus: Either[String, String] = if (GraphSupport.graphLoaded) Right("Graph loaded")
+            else Left(s"Graph has not loaded yet. Status: ${GraphSupport.status}")
+            val responseBody: JsValue = Map(
+              "status" -> Map(
+                "DB" -> dbStatus.merge,
+                "Graph" -> graphStatus.merge)).toJson
+            val responseStatus = (dbStatus, graphStatus) match {
+              case (Right(_), Right(_)) ⇒ OK
+              case _                    ⇒ ServiceUnavailable
+            }
+            complete(responseStatus -> responseBody)
+          } ~
+          pathPrefix("map") {
+            path("edges") {
+              parameters('edgeType.as[EdgeType], 'radius ? 1.0D, 'lat.as[Double], 'lng.as[Double]).as(EdgeRequest) { edgeRequest ⇒
+                val response: Future[ToResponseMarshallable] = Future.successful {
+                  val list = MapService.edges(edgeRequest.edgeType, Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius).get
+                  EdgeResponse(list.toList)
+                }
+                complete(response)
+              }
+            } ~
+              path("ramps") {
+                parameters('lat.as[Double], 'lng.as[Double], 'radius ? 1.0D).as(RampRequest) { rampRequest: RampRequest ⇒
+                  val response: Future[ToResponseMarshallable] = Future.successful {
+                    val list = MapService.ramps(Coordinate(rampRequest.lat, rampRequest.lng), rampRequest.radius).get
+                    RampResponse(list)
+                  }
+                  complete(response)
+                }
+              }
+          } ~
+          pathPrefix("private") {
+            pathPrefix("create") {
+              path("street") {
+                val response: Future[ToResponseMarshallable] = Future.successful {
+                  MapGeneratorService.createStreets() map (_ ⇒ "") get
+                }
+                complete(response)
+              } ~
+                path("sidewalk") {
+                  val response: Future[ToResponseMarshallable] = Future.successful {
+                    MapGeneratorService.createSidewalks() map (_ ⇒ "") get
+                  }
+                  complete(response)
+                }
+            }
+          }
+      }
     }
   }
 
-  protected def searchRouting[V <: GeoVertex](graphContainer: GeoGraphContainer[V], coordinateFrom: Coordinate,
-                                              coordinateTo: Coordinate, createRouting: List[V] => Path)(implicit tag: TypeTag[V]): Try[Path] = {
-
-    searchRoutingByGraph(graphContainer, coordinateFrom, coordinateTo)
-      .map(vertices => createRouting(vertices))
+  implicit def exceptionHandler = ExceptionHandler {
+    case exc: Throwable ⇒
+      extractUri { uri ⇒
+        logger.error(exc, s"Request to $uri could not be handled normally")
+        complete(HttpResponse(InternalServerError, entity = exc.getMessage))
+      }
   }
 
-  protected def createRoutingPathByWalk(vertices: List[SidewalkVertex]): Path = {
-    val path: List[Coordinate] = vertices.map(_.coordinate)
-    vertices match {
-      case firstVertex :: xs =>
-        val from = "Av. Independencia 2258" // FIXME extract info from vertex
-      val to = "Av. Rivadavia 1685"
-        Path(path, PathDescription(WalkPath, from, to))
-      case Nil =>
-        Path(path, PathDescription(WalkPath, "-", "-"))
+  implicit def rejectionHandler = RejectionHandler.newBuilder()
+    .handleAll[MethodRejection] { methodRejections ⇒
+      val names = methodRejections.map(_.supported.name)
+      complete((MethodNotAllowed, s"Can't do that! Supported: ${names mkString " or "}!"))
     }
-  }
+    .handleNotFound { complete((NotFound, "Not here!")) }
+    .result()
 
-  protected def createRoutingPathByStreet(vertices: List[StreetVertex]): Path = {
-    val path: List[Coordinate] = vertices.map(_.coordinate)
-    vertices match {
-      case firstVertex :: xs =>
-        val from = "Av. Independencia 2258" // FIXME extract info from vertex
-      val to = "Av. Rivadavia 1685"
-        Path(path, PathDescription(WalkPath, from, to))
-      case Nil =>
-        Path(path, PathDescription(WalkPath, "-", "-"))
-    }
-  }
-
-  protected def searchRoutingByGraph[V <: GeoVertex](graphContainer: GeoGraphContainer[V], coordinateFrom: Coordinate,
-                                                     coordinateTo: Coordinate)(implicit tag: TypeTag[V]): Try[List[V]] = {
-    (graphContainer.findNearest(coordinateFrom), graphContainer.findNearest(coordinateTo)) match {
-      case (Some(fromVertex), Some(toVertex)) ⇒
-        logger.info(s"Vertex From: ${fromVertex.id}. Vertex To: ${toVertex.id}")
-        val aStartFactory = AStar[V, GeoHeuristic[V]](GeoHeuristic(fromVertex)) _
-        aStartFactory(graphContainer, fromVertex, toVertex)
-          .search
-          .map(edges ⇒
-            GraphUtils.edgesToIds(edges) map (vertexId ⇒ graphContainer.findVertex(vertexId) match {
-              case Some(vertex) ⇒ vertex
-              case None         ⇒ throw new RuntimeException(s"Vertex not found $vertexId while trying to create the path from the edge list.")
-            }))
-      case otherResult ⇒ Failure(new RuntimeException(s"It could not get a near vertex. $otherResult"))
-    }
-  }
 }
-
-object RoutingModule extends RoutingModule
