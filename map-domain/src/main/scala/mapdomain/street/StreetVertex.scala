@@ -24,7 +24,7 @@ object StreetVertex extends SQLSyntaxSupport[StreetVertex] {
 
 }
 
-case class TransitStopStreetVertex(override val id: Long, override val edges: List[StreetEdge], override val coordinate: Coordinate) extends StreetVertex(id, edges, coordinate)
-case class ExitVertex(override val id: Long, override val edges: List[StreetEdge], override val coordinate: Coordinate, exitName: String) extends StreetVertex(id, edges, coordinate)
-case class BarrierVertex(override val id: Long, override val edges: List[StreetEdge], override val coordinate: Coordinate) extends StreetVertex(id, edges, coordinate)
+case class UnsavedStreetVertex(override val id: Long, override val edges: List[StreetEdgeUnsaved], override val coordinate: Coordinate) extends StreetVertex(id, edges, coordinate) {
 
+  def copy(edges: Seq[StreetEdgeUnsaved]): UnsavedStreetVertex = UnsavedStreetVertex(id, edges.toList, coordinate)
+}

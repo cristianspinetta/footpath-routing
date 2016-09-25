@@ -71,15 +71,6 @@ case class InMemoryStreetGraphContainer(vertices: List[StreetVertex]) extends St
       (street: StreetEdge) ⇒
         Seq(findVertex(street.vertexStartId).get.coordinate, findVertex(street.vertexEndId).get.coordinate))
   }
-
-  /**
-   * Create a new InMemoryStreetGraphContainer with maximal connected subgraph that this graph contains
-   * @return The connected graph
-   */
-  def purgeStreets: InMemoryStreetGraphContainer = withTimeLogging({
-    logger.info(s"Purge the street graph in order to get a connected graph")
-    GraphUtils.getConnectedComponent(this, InMemoryStreetGraphContainer.apply)
-  }, (time: Long) ⇒ logger.info(s"Street graph was purged in $time ms."))
 }
 
 object InMemoryStreetGraphContainer extends LazyLoggerSupport with MeterSupport {
@@ -88,4 +79,17 @@ object InMemoryStreetGraphContainer extends LazyLoggerSupport with MeterSupport 
     logger.info("Getting Street Graph from DB")
     InMemoryStreetGraphContainer(StreetVertexRepository.findAll)
   }, (time: Long) ⇒ logger.info(s"Loading Street Graph finished from DB in $time ms."))
+}
+
+case class UnsavedStreetGraphContainer(vertices: List[UnsavedStreetVertex]) extends InMemoryGeoGraphContainer[UnsavedStreetVertex] with LazyLoggerSupport with MeterSupport {
+
+  /**
+   * Create a new InMemoryStreetGraphContainer with maximal connected subgraph that this graph contains
+   * @return The connected graph
+   */
+  def purgeStreets: UnsavedStreetGraphContainer = withTimeLogging({
+    logger.info(s"Purge the unsaved street graph in order to get a connected graph")
+    GraphUtils.getConnectedComponent(this, UnsavedStreetGraphContainer.apply)
+  }, (time: Long) ⇒ logger.info(s"Street graph was purged in $time ms."))
+
 }

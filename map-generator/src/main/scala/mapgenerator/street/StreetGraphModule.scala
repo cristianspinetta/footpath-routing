@@ -2,22 +2,24 @@ package mapgenerator.street
 
 import base.{ LazyLoggerSupport, MeterSupport }
 import enums.StreetTraversalPermission
-import mapdomain.graph.{ Coordinate, GraphContainer }
-import mapdomain.street._
+import mapdomain.graph.Coordinate
+import mapdomain.street.{ StreetEdgeUnsaved, StreetInfo, UnsavedStreetGraphContainer, UnsavedStreetVertex }
 import mapgenerator.source.osm.OSMModule
 import mapgenerator.source.osm.model._
 
 import scala.collection.concurrent.TrieMap
-import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
+import scala.collection.mutable.ArrayBuffer
 
 case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport with MeterSupport {
 
   private val intersectionNodes: Set[Long] = getIntersections
-  private val createdStreetVertex = ArrayBuffer.empty[StreetVertex]
+  private val createdStreetVertex = ArrayBuffer.empty[UnsavedStreetVertex]
 
-  private val multiLevelNodes = TrieMap[Long, Map[OSMLevel, StreetVertex]]()
+  private val multiLevelNodes = TrieMap[Long, Map[OSMLevel, UnsavedStreetVertex]]()
 
-  def createGraph: InMemoryStreetGraphContainer = {
+  private val streetInfoByWayId = TrieMap[Long, StreetInfo]()
+
+  def createGraph: UnsavedStreetGraphContainer = {
     logger.info("Starting to create a Street Graph from the OSM Module")
     withTimeLogging({
       osmModule.streetWays.foldLeft(0) {
@@ -26,7 +28,7 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
           processStreetWay(way)
           counter + 1
       }
-      InMemoryStreetGraphContainer(createdStreetVertex.toList)
+      UnsavedStreetGraphContainer(createdStreetVertex.toList)
     }, (time: Long) ⇒ logger.info(s"Created Street Graph in $time ms."))
   }
 
@@ -42,10 +44,10 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
 
       var startNode: Option[Long] = None
       var osmStartNodeOpt: Option[OSMNode] = None
-      val segmentCoordinates: ListBuffer[Coordinate] = ListBuffer.empty
+      val segmentCoordinates: ArrayBuffer[Coordinate] = ArrayBuffer.empty
 
-      var startEndpointOpt: Option[StreetVertex] = None
-      var endEndpointOpt: Option[StreetVertex] = None
+      var startEndpointOpt: Option[UnsavedStreetVertex] = None
+      var endEndpointOpt: Option[UnsavedStreetVertex] = None
 
       val coupleWays: List[List[OSMNode]] = wayUniqueNodes match {
         case head :: second :: tail ⇒ wayUniqueNodes.sliding(2).toList
@@ -102,27 +104,22 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
     }
   }
 
-  private def addEdgeToCreatedVertex(streetVertex: StreetVertex, streetEdge: StreetEdge): Unit = {
+  private def addEdgeToCreatedVertex(streetVertex: UnsavedStreetVertex, streetEdge: StreetEdgeUnsaved): Unit = {
 
     assert(streetEdge.vertexStartId == streetVertex.id, "The startVertex of the edge must be the Vertex that it belong to.")
 
     val indexWhere: Int = createdStreetVertex.indexWhere(vertex ⇒ vertex.id == streetVertex.id)
 
-    val foundStreetVertex: StreetVertex = createdStreetVertex(indexWhere)
+    val foundStreetVertex: UnsavedStreetVertex = createdStreetVertex(indexWhere)
 
-    val updatedStreetVertex: StreetVertex = foundStreetVertex match {
-      case vertex: TransitStopStreetVertex ⇒ vertex.copy(edges = streetEdge :: foundStreetVertex.edges)
-      case vertex: ExitVertex              ⇒ vertex.copy(edges = streetEdge :: foundStreetVertex.edges)
-      case vertex: BarrierVertex           ⇒ vertex.copy(edges = streetEdge :: foundStreetVertex.edges)
-      case vertex: StreetVertex            ⇒ new StreetVertex(foundStreetVertex.id, streetEdge :: foundStreetVertex.edges, foundStreetVertex.coordinate)
-    }
+    val updatedStreetVertex: UnsavedStreetVertex = foundStreetVertex.copy(edges = streetEdge :: foundStreetVertex.edges)
 
     createdStreetVertex.update(indexWhere, updatedStreetVertex)
 
   }
 
-  private def createEdgesForStreet(startEndpoint: StreetVertex, endEndpoint: StreetVertex, way: Way, osmStartNode: OSMNode,
-    osmEndNode: OSMNode, permissions: StreetTraversalPermission): (Option[StreetEdge], Option[StreetEdge]) = {
+  private def createEdgesForStreet(startEndpoint: UnsavedStreetVertex, endEndpoint: UnsavedStreetVertex, way: Way, osmStartNode: OSMNode,
+    osmEndNode: OSMNode, permissions: StreetTraversalPermission): (Option[StreetEdgeUnsaved], Option[StreetEdgeUnsaved]) = {
     // TODO implementar permissions.allowsNothing (se usa en linea 1006)
     // TODO LineString backGeometry (linea 1010)
     // TODO implementar: "double length = this.getGeometryLengthMeters(geometry);" (linea 1012)
@@ -131,12 +128,12 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
 
     val frontOpt =
       if (permissionsFront.allowsAnything())
-        Some(createStreetEdge(startEndpoint, endEndpoint, way, permissions))
+        Some(createStreetEdgeUnsaved(startEndpoint, endEndpoint, way, permissions))
       else
         None
     val backOpt =
       if (permissionsBack.allowsAnything())
-        Some(createStreetEdge(endEndpoint, startEndpoint, way, permissions))
+        Some(createStreetEdgeUnsaved(endEndpoint, startEndpoint, way, permissions))
       else
         None
 
@@ -145,8 +142,8 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
     (frontOpt, backOpt)
   }
 
-  private def createStreetEdge(startEndpoint: StreetVertex, endEndpoint: StreetVertex, way: Way,
-    permissions: StreetTraversalPermission): StreetEdge = {
+  private def createStreetEdgeUnsaved(startEndpoint: UnsavedStreetVertex, endEndpoint: UnsavedStreetVertex, way: Way,
+    permissions: StreetTraversalPermission): StreetEdgeUnsaved = {
     // TODO crear label y name (linea 1046)
     // TODO crear length a partir del recorrido de los coordinate (1053)
 
@@ -157,8 +154,13 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
 
     // TODO implementar "permissions: StreetTraversalPermission" para distinguir entre ida y vuelta
 
-    StreetEdge(startEndpoint, endEndpoint, 10, way.id)
+    val streetInfo = streetInfoByWayId.getOrElse(way.id, {
+      val si = StreetInfo(None, way.name, way.id)
+      streetInfoByWayId += (way.id -> si)
+      si
+    })
 
+    StreetEdgeUnsaved(startEndpoint.id, endEndpoint.id, 10, way.id, streetInfo)
     // TODO revisar el resto de las cosas de este metodo (linea 1092 en adelante)
   }
 
@@ -209,24 +211,13 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
     (permissionsFront, permissionsBack)
   }
 
-  private def createGraphVertex(way: Way, osmStartNode: OSMNode): StreetVertex = {
+  private def createGraphVertex(way: Way, osmStartNode: OSMNode): UnsavedStreetVertex = {
     if (osmStartNode.isMultiLevel) {
       recordLevel(way, osmStartNode)
     } else {
       createdStreetVertex.find(_.id == osmStartNode.id) match {
         case None ⇒
-          // TODO implementar el label
-
-          val vertex: StreetVertex = osmStartNode match {
-            case node if node.tags.get("highway").contains("motorway_junction") && node.tags.get("ref").isDefined ⇒
-              ExitVertex(node.id, Nil, Coordinate(node.lat, node.lon), node.tags("ref"))
-            case node if node.isStop && node.tags.get("ref").isDefined ⇒
-              TransitStopStreetVertex(node.id, Nil, Coordinate(node.lat, node.lon)) // TODO chequear loas demas datos que le agregan (linea 1192 de OSMModule)
-            case node if node.isBollard ⇒
-              BarrierVertex(node.id, Nil, Coordinate(node.lat, node.lon)) // TODO chequear los permisos que le agregan (linea 1199)
-            case node ⇒ Way.createOSMVertex(way, node)
-          }
-
+          val vertex: UnsavedStreetVertex = Way.createOSMVertex(way, osmStartNode)
           createdStreetVertex += vertex
           vertex
         case Some(vertex) ⇒ vertex
@@ -285,10 +276,10 @@ case class StreetGraphModule(osmModule: OSMModule) extends LazyLoggerSupport wit
     intersectionNodes.toSet
   }
 
-  private def recordLevel(way: Way, osmStartNode: OSMNode): StreetVertex = {
+  private def recordLevel(way: Way, osmStartNode: OSMNode): UnsavedStreetVertex = {
     val level: OSMLevel = osmModule.wayLevels.getOrElse(way, OSMLevel.default)
 
-    val map: Map[OSMLevel, StreetVertex] = multiLevelNodes.getOrElse(osmStartNode.id, Map[OSMLevel, StreetVertex]())
+    val map: Map[OSMLevel, UnsavedStreetVertex] = multiLevelNodes.getOrElse(osmStartNode.id, Map[OSMLevel, UnsavedStreetVertex]())
 
     map.getOrElse(level, {
       val vertex = Way.createOSMVertex(way, osmStartNode)

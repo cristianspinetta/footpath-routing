@@ -3,7 +3,7 @@ package mapdomain.repository
 import mapdomain.graph.Coordinate
 import mapdomain.publictransport.{ PathRepository, StopRepository, TravelInfoRepository }
 import mapdomain.sidewalk._
-import mapdomain.street.{ StreetEdge, StreetEdgeRepository, StreetVertex, StreetVertexRepository }
+import mapdomain.street._
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
 import scalikejdbc.DB
 import scalikejdbc.config.DBs
@@ -23,6 +23,7 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
 
   override def beforeEach(): Unit = {
     StopRepository.deleteAll
+    StreetInfoRepository.deleteAll
     StreetEdgeRepository.deleteAll
     StreetVertexRepository.deleteAll
     RampRepository.deleteAll
@@ -56,13 +57,15 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
   it should "create street edges correctly" in {
     StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
     StreetVertexRepository.create(StreetVertex(6, Nil, Coordinate(14, 13)))
-    val streetEdge = StreetEdge(None, 5, 6, 10, 9)
+    val wayId: Long = 2
+    val streetInfoId = StreetInfoRepository.create(StreetInfo(None, Some("some address"), wayId))
+    val streetEdge = StreetEdge(id = None, streetVertexStartId = 5, streetVertexEndId = 6, distance = 10, wayId = wayId, streetInfoId = streetInfoId)
     val edgeId = StreetEdgeRepository.create(streetEdge)
 
     val edge: StreetEdge = StreetEdgeRepository.find(edgeId)
     edge.id should not be None
     edge.distance shouldBe 10d
-    edge.wayId shouldBe 9l
+    edge.wayId shouldBe wayId
     edge.vertexStartId shouldBe 5
     edge.vertexEndId shouldBe 6
   }
@@ -76,10 +79,13 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
     val vertex2 = StreetVertexRepository.create(StreetVertex(6, Nil, Coordinate(14, 13)))
     val vertex3 = StreetVertexRepository.create(StreetVertex(7, Nil, Coordinate(14, 15)))
 
-    StreetEdgeRepository.create(StreetEdge(None, vertex1.id, vertex2.id, 10d, 9l))
-    StreetEdgeRepository.create(StreetEdge(None, vertex2.id, vertex1.id, 10d, 9l))
-    StreetEdgeRepository.create(StreetEdge(None, vertex2.id, vertex3.id, 10d, 9l))
-    StreetEdgeRepository.create(StreetEdge(None, vertex3.id, vertex2.id, 10d, 9l))
+    val wayId: Long = 2
+    val streetInfoId = StreetInfoRepository.create(StreetInfo(None, Some("an address"), wayId))
+
+    StreetEdgeRepository.create(StreetEdge(None, vertex1.id, vertex2.id, 10d, wayId, streetInfoId))
+    StreetEdgeRepository.create(StreetEdge(None, vertex2.id, vertex1.id, 10d, wayId, streetInfoId))
+    StreetEdgeRepository.create(StreetEdge(None, vertex2.id, vertex3.id, 10d, wayId, streetInfoId))
+    StreetEdgeRepository.create(StreetEdge(None, vertex3.id, vertex2.id, 10d, wayId, streetInfoId))
 
     var neighbours = StreetVertexRepository.findNeighbours(vertex2.id)
     neighbours.size shouldBe 2
@@ -152,7 +158,7 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
     var travelInfo = TravelInfoRepository.create("any description")
 
     val path = PathRepository.create("some coordinates")
-    val firstStop = StopRepository.create(10l, 11l, false, path.id.get)
+    val firstStop = StopRepository.create(10l, 11l, isAccessible = false, path.id.get)
     val lastStop = StopRepository.create(12l, 13l, true, path.id.get)
 
     travelInfo = travelInfo.copy(firstStopId = firstStop.id, lastStopId = lastStop.id)
@@ -180,7 +186,10 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
     val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(10, 9), Nil, Nil, vertex1.id))
     val sidewalk3 = SidewalkVertexRepository.create(SidewalkVertex(6, Coordinate(10, 9), Nil, Nil, vertex1.id))
 
-    val streetEdge = StreetEdge(None, 5, 6, 10, 9)
+    val wayId: Long = 2
+    val streetInfoId = StreetInfoRepository.create(StreetInfo(None, Some("an address"), wayId))
+
+    val streetEdge = StreetEdge(None, 5, 6, 10, wayId, streetInfoId)
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
     val edge1Id = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk1.id, sidewalk2.id, "key1", NorthSide, savedStreetEdge.id))
@@ -239,7 +248,10 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
     val sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1.id))
     val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1.id))
 
-    val streetEdge = StreetEdge(None, 5, 6, 10, 9)
+    val wayId: Long = 2
+    val streetInfoId = StreetInfoRepository.create(StreetInfo(None, Some("an address"), wayId))
+
+    val streetEdge = StreetEdge(None, 5, 6, 10, wayId, streetInfoId)
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
 

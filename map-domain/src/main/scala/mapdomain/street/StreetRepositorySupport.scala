@@ -113,6 +113,7 @@ trait StreetEdgeRepository extends SpatialSQLSupport {
       rs.long(e.vertexEndId),
       rs.double(e.distance),
       rs.long(e.wayId),
+      rs.long(e.streetInfoId),
       Some(rs.long(e.id)))
   }
 
@@ -125,7 +126,8 @@ trait StreetEdgeRepository extends SpatialSQLSupport {
         StreetEdge.column.vertexStartId -> edge.vertexStartId,
         StreetEdge.column.vertexEndId -> edge.vertexEndId,
         StreetEdge.column.distance -> edge.distance,
-        StreetEdge.column.wayId -> edge.wayId)
+        StreetEdge.column.wayId -> edge.wayId,
+        StreetEdge.column.streetInfoId -> edge.streetInfoId)
     }.updateAndReturnGeneratedKey.apply()
   }
 
@@ -155,3 +157,22 @@ trait StreetEdgeRepository extends SpatialSQLSupport {
 }
 
 object StreetEdgeRepository extends StreetEdgeRepository
+
+trait StreetInfoRepository extends SpatialSQLSupport {
+
+  val si = StreetInfo.syntax("si")
+
+  def create(streetInfo: StreetInfo)(implicit session: DBSession = StreetInfo.autoSession): Long = {
+    withSQL {
+      insert.into(StreetInfo).namedValues(
+        StreetInfo.column.address -> streetInfo.address,
+        StreetInfo.column.wayId -> streetInfo.wayId)
+    }.updateAndReturnGeneratedKey.apply()
+  }
+
+  def deleteAll(implicit session: DBSession = StreetInfo.autoSession): Unit = withSQL {
+    deleteFrom(StreetInfo)
+  }.update.apply()
+
+}
+object StreetInfoRepository extends StreetInfoRepository
