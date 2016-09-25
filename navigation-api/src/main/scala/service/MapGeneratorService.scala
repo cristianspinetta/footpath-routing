@@ -12,7 +12,7 @@ import scalikejdbc.DB
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
-object MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with StreetRepositorySupport with SidewalkRepositorySupport {
+trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with StreetRepositorySupport with SidewalkRepositorySupport {
 
   def createStreets(): Try[_] = Try {
     // FIXME Check that streets doen't exist.
@@ -76,3 +76,5 @@ object MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiE
   }
 
 }
+
+object MapGeneratorService extends MapGeneratorService
