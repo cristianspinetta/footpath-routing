@@ -40,9 +40,9 @@ case class Way(id: Long, visible: Boolean, version: Int, changeset: Long, timest
 
 object Way {
 
-  def createOSMVertex(way: Way, node: OSMNode): UnsavedStreetVertex = new UnsavedStreetVertex(node.id, Nil, Coordinate(node.lat, node.lon))
+  def createOSMVertex(way: Way, node: OSMNode): UnsavedStreetVertex = UnsavedStreetVertex(node.id, Nil, Coordinate(node.lat, node.lon))
 
-  def getPath[V <: GeoVertex](way: Way)(implicit graph: GraphContainer[V]): List[Coordinate] = {
+  def getPath[V <: GeoVertex[_]](way: Way)(implicit graph: GraphContainer[_, V]): List[Coordinate] = {
     for {
       nodeId ← way.nodeIds
       vertex ← graph.findVertex(nodeId).toSeq

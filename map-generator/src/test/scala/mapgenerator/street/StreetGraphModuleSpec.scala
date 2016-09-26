@@ -1,11 +1,12 @@
 package mapgenerator.street
 
-import mapdomain.street.{ StreetEdge, StreetVertex, UnsavedStreetGraphContainer }
+import mapdomain.street.{ StreetEdge, UnsavedStreetGraphContainer, UnsavedStreetVertex }
 import mapgenerator.source.osm._
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
 import org.scalatest.{ FlatSpec, Matchers }
 
+import scala.collection.immutable.IndexedSeq
 import scala.collection.mutable.ArrayBuffer
 
 class StreetGraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
@@ -39,7 +40,7 @@ class StreetGraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
     graph.vertices.size should be(otpVertices.size)
 
-    val graphVertices: Seq[StreetVertex] = graph.vertices.toIndexedSeq
+    val graphVertices: IndexedSeq[UnsavedStreetVertex] = graph.vertices.toIndexedSeq
 
     val edgesReport = StringBuilder.newBuilder
 

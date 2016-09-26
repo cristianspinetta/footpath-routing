@@ -58,7 +58,7 @@ class SidewalkModuleSpec extends FlatSpec with Matchers {
 
   def createStreetGraph(vertexData: Map[Long, (List[Long], Coordinate)]): InMemoryStreetGraphContainer = {
     val id = new AtomicLong(0)
-    val vertices: List[StreetVertex] = vertexData.toList map {
+    val vertices: List[StreetVertex[StreetEdge]] = vertexData.toList map {
       case (nodeId, (edgeIds, nodeCoordinate)) ⇒
         new StreetVertex(nodeId,
           edgeIds.map(neighbourId ⇒ StreetEdge(Some(id.addAndGet(1)), nodeId, neighbourId, nodeCoordinate.distanceTo(vertexData(neighbourId)._2), 0, 0)),

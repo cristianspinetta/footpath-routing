@@ -14,7 +14,7 @@ object StreetEdge extends SQLSyntaxSupport[StreetEdge] {
 
   override val useSnakeCaseColumnName = false
 
-  def apply(streetVertexStart: StreetVertex, streetVertexEnd: StreetVertex, distance: Double, wayId: Long, streetInfoId: Long): StreetEdge =
+  def apply(streetVertexStart: StreetVertex.T, streetVertexEnd: StreetVertex.T, distance: Double, wayId: Long, streetInfoId: Long): StreetEdge =
     new StreetEdge(streetVertexStart.id, streetVertexEnd.id, distance, wayId, streetInfoId)
 
   def apply(id: Option[Long] = None, streetVertexStartId: Long, streetVertexEndId: Long, distance: Double, wayId: Long, streetInfoId: Long): StreetEdge = new StreetEdge(streetVertexStartId, streetVertexEndId, distance, wayId, streetInfoId, id)

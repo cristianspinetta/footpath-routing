@@ -52,9 +52,9 @@ object StreetCrossingEdge extends SQLSyntaxSupport[StreetCrossingEdge] {
 }
 
 case class SidewalkVertex(override val id: Long, override val coordinate: Coordinate, sidewalkEdges: List[SidewalkEdge],
-    streetCrossingEdges: List[StreetCrossingEdge], streetVertexBelongToId: Long) extends GeoVertex(id, sidewalkEdges ++ streetCrossingEdges, coordinate) {
+    streetCrossingEdges: List[StreetCrossingEdge], streetVertexBelongToId: Long) extends GeoVertex[PedestrianEdge](id, sidewalkEdges ++ streetCrossingEdges, coordinate) {
 
-  override def getEdgesFor(vertexId: Long): Option[Edge] = edges.find(edge ⇒ edge.vertexEndId == vertexId || edge.vertexStartId == vertexId)
+  override def getEdgesFor(vertexId: Long): Option[PedestrianEdge] = edges.find(edge ⇒ edge.vertexEndId == vertexId || edge.vertexStartId == vertexId)
 }
 
 object SidewalkVertex extends SQLSyntaxSupport[SidewalkVertex] {

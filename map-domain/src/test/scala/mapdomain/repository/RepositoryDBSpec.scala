@@ -71,7 +71,7 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
   }
 
   it should "create street vertex correctly" in {
-    var vertex1 = StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
+    var vertex1: StreetVertex.T = StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
     vertex1 = StreetVertexRepository.find(vertex1.id).get
     vertex1.id shouldBe 5
     coordinateAssertion(vertex1.coordinate, Coordinate(12, 11))
@@ -104,7 +104,7 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
 
   it should "create street vertex in bulk correctly" in {
     val qunatityToInsert = 15
-    val vertices = (1 to qunatityToInsert).map(i ⇒ StreetVertex(i, Nil, Coordinate(i * 3, i * 5))).toList
+    val vertices = (1 to qunatityToInsert).map(i ⇒ StreetVertex[StreetEdge](i, Nil, Coordinate(i * 3, i * 5))).toList
     StreetVertexRepository.createInBulk(vertices)
 
     val v = StreetVertexRepository.v
@@ -132,9 +132,9 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
     val coordinates = "{lng: 34, lat: 20}, {lng: 34, lat: 21}"
     val path = PathRepository.create(coordinates)
 
-    val firstStop = StopRepository.create(10l, 11l, false, path.id.get)
-    var secondStop = StopRepository.create(12l, 13l, true, path.id.get)
-    val thirdStop = StopRepository.create(14l, 15l, true, path.id.get)
+    val firstStop = StopRepository.create(10l, 11l, isAccessible = false, path.id.get)
+    var secondStop = StopRepository.create(12l, 13l, isAccessible = true, path.id.get)
+    val thirdStop = StopRepository.create(14l, 15l, isAccessible = true, path.id.get)
 
     secondStop = secondStop.copy(previousStopId = firstStop.id, nextStopId = thirdStop.id, travelInfoId = travelInfo.id)
     StopRepository.save(secondStop)
@@ -255,7 +255,7 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
 
-    val sidewalkEdge1Id = SidewalkEdgeRepository.create(SidewalkEdge(4, 5, "key1", NorthSide, savedStreetEdge.id, None, false))
+    val sidewalkEdge1Id = SidewalkEdgeRepository.create(SidewalkEdge(4, 5, "key1", NorthSide, savedStreetEdge.id, None, isAccessible = false))
     val sidewalkEdge1 = SidewalkEdgeRepository.find(sidewalkEdge1Id)
     sidewalkEdge1.id shouldBe 'defined
     sidewalkEdge1.keyValue shouldBe "key1"

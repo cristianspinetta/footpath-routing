@@ -3,7 +3,7 @@ package mapdomain.graph
 import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
 
-trait GeoSearch[V <: GeoVertex] { self: GraphContainer[V] ⇒
+trait GeoSearch[E <: GeoEdge, V <: GeoVertex[E]] { self: GraphContainer[E, V] ⇒
 
   protected val position: Coordinate
 

@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 
-class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: V, targetNode: V,
+class AStarAlternative[E <: Edge, V <: Vertex[E]](gMap: GraphContainer[E, V], startNode: V, targetNode: V,
     estFurtherCostFunc: V ⇒ Int) {
 
   // priority queue orders by highest value, so cost is negated.
@@ -22,16 +22,16 @@ class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: V, targe
   private val _visited = mutable.Set[V]()
 
   // The map of navigated vertices.
-  private val _cameFrom: TrieMap[Vertex, Vertex] = TrieMap.empty
+  private val _cameFrom: TrieMap[V, V] = TrieMap.empty
 
-  def search: List[Edge] = loop(1, None)
+  def search: List[E] = loop(1, None)
 
   @tailrec
-  private def loop(loopCount: Int, fromNode: Option[V]): List[Edge] = {
+  private def loop(loopCount: Int, fromNode: Option[V]): List[E] = {
     if (_opens isEmpty) Nil
     else {
       val current = _opens.dequeue()
-      fromNode foreach (from ⇒ _cameFrom += ((current.node, from)))
+      fromNode foreach (from ⇒ _cameFrom += (current.node -> from))
       if (current.node == targetNode) {
         reconstructPath(_cameFrom, current.node)
       } else {
@@ -51,7 +51,7 @@ class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: V, targe
   }
 
   // recursive function
-  private def reconstructPath(cameFrom: TrieMap[Vertex, Vertex], current: Vertex): List[Edge] = {
+  private def reconstructPath(cameFrom: TrieMap[V, V], current: V): List[E] = {
     cameFrom.get(current) match {
       case Some(nodeFrom) ⇒
         reconstructPath(cameFrom - current, nodeFrom) ++ nodeFrom.getEdgesFor(current.id).toList
@@ -61,4 +61,4 @@ class AStarAlternative[V <: Vertex](gMap: GraphContainer[V], startNode: V, targe
 
 }
 
-case class MetaInformedState[V <: Vertex](node: V, cost: Long, estFurtherCost: Long)
+case class MetaInformedState[V <: Vertex[_]](node: V, cost: Long, estFurtherCost: Long)

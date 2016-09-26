@@ -1,18 +1,18 @@
 package playground
 
 import akka.util.ConcurrentMultiMap
-import base.{LazyLoggerSupport, MeterSupport}
+import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph.Coordinate
 import mapdomain.utils.GraphUtils
-import playground.model.{GeoNode, GeoNodeRepository}
+import playground.model.{ GeoNode, GeoNodeRepository }
 import scalikejdbc.DB
-import scalikejdbc.{DBSession, WrappedResultSet, _}
+import scalikejdbc.{ DBSession, WrappedResultSet, _ }
 import scalikejdbc.config.DBs
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.IndexedSeq
 import scala.collection.mutable
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 import scala.util.Random
 
 object DBTest extends App with LazyLoggerSupport with MeterSupport {
@@ -23,8 +23,7 @@ object DBTest extends App with LazyLoggerSupport with MeterSupport {
   GlobalSettings.loggingSQLAndTime = new LoggingSQLAndTimeSettings(
     enabled = true,
     singleLineMode = true,
-    logLevel = 'DEBUG
-  )
+    logLevel = 'DEBUG)
 
   DBs.setupAll()
   //  GeoNode.createTable3
@@ -50,7 +49,7 @@ object DBTest extends App with LazyLoggerSupport with MeterSupport {
     val timeout = 120 seconds
 
     def testScanOnly(from: Coordinate, distance: Double): Unit = {
-      val scanOnly = withTimeLogging(GeoNodeRepository.findNearestWithRangeScanOnly(from, distance), { timing: Long =>
+      val scanOnly = withTimeLogging(GeoNodeRepository.findNearestWithRangeScanOnly(from, distance), { timing: Long ⇒
         logger.info(s"Fetch rows from Geo Node table by Range Scan only in $timing ms.")
         times.put(ScanOnly, times.get(ScanOnly).toVector.flatten :+ timing)
       })
@@ -58,7 +57,7 @@ object DBTest extends App with LazyLoggerSupport with MeterSupport {
     }
 
     def testScanWithBounding(from: Coordinate, distance: Double): Unit = {
-      val selectWithFilter = withTimeLogging(GeoNodeRepository.findNearestWithRangeScanAndBounding(from, distance), { timing: Long =>
+      val selectWithFilter = withTimeLogging(GeoNodeRepository.findNearestWithRangeScanAndBounding(from, distance), { timing: Long ⇒
         logger.info(s"Fetch rows from Geo Node table by Range Scan with Filter in $timing ms.")
         times.put(ScanWithBounding, times.get(ScanWithBounding).toVector.flatten :+ timing)
       })
@@ -69,20 +68,19 @@ object DBTest extends App with LazyLoggerSupport with MeterSupport {
       logger.info(s"Fetch ${list.size} rows for $testName.")
     }
 
-    val testCases: List[() => Unit] = List(
-      () => testScanOnly(randomCoordinate(r), randomDistance(r)),
-      () => testScanWithBounding(randomCoordinate(r), randomDistance(r))
-    )
+    val testCases: List[() ⇒ Unit] = List(
+      () ⇒ testScanOnly(randomCoordinate(r), randomDistance(r)),
+      () ⇒ testScanWithBounding(randomCoordinate(r), randomDistance(r)))
 
-    def executeTestCase(testCaseF: () => Unit): IndexedSeq[Future[IndexedSeq[Unit]]] = (1 to concurrency).map(_ =>
+    def executeTestCase(testCaseF: () ⇒ Unit): IndexedSeq[Future[IndexedSeq[Unit]]] = (1 to concurrency).map(_ ⇒
       Future {
-        for (_ <- 1 to (number / concurrency))
+        for (_ ← 1 to (number / concurrency))
           yield testCaseF()
       })
 
-  //  val testCasesFut = Future.sequence(testCases.flatMap(f => executeTestCase(f)))
+    //  val testCasesFut = Future.sequence(testCases.flatMap(f => executeTestCase(f)))
 
-    testCases foreach { testCaseF =>
+    testCases foreach { testCaseF ⇒
       Await.result(Future.sequence(executeTestCase(testCaseF)), timeout)
     }
 
@@ -105,7 +103,7 @@ object DBTest extends App with LazyLoggerSupport with MeterSupport {
     generateData()
 
     def generateData(): Unit = {
-      val dataSet: Vector[Coordinate] = (for (_ <- 1 to quantity) yield randomCoordinate(r)).toVector
+      val dataSet: Vector[Coordinate] = (for (_ ← 1 to quantity) yield randomCoordinate(r)).toVector
 
       withTimeLogging(saveCoordinate(dataSet), { timing: Long ⇒
         logger.info(s"Inserted ${dataSet.size} rows to Geo Node table in $timing ms.")
@@ -114,13 +112,13 @@ object DBTest extends App with LazyLoggerSupport with MeterSupport {
 
     def saveCoordinate(dataSet: Vector[Coordinate]): Unit = {
       dataSet.par
-        .map(coordinate => GeoNodeRepository.create(GeoNode(coordinate)))
+        .map(coordinate ⇒ GeoNodeRepository.create(GeoNode(coordinate)))
     }
 
     def createGrid(rows: Int, columns: Int): List[GeoNode] = {
       val graph = GraphUtils.createGridGeoGraph(rows, columns)
       val nodes = graph.vertices.par
-        .map(vertex => {
+        .map(vertex ⇒ {
           GeoNodeRepository.create(GeoNode(vertex.coordinate))
         }).seq.toList
       nodes

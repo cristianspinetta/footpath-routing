@@ -26,7 +26,7 @@ trait RoutingService extends GraphSupport with LazyLoggerSupport with ApiEnvConf
     }
   }
 
-  protected def searchRouting[V <: GeoVertex](graphContainer: GeoGraphContainer[V], coordinateFrom: Coordinate,
+  protected def searchRouting[E <: GeoEdge, V <: GeoVertex[E]](graphContainer: GeoGraphContainer[E, V], coordinateFrom: Coordinate,
                                               coordinateTo: Coordinate, createRouting: List[V] => Path)(implicit tag: TypeTag[V]): Try[Path] = {
 
     searchRoutingByGraph(graphContainer, coordinateFrom, coordinateTo)
@@ -45,7 +45,7 @@ trait RoutingService extends GraphSupport with LazyLoggerSupport with ApiEnvConf
     }
   }
 
-  protected def createRoutingPathByStreet(vertices: List[StreetVertex]): Path = {
+  protected def createRoutingPathByStreet(vertices: List[StreetVertex.T]): Path = {
     val path: List[Coordinate] = vertices.map(_.coordinate)
     vertices match {
       case firstVertex :: xs =>
@@ -57,12 +57,12 @@ trait RoutingService extends GraphSupport with LazyLoggerSupport with ApiEnvConf
     }
   }
 
-  protected def searchRoutingByGraph[V <: GeoVertex](graphContainer: GeoGraphContainer[V], coordinateFrom: Coordinate,
+  protected def searchRoutingByGraph[E <: GeoEdge, V <: GeoVertex[E]](graphContainer: GeoGraphContainer[E, V], coordinateFrom: Coordinate,
                                                      coordinateTo: Coordinate)(implicit tag: TypeTag[V]): Try[List[V]] = {
     (graphContainer.findNearest(coordinateFrom), graphContainer.findNearest(coordinateTo)) match {
       case (Some(fromVertex), Some(toVertex)) ⇒
         logger.info(s"Vertex From: ${fromVertex.id}. Vertex To: ${toVertex.id}")
-        val aStartFactory = AStar[V, GeoHeuristic[V]](GeoHeuristic(fromVertex)) _
+        val aStartFactory = AStar[E, V, GeoHeuristic[E, V]](GeoHeuristic(fromVertex)) _
         aStartFactory(graphContainer, fromVertex, toVertex)
           .search
           .map(edges ⇒
