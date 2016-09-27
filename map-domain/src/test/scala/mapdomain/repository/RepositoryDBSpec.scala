@@ -169,50 +169,81 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
   }
 
   it should "create sidewalks correctly" in {
-    val vertex1 = StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
-    var sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1.id))
+    val vertex1 = StreetVertexRepository.create(StreetVertex(1, Nil, Coordinate(10, 9)))
+    var sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(1, Coordinate(10, 9), Nil, Nil, vertex1.id))
     sidewalk1 = SidewalkVertexRepository.find(sidewalk1.id).get
-    sidewalk1.id shouldBe 4
+    sidewalk1.id shouldBe 1
     coordinateAssertion(sidewalk1.coordinate, Coordinate(10, 9))
-    sidewalk1.streetVertexBelongToId shouldBe 5
-    sidewalk1.streetVertexBelongToId shouldBe 5
+    sidewalk1.streetVertexBelongToId shouldBe 1
 
-    val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(10, 9), Nil, Nil, vertex1.id))
-    val sidewalk3 = SidewalkVertexRepository.create(SidewalkVertex(6, Coordinate(10, 9), Nil, Nil, vertex1.id))
+    val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(2, Coordinate(10, 9), Nil, Nil, vertex1.id))
+    val sidewalk3 = SidewalkVertexRepository.create(SidewalkVertex(3, Coordinate(10, 9), Nil, Nil, vertex1.id))
+    val sidewalk4 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1.id))
+    val sidewalk5 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(10, 9), Nil, Nil, vertex1.id))
+
+    val ramp1 = RampRepository.create(10, 9, "1", "Callao", Some(1234), "Callao 1234", true)
+    val ramp2 = RampRepository.create(10, 9, "2", "Callao", Some(1234), "Callao 1234", true)
+    val ramp3 = RampRepository.create(10, 9, "3", "Callao", Some(1234), "Callao 1234", true)
+    val ramp4 = RampRepository.create(10, 9, "4", "Callao", Some(1234), "Callao 1234", true)
 
     val streetEdge = StreetEdge(None, 5, 6, 10, 9)
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
-    val edge1Id = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk1.id, sidewalk2.id, "key1", NorthSide, savedStreetEdge.id))
-    val edge2Id = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk2.id, sidewalk1.id, "key2", NorthSide, savedStreetEdge.id))
-    StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk2.id, sidewalk3.id, "key3"))
-    StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk3.id, sidewalk2.id, "key4"))
+    val edge1Id = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk2.id, sidewalk1.id, "key1", NorthSide, savedStreetEdge.id))
+    val edge2Id = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk1.id, sidewalk3.id, "key2", NorthSide, savedStreetEdge.id))
+    StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk1.id, sidewalk4.id, "key3", None, Some(ramp1.id), Some(ramp2.id)))
+    val crossingEdge2Id = StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk5.id, sidewalk1.id, "key4", None, Some(ramp3.id), Some(ramp4.id)))
 
-    var neighbours = SidewalkVertexRepository.findNeighbours(sidewalk2.id)
-    neighbours.size shouldBe 2
-    neighbours.sortWith(_.id < _.id)
-    neighbours.head.id shouldBe sidewalk1.id
+    // all neighbours are accessible
+    var neighbours = SidewalkVertexRepository.findNeighbours(sidewalk1.id)
+    neighbours.size shouldBe 4
+    neighbours = neighbours.sortWith(_.id < _.id)
+    neighbours.head.id shouldBe sidewalk2.id
     neighbours.tail.head.id shouldBe sidewalk3.id
-
-    neighbours = SidewalkVertexRepository.findNeighbours(sidewalk1.id)
-    neighbours.size shouldBe 1
-    neighbours.head.id shouldBe sidewalk2.id
-
-    neighbours = SidewalkVertexRepository.findNeighbours(sidewalk3.id)
-    neighbours.size shouldBe 1
-    neighbours.head.id shouldBe sidewalk2.id
-
-    // findNeighbours should filter not accessible edge
-    val edge1 = SidewalkEdgeRepository.find(edge1Id)
-    edge1.isAccessible = false
-    SidewalkEdgeRepository.save(edge1)
-    val edge2 = SidewalkEdgeRepository.find(edge2Id)
-    edge2.isAccessible = false
-    SidewalkEdgeRepository.save(edge2)
+    neighbours.tail.tail.head.id shouldBe sidewalk4.id
+    neighbours.tail.tail.tail.head.id shouldBe sidewalk5.id
 
     neighbours = SidewalkVertexRepository.findNeighbours(sidewalk2.id)
     neighbours.size shouldBe 1
+    neighbours.head.id shouldBe sidewalk1.id
+
+    neighbours = SidewalkVertexRepository.findNeighbours(sidewalk3.id)
+    neighbours.size shouldBe 1
+    neighbours.head.id shouldBe sidewalk1.id
+
+    neighbours = SidewalkVertexRepository.findNeighbours(sidewalk4.id)
+    neighbours.size shouldBe 1
+    neighbours.head.id shouldBe sidewalk1.id
+
+    neighbours = SidewalkVertexRepository.findNeighbours(sidewalk5.id)
+    neighbours.size shouldBe 1
+    neighbours.head.id shouldBe sidewalk1.id
+
+    // findNeighbours should filter not accessible edge and ramps
+    val edge1 = SidewalkEdgeRepository.find(edge1Id)
+    edge1.isAccessible = false
+    SidewalkEdgeRepository.save(edge1)
+    ramp1.isAccessible = false
+    RampRepository.save(ramp1)
+
+    neighbours = SidewalkVertexRepository.findNeighbours(sidewalk1.id)
+    neighbours.size shouldBe 2
+    neighbours = neighbours.sortWith(_.id < _.id)
     neighbours.head.id shouldBe sidewalk3.id
+    neighbours.tail.head.id shouldBe sidewalk5.id
+
+    // findNeighbours should filter crossing edges without ramps
+    StreetCrossingEdgeRepository.deleteStartRamp(crossingEdge2Id)
+    neighbours = SidewalkVertexRepository.findNeighbours(sidewalk1.id)
+    neighbours.size shouldBe 1
+    neighbours.head.id shouldBe sidewalk3.id
+
+    // findNeighbours without neighbours
+    val edge2 = SidewalkEdgeRepository.find(edge2Id)
+    edge2.isAccessible = false
+    SidewalkEdgeRepository.save(edge2)
+    neighbours = SidewalkVertexRepository.findNeighbours(sidewalk1.id)
+    neighbours.size shouldBe 0
   }
 
   it should "create sidewalk crossing edges correctly" in {

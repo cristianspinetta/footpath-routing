@@ -93,10 +93,15 @@ trait GraphUtils {
     findNotVisited(TrieMap.empty, graph, Nil)
   }
 
+  private def neighbours[V <: Vertex](vertex: V, graph: GraphContainer[V]): List[V] = {
+    val neighbourIds: List[Long] = vertex.edges.map(edge ⇒ if (edge.vertexStartId == vertex.id) edge.vertexEndId else edge.vertexStartId)
+    neighbourIds.flatMap(id ⇒ graph.findVertex(id) toList)
+  }
+
   def findNeighbours[V <: Vertex](start: V, graph: GraphContainer[V]): TrieMap[Long, V] = {
     def childrenNotVisited(vertex: V, visited: TrieMap[Long, V]): TrieMap[Long, V] = {
       val notVisited = new TrieMap[Long, V]()
-      graph.neighbours(vertex).foreach((x: V) ⇒ if (!visited.contains(x.id)) notVisited += (x.id -> x))
+      neighbours(vertex, graph).foreach((x: V) ⇒ if (!visited.contains(x.id)) notVisited += (x.id -> x))
       notVisited
     }
 

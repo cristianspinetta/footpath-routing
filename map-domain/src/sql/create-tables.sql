@@ -95,3 +95,9 @@ CREATE TABLE IF NOT EXISTS `sidewalk_edge` (
 
 CREATE SPATIAL INDEX street_vertex_coordinate_index ON `street_vertex` (`coordinate`);
 CREATE SPATIAL INDEX sidewalk_vertex_coordinate_index ON `sidewalk_vertex` (`coordinate`);
+
+ALTER TABLE `street_crossing_edge`
+  ADD COLUMN `rampStartId` varchar(255) DEFAULT NULL,
+  ADD COLUMN `rampEndId` varchar(255) DEFAULT NULL,
+  ADD CONSTRAINT fk_rampStart_id FOREIGN KEY (rampStartId) REFERENCES `ramp` (`id`),
+  ADD CONSTRAINT fk_rampEnd_id FOREIGN KEY (rampEndId) REFERENCES `ramp` (`id`);

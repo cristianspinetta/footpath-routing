@@ -1,7 +1,7 @@
 package mapdomain.sidewalk
 
 import mapdomain.graph.Coordinate
-import scalikejdbc.{ DBSession, WrappedResultSet, _ }
+import scalikejdbc._
 import sql.SpatialSQLSupport
 
 case class Ramp(
@@ -10,7 +10,7 @@ case class Ramp(
     street: String,
     number: Option[Int],
     address: String,
-    isAccessible: Boolean = true) {
+    var isAccessible: Boolean = true) {
 }
 
 object Ramp extends SQLSyntaxSupport[Ramp] {
@@ -68,6 +68,18 @@ trait RampRepository extends SpatialSQLSupport {
     Ramp(coordinate, id, street, number, address, isAccessible)
   }
 
+  def save(ramp: Ramp)(implicit session: DBSession = Ramp.autoSession): Ramp = {
+    withSQL {
+      update(Ramp).set(
+        Ramp.column.street -> ramp.street,
+        Ramp.column.number -> ramp.number,
+        Ramp.column.address -> ramp.address,
+        Ramp.column.isAccessible -> ramp.isAccessible).where.eq(Ramp.column.id, ramp.id)
+    }.update().apply()
+
+    ramp
+  }
+
   def find(id: String)(implicit session: DBSession = Ramp.autoSession): Option[Ramp] = withSQL {
     select(r.resultAll)
       .append(selectLatitudeAndLongitude(r))
@@ -78,6 +90,11 @@ trait RampRepository extends SpatialSQLSupport {
   def deleteAll(implicit session: DBSession = Ramp.autoSession): Unit = withSQL {
     deleteFrom(Ramp)
   }.update.apply()
+
+  def findAll(implicit session: DBSession = Ramp.autoSession): List[Ramp] = withSQL {
+    select
+      .from(Ramp as r)
+  }.map(ramp(r)).list().apply()
 
 }
 

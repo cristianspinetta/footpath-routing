@@ -103,7 +103,9 @@ trait StreetCrossingEdgeRepository extends SpatialSQLSupport {
       vertexStartId = rs.long(e.vertexStartId),
       vertexEndId = rs.long(e.vertexEndId),
       keyValue = rs.string(e.keyValue),
-      id = rs.longOpt(e.id))
+      id = rs.longOpt(e.id),
+      rampStartId = rs.stringOpt(e.rampStartId),
+      rampEndId = rs.stringOpt(e.rampEndId))
   }
 
   def opt(e: SyntaxProvider[StreetCrossingEdge])(rs: WrappedResultSet): Option[StreetCrossingEdge] =
@@ -114,7 +116,9 @@ trait StreetCrossingEdgeRepository extends SpatialSQLSupport {
       insert.into(StreetCrossingEdge).namedValues(
         StreetCrossingEdge.column.vertexStartId -> edge.vertexStartId,
         StreetCrossingEdge.column.vertexEndId -> edge.vertexEndId,
-        StreetCrossingEdge.column.keyValue -> edge.keyValue)
+        StreetCrossingEdge.column.keyValue -> edge.keyValue,
+        StreetCrossingEdge.column.rampStartId -> edge.rampStartId,
+        StreetCrossingEdge.column.rampEndId -> edge.rampEndId)
     }.updateAndReturnGeneratedKey.apply()
   }
 
@@ -143,6 +147,11 @@ trait StreetCrossingEdgeRepository extends SpatialSQLSupport {
     }.map(streetCrossingEdge(sce)).list.apply()
   }
 
+  def deleteStartRamp(crossingEdgeId: Long)(implicit session: DBSession = StreetCrossingEdge.autoSession): Unit = withSQL {
+    update(StreetCrossingEdge).set(
+      StreetCrossingEdge.column.rampStartId -> null)
+  }.update().apply()
+
 }
 
 object StreetCrossingEdgeRepository extends StreetCrossingEdgeRepository
@@ -154,7 +163,12 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
   val sidewalkEdge2 = SidewalkEdge.syntax("sidewalkEdge2")
   val crossingEdge1 = StreetCrossingEdge.syntax("crossingEdge1")
   val crossingEdge2 = StreetCrossingEdge.syntax("crossingEdge2")
+
   val neighbour = SidewalkVertex.syntax("neighbour")
+  val sidewalkEdge = SidewalkEdge.syntax("sidewalkEdge")
+  val crossingEdge = StreetCrossingEdge.syntax("crossingEdge")
+  val ramp1 = Ramp.syntax("ramp1")
+  val ramp2 = Ramp.syntax("ramp2")
 
   def sidewalkVertex(s: SyntaxProvider[SidewalkVertex], withEdges: Boolean = true)(rs: WrappedResultSet): SidewalkVertex = {
     val vertex: SidewalkVertex = sidewalkVertex(s.resultName, s.tableAliasName)(rs)
@@ -214,17 +228,35 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
 
   def findNeighbours(vertexId: Long)(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = DB readOnly { implicit session ⇒
     sql"""
-       select
-        distinct ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
-       from
-        ${SidewalkVertex.as(s)}
-        left join ${SidewalkEdge.as(sidewalkEdge1)} on ${sidewalkEdge1.vertexStartId} = ${s.id} and ${sidewalkEdge1.isAccessible} = true
-        left join ${SidewalkEdge.as(sidewalkEdge2)} on ${sidewalkEdge2.vertexEndId} = ${s.id} and ${sidewalkEdge2.isAccessible} = true
-        left join ${StreetCrossingEdge.as(crossingEdge1)} on ${crossingEdge1.vertexStartId} = ${vertexId}
-        left join ${StreetCrossingEdge.as(crossingEdge2)} on ${crossingEdge2.vertexEndId} = ${vertexId}
-        left join ${SidewalkVertex.as(neighbour)} on ${neighbour.id} IN (sidewalkEdge1.vertexEndId, sidewalkEdge2.vertexStartId, crossingEdge1.vertexEndId, crossingEdge2.vertexStartId)
-       where
-        ${s.id} = ${vertexId}
+       select ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
+       from ${SidewalkEdge.as(sidewalkEdge)}
+       	join ${SidewalkVertex.as(neighbour)} on ${neighbour.id} = ${sidewalkEdge.vertexEndId}
+       where ${sidewalkEdge.vertexStartId} = ${vertexId} and ${sidewalkEdge.isAccessible}
+
+       union
+
+       select ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
+       from ${SidewalkEdge.as(sidewalkEdge)}
+        join ${SidewalkVertex.as(neighbour)} on ${neighbour.id} = ${sidewalkEdge.vertexStartId}
+       where ${sidewalkEdge.vertexEndId} = ${vertexId} and ${sidewalkEdge.isAccessible}
+
+       union
+
+       select ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
+       from ${StreetCrossingEdge.as(crossingEdge)}
+       	join ${SidewalkVertex.as(neighbour)} on ${neighbour.id} = ${crossingEdge.vertexEndId}
+       	join ${Ramp.as(ramp1)} on ${ramp1.id} = ${crossingEdge.rampEndId}
+        join ${Ramp.as(ramp2)} on ${ramp2.id} = ${crossingEdge.rampStartId}
+       where ${crossingEdge.vertexStartId} = ${vertexId} and ${ramp1.isAccessible} and ${ramp2.isAccessible}
+
+       union
+
+       select ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
+       from ${StreetCrossingEdge.as(crossingEdge)}
+        join ${SidewalkVertex.as(neighbour)} on ${neighbour.id} = ${crossingEdge.vertexStartId}
+        join ${Ramp.as(ramp1)} on ${ramp1.id} = ${crossingEdge.rampStartId}
+        join ${Ramp.as(ramp2)} on ${ramp2.id} = ${crossingEdge.rampEndId}
+       where ${crossingEdge.vertexEndId} = ${vertexId} and ${ramp1.isAccessible} and ${ramp2.isAccessible}
     """.map(sidewalkVertex(neighbour))
       .list.apply()
   }

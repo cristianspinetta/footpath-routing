@@ -47,6 +47,8 @@ case class LazySidewalkGraphContainer() extends SidewalkGraphContainer with Side
 
 case class InMemorySidewalkGraphContainer(vertices: List[SidewalkVertex]) extends SidewalkGraphContainer with InMemoryGraphContainer[SidewalkVertex] with LazyLoggerSupport with MeterSupport {
 
+  var ramps: List[Ramp] = List()
+
   protected val totalVertices: Long = vertices.size
 
   lazy val sidewalkEdges: List[SidewalkEdge] = { // FIXME esto quedo medio cualquiera, reveer!
@@ -76,9 +78,19 @@ case class InMemorySidewalkGraphContainer(vertices: List[SidewalkVertex]) extend
 
   override def neighbours(vertex: SidewalkVertex): List[SidewalkVertex] = {
     // FIXME meter los neighbours en un cache, por ejemplo usar un TrieMap con vertex.id como key y neighbourIds como value
-    val neighbourIds: List[Long] = vertex.edges.map(edge ⇒ if (edge.vertexStartId == vertex.id) edge.vertexEndId else edge.vertexStartId)
+    val edges = vertex.sidewalkEdges.filter(e => e.isAccessible) ++ vertex.streetCrossingEdges.filter(sce => {
+                          val startRamp = findRamp(sce.rampStartId)
+                          val endRamp = findRamp(sce.rampEndId)
+                          if(startRamp.isEmpty || endRamp.isEmpty)
+                            false
+                          else
+                            startRamp.get.isAccessible && endRamp.get.isAccessible
+                        })
+    val neighbourIds: List[Long] = edges.map(edge ⇒ if (edge.vertexStartId == vertex.id) edge.vertexEndId else edge.vertexStartId)
     neighbourIds.flatMap(id ⇒ findVertex(id) toList)
   }
+
+  private def findRamp(id: Option[String]): Option[Ramp] = ramps.find(r => r.id == id.getOrElse(""))
 
   override def findNearest(coordinate: Coordinate): Option[SidewalkVertex] = GeoGraphContainer.findNearest(vertices, coordinate)
 
@@ -96,7 +108,9 @@ case class InMemorySidewalkGraphContainer(vertices: List[SidewalkVertex]) extend
    */
   def purgeSidewalks: InMemorySidewalkGraphContainer = withTimeLogging({
     logger.info(s"Purge the sidewalk graph in order to get a connected graph")
-    GraphUtils.getConnectedComponent(this, InMemorySidewalkGraphContainer.apply)
+    val container = GraphUtils.getConnectedComponent(this, InMemorySidewalkGraphContainer.apply)
+    container.ramps = ramps
+    container
   }, (time: Long) => logger.info(s"Sidewalk graph was purged in $time ms."))
 }
 
@@ -104,6 +118,8 @@ object InMemorySidewalkGraphContainer extends LazyLoggerSupport with MeterSuppor
 
   def createFromDB: InMemorySidewalkGraphContainer = withTimeLogging({
     logger.info("Getting Sidewalk Graph from DB")
-    InMemorySidewalkGraphContainer(SidewalkVertexRepository.findAll)
+    val graph = InMemorySidewalkGraphContainer(SidewalkVertexRepository.findAll)
+    graph.ramps = RampRepository.findAll
+    graph
   }, (time: Long) => logger.info(s"Loading Sidewalk Graph from DB finished in $time ms."))
 }
