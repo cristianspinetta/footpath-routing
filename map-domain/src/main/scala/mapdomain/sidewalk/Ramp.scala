@@ -39,6 +39,20 @@ trait RampRepository extends SpatialSQLSupport {
       isAccessible = rs.boolean(resultName.isAccessible))
   }
 
+  def createRamp(ramp: Ramp)(implicit session: DBSession = Ramp.autoSession): Ramp = {
+    withSQL {
+      insert.into(Ramp).namedValues(
+        Ramp.column.coordinate -> positionToSQL(ramp.coordinate),
+        Ramp.column.id -> ramp.id,
+        Ramp.column.street -> ramp.street,
+        Ramp.column.number -> ramp.number,
+        Ramp.column.address -> ramp.address,
+        Ramp.column.isAccessible -> ramp.isAccessible)
+    }.update().apply()
+
+    ramp
+  }
+
   def create(latitude: Double, longitude: Double, id: String, street: String, number: Option[Int], address: String, isAccessible: Boolean)(implicit session: DBSession = Ramp.autoSession): Ramp = {
     val coordinate = Coordinate(latitude, longitude)
     withSQL {
