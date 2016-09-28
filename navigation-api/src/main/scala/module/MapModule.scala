@@ -2,8 +2,8 @@ package module
 
 import base.LazyLoggerSupport
 import conf.ApiEnvConfig
-import mapdomain.graph.{Coordinate, GeoSearch}
-import mapdomain.sidewalk.{PedestrianEdge, Ramp, RampRepository, SidewalkGraphContainer}
+import mapdomain.graph.{ Coordinate, GeoSearch }
+import mapdomain.sidewalk.{ PedestrianEdge, Ramp, RampRepository, SidewalkGraphContainer }
 import mapdomain.street.StreetGraphContainer
 import model._
 

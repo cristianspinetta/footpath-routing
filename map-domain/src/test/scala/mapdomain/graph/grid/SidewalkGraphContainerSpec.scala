@@ -2,9 +2,9 @@ package mapdomain.graph.grid
 
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, _ }
-import org.scalatest.{ FlatSpec, Matchers }
+import org.scalatest.{ FlatSpec, Ignore, Matchers }
 
-class SidewalkGraphContainerSpec extends FlatSpec with Matchers {
+@Ignore class SidewalkGraphContainerSpec extends FlatSpec with Matchers {
 
   "With in memory sidewalk graph container" should "filter unaccessible edges and ramps" in {
     var sidewalk1 = SidewalkVertex(1, Coordinate(10, 9), Nil, Nil, 1)

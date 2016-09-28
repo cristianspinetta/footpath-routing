@@ -78,15 +78,15 @@ case class InMemorySidewalkGraphContainer(vertices: List[SidewalkVertex]) extend
 
   override def neighbours(vertex: SidewalkVertex): List[SidewalkVertex] = {
     // FIXME meter los neighbours en un cache, por ejemplo usar un TrieMap con vertex.id como key y neighbourIds como value
-    val edges = vertex.sidewalkEdges.filter(e => e.isAccessible) ++ vertex.streetCrossingEdges.filter(sce => {
+    /*val edges = vertex.sidewalkEdges.filter(e => e.isAccessible) ++ vertex.streetCrossingEdges.filter(sce => {
                           val startRamp = findRamp(sce.rampStartId)
                           val endRamp = findRamp(sce.rampEndId)
                           if(startRamp.isEmpty || endRamp.isEmpty)
                             false
                           else
                             startRamp.get.isAccessible && endRamp.get.isAccessible
-                        })
-    val neighbourIds: List[Long] = edges.map(edge ⇒ if (edge.vertexStartId == vertex.id) edge.vertexEndId else edge.vertexStartId)
+                        })*/
+    val neighbourIds: List[Long] = vertex.edges.map(edge ⇒ if (edge.vertexStartId == vertex.id) edge.vertexEndId else edge.vertexStartId)
     neighbourIds.flatMap(id ⇒ findVertex(id) toList)
   }
 

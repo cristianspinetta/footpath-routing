@@ -1,7 +1,7 @@
 package mapdomain.sidewalk
 
 import mapdomain.graph.Coordinate
-import mapdomain.street.{StreetEdge, StreetVertex}
+import mapdomain.street.{ StreetEdge, StreetVertex }
 import scalikejdbc._
 import sql.SpatialSQLSupport
 
