@@ -51,6 +51,8 @@ class RepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll wit
     ramp.number shouldBe Some(500)
     ramp.address shouldBe "Callao 523"
     ramp.isAccessible shouldBe false
+
+    RampRepository.findAll.size shouldBe 1
   }
 
   it should "create street edges correctly" in {

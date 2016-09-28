@@ -1,6 +1,7 @@
 package mapdomain.sidewalk
 
 import mapdomain.graph.Coordinate
+import mapdomain.street.{StreetEdge, StreetVertex}
 import scalikejdbc._
 import sql.SpatialSQLSupport
 
@@ -92,9 +93,17 @@ trait RampRepository extends SpatialSQLSupport {
   }.update.apply()
 
   def findAll(implicit session: DBSession = Ramp.autoSession): List[Ramp] = withSQL {
-    select
+    select(r.resultAll)
+      .append(selectLatitudeAndLongitude(r))
       .from(Ramp as r)
-  }.map(ramp(r)).list().apply()
+  }.map(ramp(r)(_)).list().apply()
+
+  def findNearestRamps(coordinate: Coordinate, radius: Double)(implicit session: DBSession = Ramp.autoSession): List[Ramp] = withSQL {
+    select(r.resultAll)
+      .append(selectLatitudeAndLongitude(r))
+      .from(Ramp as r)
+      .where.append(clauseNearestByDistance(coordinate, radius, r, "coordinate"))
+  }.map(ramp(r)(_)).list().apply()
 
 }
 
