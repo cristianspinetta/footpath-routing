@@ -10,7 +10,7 @@ import scala.collection.Map
 import scala.collection.concurrent.TrieMap
 import scala.util.{ Failure, Success, Try }
 
-case class SidewalkEdgeBuilderManager[V <: GeoVertex](implicit graph: GraphContainer[V], idGenerator: SidewalkVertexIDGenerator) extends LazyLoggerSupport {
+case class SidewalkEdgeBuilderManager[E <: GeoEdge, V <: GeoVertex[E]](implicit graph: GraphContainer[E, V], idGenerator: SidewalkVertexIDGenerator) extends LazyLoggerSupport {
 
   type SidewalkIdentity = (Long, GeoEdge, Boolean) // (street vertex id, street edge object, is at north)
 

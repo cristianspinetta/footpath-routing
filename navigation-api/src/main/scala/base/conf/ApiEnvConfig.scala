@@ -1,4 +1,4 @@
-package conf
+package base.conf
 
 import base.LazyLoggerSupport
 import com.typesafe.config.Config

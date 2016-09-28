@@ -1,4 +1,4 @@
-package conf
+package base.conf
 
 import java.io.File
 

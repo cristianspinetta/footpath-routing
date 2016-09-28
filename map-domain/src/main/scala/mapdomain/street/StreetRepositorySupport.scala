@@ -8,6 +8,7 @@ import sqls.count
 trait StreetRepositorySupport {
   val streetVertexRepository = StreetVertexRepository
   val streetEdgeRepository = StreetEdgeRepository
+  val streetInfoRepository = StreetInfoRepository
 }
 
 trait StreetVertexRepository extends SpatialSQLSupport {
@@ -17,15 +18,15 @@ trait StreetVertexRepository extends SpatialSQLSupport {
   val edge2 = StreetEdge.syntax("edge2")
   val neighbour = StreetVertex.syntax("neighbour")
 
-  protected def streetVertex(v: SyntaxProvider[StreetVertex], withEdges: Boolean = true)(rs: WrappedResultSet): StreetVertex = {
-    val vertex: StreetVertex = StreetVertex(rs.long(v.resultName.id), Nil, coordinateFromResultSet(rs, v.tableAliasName))
+  protected def streetVertex(v: SyntaxProvider[StreetVertex.T], withEdges: Boolean = true)(rs: WrappedResultSet): StreetVertex.T = {
+    val vertex: StreetVertex.T = StreetVertex(rs.long(v.resultName.id), Nil, coordinateFromResultSet(rs, v.tableAliasName))
     if (withEdges) {
       val streetEdges: List[StreetEdge] = StreetEdgeRepository.findStreetEdgesByStreetVertex(vertex.id)
       vertex.copy(edges = streetEdges)
     } else vertex
   }
 
-  def create(streetVertex: StreetVertex)(implicit session: DBSession = StreetVertex.autoSession): StreetVertex = {
+  def create[V <: StreetVertex[_]](streetVertex: V)(implicit session: DBSession = StreetVertex.autoSession): V = {
     withSQL {
       insert.into(StreetVertex).namedValues(
         StreetVertex.column.id -> streetVertex.id,
@@ -35,12 +36,12 @@ trait StreetVertexRepository extends SpatialSQLSupport {
     streetVertex
   }
 
-  def createInBulk(streetVertices: List[StreetVertex])(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex] = {
+  def createInBulk[V <: StreetVertex[_]](streetVertices: List[V])(implicit session: DBSession = StreetVertex.autoSession): List[V] = {
     streetVertices foreach create
     streetVertices
   }
 
-  def find(id: Long)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex] = withSQL {
+  def find(id: Long)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex.T] = withSQL {
     select
       .all(v)
       .append(selectLatitudeAndLongitude(v))
@@ -49,14 +50,14 @@ trait StreetVertexRepository extends SpatialSQLSupport {
   }.map(streetVertex(v)).single().apply()
 
   // FIXME adaptar a streaming @see https://github.com/tkawachi/scalikejdbc-stream
-  def findAll(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex] = withSQL {
+  def findAll(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex.T] = withSQL {
     select
       .all(v)
       .append(selectLatitudeAndLongitude(v))
       .from(StreetVertex as v)
   }.map(streetVertex(v)).list().apply()
 
-  def findAllWithoutOf(ids: List[Long])(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex] = withSQL {
+  def findAllWithoutOf(ids: List[Long])(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex.T] = withSQL {
     select
       .all(v)
       .append(selectLatitudeAndLongitude(v))
@@ -64,7 +65,7 @@ trait StreetVertexRepository extends SpatialSQLSupport {
       .where.notIn(v.id, ids)
   }.map(streetVertex(v)).list().apply()
 
-  def findNearest(coordinate: Coordinate)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex] = withSQL {
+  def findNearest(coordinate: Coordinate)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex.T] = withSQL {
     select
       .all(v)
       .append(selectLatitudeAndLongitude(v))
@@ -77,7 +78,7 @@ trait StreetVertexRepository extends SpatialSQLSupport {
     deleteFrom(StreetVertex)
   }.update.apply()
 
-  def findNeighbours(vertexId: Long)(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex] = DB readOnly { implicit session ⇒
+  def findNeighbours(vertexId: Long)(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex.T] = DB readOnly { implicit session ⇒
     sql"""
        select
         distinct ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
@@ -113,11 +114,9 @@ trait StreetEdgeRepository extends SpatialSQLSupport {
       rs.long(e.vertexEndId),
       rs.double(e.distance),
       rs.long(e.wayId),
+      rs.long(e.streetInfoId),
       Some(rs.long(e.id)))
   }
-
-  def opt(e: SyntaxProvider[StreetEdge])(rs: WrappedResultSet): Option[StreetEdge] =
-    rs.longOpt(e.resultName.id).map(_ ⇒ streetEdge(e)(rs))
 
   def create(edge: StreetEdge)(implicit session: DBSession = StreetEdge.autoSession): Long = {
     withSQL {
@@ -125,7 +124,8 @@ trait StreetEdgeRepository extends SpatialSQLSupport {
         StreetEdge.column.vertexStartId -> edge.vertexStartId,
         StreetEdge.column.vertexEndId -> edge.vertexEndId,
         StreetEdge.column.distance -> edge.distance,
-        StreetEdge.column.wayId -> edge.wayId)
+        StreetEdge.column.wayId -> edge.wayId,
+        StreetEdge.column.streetInfoId -> edge.streetInfoId)
     }.updateAndReturnGeneratedKey.apply()
   }
 
@@ -155,3 +155,45 @@ trait StreetEdgeRepository extends SpatialSQLSupport {
 }
 
 object StreetEdgeRepository extends StreetEdgeRepository
+
+trait StreetInfoRepository extends SpatialSQLSupport {
+
+  val (si, se) = (StreetInfo.syntax("si"), StreetEdge.syntax("se"))
+
+  def streetInfo(si: SyntaxProvider[StreetInfo])(rs: WrappedResultSet): StreetInfo = streetInfo(si.resultName)(rs)
+
+  private def streetInfo(si: ResultName[StreetInfo])(implicit rs: WrappedResultSet): StreetInfo = {
+    new StreetInfo(
+      Some(rs.long(si.id)),
+      rs.stringOpt(si.address),
+      rs.long(si.wayId))
+  }
+
+  def find(id: Long)(implicit session: DBSession = StreetInfo.autoSession): StreetInfo = withSQL {
+    select.
+      from(StreetInfo as si)
+      .where.eq(si.id, id)
+  }.map(streetInfo(si)).single().apply().get
+
+  def findByStreetEdge(streetEdgeId: Long)(implicit session: DBSession = StreetInfo.autoSession): StreetInfo = withSQL {
+    select
+      .all(si)
+      .from(StreetEdge as se)
+      .innerJoin(StreetInfo as si).on(se.streetInfoId, si.id)
+      .where.eq(se.id, streetEdgeId)
+  }.map(streetInfo(si)).single().apply().get
+
+  def create(streetInfo: StreetInfo)(implicit session: DBSession = StreetInfo.autoSession): Long = {
+    withSQL {
+      insert.into(StreetInfo).namedValues(
+        StreetInfo.column.address -> streetInfo.address,
+        StreetInfo.column.wayId -> streetInfo.wayId)
+    }.updateAndReturnGeneratedKey.apply()
+  }
+
+  def deleteAll(implicit session: DBSession = StreetInfo.autoSession): Unit = withSQL {
+    deleteFrom(StreetInfo)
+  }.update.apply()
+
+}
+object StreetInfoRepository extends StreetInfoRepository

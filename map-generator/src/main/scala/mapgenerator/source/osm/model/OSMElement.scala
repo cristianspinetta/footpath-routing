@@ -1,17 +1,10 @@
 package mapgenerator.source.osm.model
 
-import mapdomain.graph.Coordinate
-import org.joda.time.DateTime
-
 trait OSMElement {
   def id: Long
   def tags: Map[String, String]
 
   private lazy val _highwayOpt: Option[String] = tags.get("highway")
-
-  lazy val isRoutable = tags.contains("highway") ||
-    ((tags.get("public_transport").contains("platform") || tags.get("railway").contains("platform")) &&
-      !tags.get("usage").contains("tourism"))
 
   lazy val isRoutableHighway: Boolean = !_highwayOpt.contains("conveyer") &&
     !_highwayOpt.contains("proposed") &&
@@ -76,14 +69,9 @@ trait OSMElement {
    * http://wiki.openstreetmap.org/wiki/Tag:highway%3Dproposed
    */
   lazy val isRoutableWay: Boolean = {
-
-    // TODO se puede reducir, pero estoy quemado para hacerlo ahora. ¿podria ser asi: "return isOsmEntityRoutable(osmElem) && osmElem. isRoutable && ..."?
-    if (!isOsmEntityRoutable) false
-    else {
-      this.isRoutable &&
-        this.isRoutableHighway &&
-        (!this.isGeneralAccessDenied || (this.isMotorcarExplicitlyAllowed || this.isBicycleExplicitlyAllowed || this.isPedestrianExplicitlyAllowed || this.isMotorVehicleExplicitlyAllowed))
-    }
+    this.isOsmEntityRoutable &&
+      this.isRoutableHighway &&
+      (!this.isGeneralAccessDenied || (this.isMotorcarExplicitlyAllowed || this.isBicycleExplicitlyAllowed || this.isPedestrianExplicitlyAllowed || this.isMotorVehicleExplicitlyAllowed))
   }
 }
 

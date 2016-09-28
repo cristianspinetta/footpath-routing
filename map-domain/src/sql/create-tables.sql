@@ -12,9 +12,18 @@ CREATE TABLE IF NOT EXISTS `street_edge` (
                 `vertexEndId` bigint(20) NOT NULL,
                 `distance` DOUBLE NOT NULL,
                   `wayId` bigint(20) DEFAULT NULL,
+                  `streetInfoId` bigint(20) NOT NULL,
                 PRIMARY KEY (`id`),
                  FOREIGN KEY (`vertexStartId`) REFERENCES `street_vertex` (`id`),
-                FOREIGN KEY (`vertexEndId`) REFERENCES `street_vertex` (`id`)
+                FOREIGN KEY (`vertexEndId`) REFERENCES `street_vertex` (`id`),
+                FOREIGN KEY (`streetInfoId`) REFERENCES `street_info` (`id`)
+               ) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `street_info` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `address` varchar(255) DEFAULT NULL,
+                `wayId` bigint(20) DEFAULT NULL,
+                PRIMARY KEY (`id`)
                ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `ramp` (

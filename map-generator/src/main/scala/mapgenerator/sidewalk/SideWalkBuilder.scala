@@ -7,17 +7,17 @@ import mapdomain.sidewalk.{ PedestrianEdge, SidewalkEdge, SidewalkVertex, Street
 import scala.collection.Map
 import scala.collection.mutable
 
-case class Builders[V <: GeoVertex](
+case class Builders[E <: GeoEdge, V <: GeoVertex[E]](
   streetCrossingBuilderManager: StreetCrossingBuilderManager,
   sidewalkVertexBuilderManager: SidewalkVertexBuilderManager,
-  sidewalkEdgeBuilderManager: SidewalkEdgeBuilderManager[V])
+  sidewalkEdgeBuilderManager: SidewalkEdgeBuilderManager[E, V])
 
 object SideWalkBuilder extends LazyLoggerSupport with MeterSupport {
 
   type SidewalkIdentity = (Long, GeoEdge, Boolean) // (street vertex id, street edge object, is at north)
 
-  def build[V <: GeoVertex](failureTolerance: Boolean = false)
-                           (implicit idGenerator: SidewalkVertexIDGenerator, builders: Builders[V]): Set[SidewalkVertex] = withTimeLogging({
+  def build[V <: GeoVertex[_]](failureTolerance: Boolean = false)
+                           (implicit idGenerator: SidewalkVertexIDGenerator, builders: Builders[_, V]): Set[SidewalkVertex] = withTimeLogging({
 
     type BuildSidewalkFunc = ((mutable.Set[SidewalkEdge], mutable.Set[SidewalkVertex]), SidewalkEdgeBuilder) ⇒ Unit
 

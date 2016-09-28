@@ -13,7 +13,7 @@ case class SidewalkVertexBuilderManager() {
 
   val _builders = new TrieMap[BuilderKey, SidewalkVertexBuilder]
 
-  def create(coordinate: Coordinate, streetVertexBelongTo: StreetVertex, key1: String, key2: String): SidewalkVertexBuilder = this.synchronized {
+  def create(coordinate: Coordinate, streetVertexBelongTo: StreetVertex.T, key1: String, key2: String): SidewalkVertexBuilder = this.synchronized {
     _builders.find { case (BuilderKey(k1, k2), builder) ⇒ (k1 == key1 && k2 == key2) || (k1 == key2 && k2 == key1) } match {
       case Some((_, builder)) ⇒ builder
       case None ⇒
@@ -23,7 +23,7 @@ case class SidewalkVertexBuilderManager() {
     }
   }
 
-  def createForSingle(coordinate: Coordinate, streetVertexBelongTo: StreetVertex, key1: String): SidewalkVertexBuilder = {
+  def createForSingle(coordinate: Coordinate, streetVertexBelongTo: StreetVertex.T, key1: String): SidewalkVertexBuilder = {
     create(coordinate, streetVertexBelongTo, key1, "single")
   }
 
@@ -36,7 +36,7 @@ case class SidewalkVertexBuilderManager() {
  * @param coordinate: the position
  * @param streetVertexBelongTo: the street vertex that belongs to
  */
-case class SidewalkVertexBuilder(coordinate: Coordinate, streetVertexBelongTo: StreetVertex) {
+case class SidewalkVertexBuilder(coordinate: Coordinate, streetVertexBelongTo: StreetVertex.T) {
 
   private var _sidewalkVertex: Option[SidewalkVertex] = None
 

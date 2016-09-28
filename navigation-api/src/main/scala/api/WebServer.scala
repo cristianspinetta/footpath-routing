@@ -4,14 +4,14 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-import com.typesafe.config.{ Config, ConfigFactory }
-import conf.ApiEnvConfig
+import com.typesafe.config.Config
+import base.conf.ApiEnvConfig
 import scalikejdbc.config._
-import service.DirectionService
+import module.RoutingModule
 
 import scala.util.{ Failure, Success }
 
-object WebServer extends App with DirectionService with ApiEnvConfig {
+object WebServer extends App with RoutingModule with ApiEnvConfig {
   override implicit val system = ActorSystem()
   override implicit val executor = system.dispatcher
   override implicit val materializer = ActorMaterializer()

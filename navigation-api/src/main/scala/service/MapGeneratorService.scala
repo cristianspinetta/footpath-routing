@@ -1,17 +1,18 @@
-package module
+package service
 
 import base.{ LazyLoggerSupport, MeterSupport }
-import conf.ApiEnvConfig
-import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp, RampRepository, SidewalkRepositorySupport }
-import mapdomain.street.{ InMemoryStreetGraphContainer, StreetRepositorySupport }
+import base.conf.ApiEnvConfig
+import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, SidewalkRepositorySupport }
+import mapdomain.street._
 import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
 import scalikejdbc.DB
 
+import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
-object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with StreetRepositorySupport with SidewalkRepositorySupport {
+trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with StreetRepositorySupport with SidewalkRepositorySupport {
 
   def createStreets(): Try[_] = Try {
     // FIXME Check that streets doen't exist.
@@ -27,17 +28,25 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
     }, (time: Long) ⇒ logger.info(s"Created and saved the Street Graph in $time ms."))
   } flatten
 
-  private def saveStreets(streetGraph: InMemoryStreetGraphContainer): Try[_] = Try {
+  private def saveStreets(streetGraph: UnsavedStreetGraphContainer): Try[_] = Try {
     logger.info(s"Persist the street graph on the DB")
     withTimeLogging(
       DB localTx { implicit session ⇒
         logger.info(s"Inserting street vertices...")
-        val savedVertices = streetVertexRepository createInBulk streetGraph.vertices
+        streetVertexRepository createInBulk streetGraph.vertices
         logger.info(s"Inserting street edges...")
+        val streetInfoByWayId = new TrieMap[Long, Long]()
         for {
-          vertex ← savedVertices
+          vertex ← streetGraph.vertices
           edge ← vertex.edges
-        } streetEdgeRepository.create(edge)
+        } {
+          val savedStreetInfoId: Long = streetInfoByWayId.getOrElse(edge.wayId, {
+            val id = StreetInfoRepository.create(edge.streetInfo)
+            streetInfoByWayId += (edge.wayId -> id)
+            id
+          })
+          streetEdgeRepository.create(edge.build(savedStreetInfoId))
+        }
       }, (time: Long) ⇒ logger.info(s"${streetGraph.vertices.size} vertices and ${streetGraph.vertices.map(_.edges.size).sum} edges for Street Graph saved in $time ms."))
   }
 
@@ -66,17 +75,6 @@ object MapGeneratorModule extends LazyLoggerSupport with MeterSupport with ApiEn
           s"${sidewalkGraph.streetCrossingEdges.size} street crossing edges for Sidewalk Graph saved in $time ms."))
   }
 
-  def createRamps() = Try {
-    logger.info(s"Starting to create ramps")
-    withTimeLogging({
-      saveRamps(RampProvider.ramps)
-    }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
-  }
-
-  private def saveRamps(ramps: Vector[Ramp]) = Try {
-    DB localTx { implicit session ⇒
-      ramps foreach RampRepository.createRamp
-    }
-  }
-
 }
+
+object MapGeneratorService extends MapGeneratorService
