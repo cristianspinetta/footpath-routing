@@ -1,11 +1,11 @@
 package service
 
-import base.{LazyLoggerSupport, MeterSupport}
+import base.{ LazyLoggerSupport, MeterSupport }
 import base.conf.ApiEnvConfig
-import mapdomain.sidewalk.{InMemorySidewalkGraphContainer, Ramp, RampRepository, SidewalkRepositorySupport}
+import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp, RampRepository, SidewalkRepositorySupport }
 import mapdomain.street._
 import mapgenerator.sidewalk.SidewalkModule
-import mapgenerator.source.osm.{OSMModule, OSMReaderByXml}
+import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
 import provider.RampProvider
 import scalikejdbc.DB

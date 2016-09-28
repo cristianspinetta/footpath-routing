@@ -35,7 +35,7 @@ trait RampRepository extends SpatialSQLSupport {
       coordinate = coordinateFromResultSet(rs, r.tableAliasName),
       id = rs.string(resultName.id),
       street = rs.string(resultName.street),
-      number = Some(rs.int(resultName.number)),
+      number = rs.intOpt(resultName.number),
       address = rs.string(resultName.address),
       isAccessible = rs.boolean(resultName.isAccessible))
   }

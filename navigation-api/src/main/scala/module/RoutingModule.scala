@@ -99,7 +99,7 @@ trait RoutingModule extends ApiEnvConfig {
                 } ~
                 path("ramp") {
                   val response: Future[ToResponseMarshallable] = Future.successful {
-                    MapGeneratorModule.createRamps() map (_ ⇒ "") get
+                    MapGeneratorService.createRamps() map (_ ⇒ "") get
                   }
                   complete(response)
                 }
