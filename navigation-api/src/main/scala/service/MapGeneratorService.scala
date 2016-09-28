@@ -1,12 +1,13 @@
 package service
 
-import base.{ LazyLoggerSupport, MeterSupport }
+import base.{LazyLoggerSupport, MeterSupport}
 import base.conf.ApiEnvConfig
-import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, SidewalkRepositorySupport }
+import mapdomain.sidewalk.{InMemorySidewalkGraphContainer, Ramp, RampRepository, SidewalkRepositorySupport}
 import mapdomain.street._
 import mapgenerator.sidewalk.SidewalkModule
-import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
+import mapgenerator.source.osm.{OSMModule, OSMReaderByXml}
 import mapgenerator.street.StreetGraphModule
+import provider.RampProvider
 import scalikejdbc.DB
 
 import scala.collection.concurrent.TrieMap
@@ -73,6 +74,19 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
       }, (time: Long) ⇒
         logger.info(s"${sidewalkGraph.vertices.size} vertices, ${sidewalkGraph.sidewalkEdges.size} sidewalk edges and " +
           s"${sidewalkGraph.streetCrossingEdges.size} street crossing edges for Sidewalk Graph saved in $time ms."))
+  }
+
+  def createRamps() = Try {
+    logger.info(s"Starting to create ramps")
+    withTimeLogging({
+      saveRamps(RampProvider.ramps)
+    }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
+  }
+
+  private def saveRamps(ramps: Vector[Ramp]) = Try {
+    DB localTx { implicit session ⇒
+      ramps foreach RampRepository.createRamp
+    }
   }
 
 }

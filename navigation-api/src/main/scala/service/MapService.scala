@@ -29,7 +29,7 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
   }
 
   def ramps(coordinate: Coordinate, radius: Double): Try[Vector[Ramp]] = Try {
-    GeoSearch.findNearestByRadius(coordinate, radius, RampProvider.ramps, (ramp: Ramp) ⇒ Seq(ramp.coordinate))
+    RampRepository.findNearestRamps(coordinate, radius).toVector
   }
 
   protected def getEdgesAndVertices[E <: GeoEdge { val id: Option[Long] }, V <: GeoVertex[E], G <: GraphContainer[E, V]](edges: List[E], graph: G) = {
