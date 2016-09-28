@@ -67,8 +67,8 @@ trait RoutingModule extends ApiEnvConfig {
             path("edges") {
               parameters('edgeType.as[EdgeType], 'radius ? 1.0D, 'lat.as[Double], 'lng.as[Double]).as(EdgeRequest) { edgeRequest ⇒
                 val response: Future[ToResponseMarshallable] = Future.successful {
-                  val list = MapService.edges(edgeRequest.edgeType, Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius).get
-                  EdgeResponse(list.toList)
+                  val mapContainer = MapService.edges(edgeRequest.edgeType, Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius).get
+                  EdgeResponse(mapContainer.edges, mapContainer.vertices)
                 }
                 complete(response)
               }

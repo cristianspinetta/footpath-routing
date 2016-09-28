@@ -13,7 +13,7 @@ final case class EdgeRequest(edgeType: EdgeType, radius: Double, lat: Double, ln
 final case class RampRequest(lat: Double, lng: Double, radius: Double)
 final case class StreetResponse(streets: Iterable[Street])
 final case class SidewalkResponse(sidewalks: Iterable[Sidewalk])
-final case class EdgeResponse(edges: Iterable[Edge])
+final case class EdgeResponse(edges: Iterable[Edge], vertices: List[Vertex])
 final case class RampResponse(ramps: Vector[Ramp])
 
 trait Protocol extends DefaultJsonProtocol with CaseObjectSerializationSupport with ModelFormatter with RouteFormatter {
@@ -24,7 +24,7 @@ trait Protocol extends DefaultJsonProtocol with CaseObjectSerializationSupport w
   implicit val StreetResponseFormat = jsonFormat1(StreetResponse.apply)
   implicit val RampResponseFormat = jsonFormat1(RampResponse.apply)
   implicit val SidewalkResponseFormat = jsonFormat1(SidewalkResponse.apply)
-  implicit val EdgeResponseFormat = jsonFormat1(EdgeResponse.apply)
+  implicit val EdgeResponseFormat = jsonFormat2(EdgeResponse.apply)
 
 }
 

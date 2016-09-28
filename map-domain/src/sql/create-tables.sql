@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `street_edge` (
 
 CREATE TABLE IF NOT EXISTS `street_info` (
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `address` varchar(255) NOT NULL,
+                `address` varchar(255) DEFAULT NULL,
                 `wayId` bigint(20) DEFAULT NULL,
                 PRIMARY KEY (`id`)
                ) ENGINE=Aria DEFAULT CHARSET=utf8;

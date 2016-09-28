@@ -1,10 +1,10 @@
 package mapdomain.street
 
-import mapdomain.graph.GeoEdge
+import mapdomain.graph.{ BaseEntity, GeoEdge }
 import scalikejdbc._
 
 class StreetEdge(override val vertexStartId: Long, override val vertexEndId: Long, override val distance: Double, val wayId: Long, val streetInfoId: Long, val id: Option[Long] = None)
-  extends GeoEdge(vertexStartId, vertexEndId, distance, directed = true)
+  extends GeoEdge(vertexStartId, vertexEndId, distance, directed = true) with BaseEntity
 
 object StreetEdge extends SQLSyntaxSupport[StreetEdge] {
 

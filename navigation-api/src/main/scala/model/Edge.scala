@@ -1,6 +1,8 @@
 package model
 
-import mapdomain.graph.Coordinate
+import mapdomain.graph.{BaseEntity, Coordinate, GeoEdge, GeoVertex}
+
+import scala.language.existentials
 
 case class Edge(id: String, from: Coordinate, to: Coordinate)
 
@@ -17,3 +19,11 @@ object EdgeType {
     "way" -> WayEdgeType,
     "wayArea" -> WayAreaEdgeType) withDefaultValue StreetEdgeType
 }
+
+case class Vertex(id: Long, coordinate: Coordinate)
+
+object Vertex {
+  def createByGeoVertex[V <: GeoVertex[E] forSome { type E <: GeoEdge with BaseEntity }](vertex: V): Vertex = new Vertex(vertex.id, vertex.coordinate)
+}
+
+case class MapContainer(edges: List[Edge], vertices: List[Vertex])
