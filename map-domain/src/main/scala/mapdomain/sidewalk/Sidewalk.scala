@@ -41,8 +41,8 @@ object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport with S
 }
 
 case class StreetCrossingEdge(override val vertexStartId: Long, override val vertexEndId: Long,
-  keyValue: String, override val id: Option[Long] = None, var rampStartId: Option[String] = None,
-  var rampEndId: Option[String] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue)
+  keyValue: String, override val id: Option[Long] = None, var rampStartId: Option[Long] = None,
+  var rampEndId: Option[Long] = None) extends PedestrianEdge(vertexStartId, vertexEndId, keyValue)
 
 object StreetCrossingEdge extends SQLSyntaxSupport[StreetCrossingEdge] {
 

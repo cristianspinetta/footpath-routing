@@ -90,7 +90,10 @@ case class InMemorySidewalkGraphContainer(vertices: List[SidewalkVertex]) extend
     neighbourIds.flatMap(id ⇒ findVertex(id) toList)
   }
 
-  private def findRamp(id: Option[String]): Option[Ramp] = ramps.find(r => r.id == id.getOrElse(""))
+  private def findRamp(id: Option[Long]): Option[Ramp] = id match {
+    case Some(i) => ramps.find(r => r.id.get == i)
+    case None => None
+  }
 
   override def findNearest(coordinate: Coordinate): Option[SidewalkVertex] = GeoGraphContainer.findNearest[PedestrianEdge, SidewalkVertex](vertices, coordinate)
 

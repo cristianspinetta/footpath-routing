@@ -104,8 +104,8 @@ trait StreetCrossingEdgeRepository extends SpatialSQLSupport {
       vertexEndId = rs.long(e.vertexEndId),
       keyValue = rs.string(e.keyValue),
       id = rs.longOpt(e.id),
-      rampStartId = rs.stringOpt(e.rampStartId),
-      rampEndId = rs.stringOpt(e.rampEndId))
+      rampStartId = rs.longOpt(e.rampStartId),
+      rampEndId = rs.longOpt(e.rampEndId))
   }
 
   def opt(e: SyntaxProvider[StreetCrossingEdge])(rs: WrappedResultSet): Option[StreetCrossingEdge] =

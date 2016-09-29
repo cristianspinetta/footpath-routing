@@ -13,15 +13,15 @@ import org.scalatest.{ FlatSpec, Ignore, Matchers }
     val sidewalk4 = SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, 1)
     val sidewalk5 = SidewalkVertex(5, Coordinate(10, 9), Nil, Nil, 1)
 
-    val ramp1 = Ramp(Coordinate(10, 9), "1", "Callao", Some(1234), "Callao 1234", true)
-    val ramp2 = Ramp(Coordinate(10, 9), "2", "Callao", Some(1234), "Callao 1234", true)
-    val ramp3 = Ramp(Coordinate(10, 9), "3", "Callao", Some(1234), "Callao 1234", true)
-    val ramp4 = Ramp(Coordinate(10, 9), "4", "Callao", Some(1234), "Callao 1234", true)
+    val ramp1 = Ramp(Coordinate(10, 9), Some(1), "Callao 1234", true)
+    val ramp2 = Ramp(Coordinate(10, 9), Some(2), "Callao 1234", true)
+    val ramp3 = Ramp(Coordinate(10, 9), Some(3), "Callao 1234", true)
+    val ramp4 = Ramp(Coordinate(10, 9), Some(4), "Callao 1234", true)
 
     val edge1 = SidewalkEdge(sidewalk2.id, sidewalk1.id, "key1", NorthSide, None)
     val edge2 = SidewalkEdge(sidewalk1.id, sidewalk3.id, "key2", NorthSide, None)
-    val crossingEdge3 = StreetCrossingEdge(sidewalk1.id, sidewalk4.id, "key3", None, Some(ramp1.id), Some(ramp2.id))
-    val crossingEdge4 = StreetCrossingEdge(sidewalk5.id, sidewalk1.id, "key4", None, Some(ramp3.id), Some(ramp4.id))
+    val crossingEdge3 = StreetCrossingEdge(sidewalk1.id, sidewalk4.id, "key3", None, ramp1.id, ramp2.id)
+    val crossingEdge4 = StreetCrossingEdge(sidewalk5.id, sidewalk1.id, "key4", None, ramp3.id, ramp4.id)
 
     sidewalk1 = sidewalk1.copy(sidewalkEdges = List(edge1, edge2), streetCrossingEdges = List(crossingEdge3, crossingEdge4))
 

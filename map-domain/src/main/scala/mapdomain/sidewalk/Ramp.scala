@@ -7,9 +7,7 @@ import sql.SpatialSQLSupport
 
 case class Ramp(
     coordinate: Coordinate,
-    id: String,
-    street: String,
-    number: Option[Int],
+    id: Option[Long] = None,
     address: String,
     var isAccessible: Boolean = true) {
 }
@@ -18,7 +16,7 @@ object Ramp extends SQLSyntaxSupport[Ramp] {
 
   override val tableName = "ramp"
 
-  override val columns = Seq("id", "street", "number", "address", "coordinate", "isAccessible")
+  override val columns = Seq("id", "address", "coordinate", "isAccessible")
 
   override val useSnakeCaseColumnName = false
 
@@ -33,9 +31,7 @@ trait RampRepository extends SpatialSQLSupport {
   private def ramp(resultName: ResultName[Ramp])(implicit rs: WrappedResultSet): Ramp = {
     new Ramp(
       coordinate = coordinateFromResultSet(rs, r.tableAliasName),
-      id = rs.string(resultName.id),
-      street = rs.string(resultName.street),
-      number = rs.intOpt(resultName.number),
+      id = rs.longOpt(resultName.id),
       address = rs.string(resultName.address),
       isAccessible = rs.boolean(resultName.isAccessible))
   }
@@ -44,9 +40,6 @@ trait RampRepository extends SpatialSQLSupport {
     withSQL {
       insert.into(Ramp).namedValues(
         Ramp.column.coordinate -> positionToSQL(ramp.coordinate),
-        Ramp.column.id -> ramp.id,
-        Ramp.column.street -> ramp.street,
-        Ramp.column.number -> ramp.number,
         Ramp.column.address -> ramp.address,
         Ramp.column.isAccessible -> ramp.isAccessible)
     }.update().apply()
@@ -54,26 +47,21 @@ trait RampRepository extends SpatialSQLSupport {
     ramp
   }
 
-  def create(latitude: Double, longitude: Double, id: String, street: String, number: Option[Int], address: String, isAccessible: Boolean)(implicit session: DBSession = Ramp.autoSession): Ramp = {
+  def create(latitude: Double, longitude: Double, address: String, isAccessible: Boolean)(implicit session: DBSession = Ramp.autoSession): Ramp = {
     val coordinate = Coordinate(latitude, longitude)
-    withSQL {
+    val id = withSQL {
       insert.into(Ramp).namedValues(
         Ramp.column.coordinate -> positionToSQL(coordinate),
-        Ramp.column.id -> id,
-        Ramp.column.street -> street,
-        Ramp.column.number -> number,
         Ramp.column.address -> address,
         Ramp.column.isAccessible -> isAccessible)
-    }.update().apply()
+    }.updateAndReturnGeneratedKey().apply()
 
-    Ramp(coordinate, id, street, number, address, isAccessible)
+    Ramp(coordinate, Some(id), address, isAccessible)
   }
 
   def save(ramp: Ramp)(implicit session: DBSession = Ramp.autoSession): Ramp = {
     withSQL {
       update(Ramp).set(
-        Ramp.column.street -> ramp.street,
-        Ramp.column.number -> ramp.number,
         Ramp.column.address -> ramp.address,
         Ramp.column.isAccessible -> ramp.isAccessible).where.eq(Ramp.column.id, ramp.id)
     }.update().apply()
@@ -81,7 +69,7 @@ trait RampRepository extends SpatialSQLSupport {
     ramp
   }
 
-  def find(id: String)(implicit session: DBSession = Ramp.autoSession): Option[Ramp] = withSQL {
+  def find(id: Long)(implicit session: DBSession = Ramp.autoSession): Option[Ramp] = withSQL {
     select(r.resultAll)
       .append(selectLatitudeAndLongitude(r))
       .from(Ramp as r)

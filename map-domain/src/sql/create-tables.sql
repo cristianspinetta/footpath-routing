@@ -27,9 +27,7 @@ CREATE TABLE IF NOT EXISTS `street_info` (
                ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `ramp` (
-               	`id` varchar(255) NOT NULL,
-               	`street` varchar(255) DEFAULT NULL,
-               	`number` int DEFAULT NULL,
+               	`id` bigint(20) NOT NULL AUTO_INCREMENT,
                	`address` varchar(255) DEFAULT NULL,
                 `coordinate` Point NOT NULL,
                 `isAccessible` boolean DEFAULT true,
@@ -83,9 +81,13 @@ CREATE TABLE IF NOT EXISTS `street_crossing_edge` (
   `vertexStartId` bigint(20) NOT NULL,
   `vertexEndId` bigint(20) NOT NULL,
   `keyValue` VARCHAR(255) DEFAULT NULL,
+  `rampStartId` bigint(20) DEFAULT NULL,
+  `rampEndId` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`vertexStartId`) REFERENCES `sidewalk_vertex` (`id`),
-  FOREIGN KEY (`vertexEndId`) REFERENCES `sidewalk_vertex` (`id`)
+  FOREIGN KEY (`vertexEndId`) REFERENCES `sidewalk_vertex` (`id`),
+  FOREIGN KEY (`rampStartId`) REFERENCES `ramp` (`id`),
+  FOREIGN KEY (`rampEndId`) REFERENCES `ramp` (`id`)
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `sidewalk_edge` (
@@ -104,9 +106,3 @@ CREATE TABLE IF NOT EXISTS `sidewalk_edge` (
 
 CREATE SPATIAL INDEX street_vertex_coordinate_index ON `street_vertex` (`coordinate`);
 CREATE SPATIAL INDEX sidewalk_vertex_coordinate_index ON `sidewalk_vertex` (`coordinate`);
-
-ALTER TABLE `street_crossing_edge`
-  ADD COLUMN `rampStartId` varchar(255) DEFAULT NULL,
-  ADD COLUMN `rampEndId` varchar(255) DEFAULT NULL,
-  ADD CONSTRAINT fk_rampStart_id FOREIGN KEY (rampStartId) REFERENCES `ramp` (`id`),
-  ADD CONSTRAINT fk_rampEnd_id FOREIGN KEY (rampEndId) REFERENCES `ramp` (`id`);
