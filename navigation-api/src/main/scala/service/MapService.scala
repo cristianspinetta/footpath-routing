@@ -17,12 +17,12 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
     edgeType match {
       case StreetEdgeType ⇒
         val streetEdges: List[StreetEdge] = graphs.streetDB.findNearestStreets(startPosition, radius)
-        val (edges, vertices: List[Vertex]) = getEdgesAndVertices[StreetEdge, StreetVertex[StreetEdge], StreetGraphContainer](streetEdges, graphs.street)
+        val (edges, vertices: List[Vertex]) = getEdgesAndVertices(streetEdges, graphs.street)
         MapContainer(edges, vertices)
       case SidewalkEdgeType ⇒
         val nearestEdges: List[PedestrianEdge] = graphs.sidewalkDB.findNearestSidewalks(startPosition, radius) ++:
           graphs.sidewalkDB.findNearestStreetCrossing(startPosition, radius)
-        val (edges, vertices) = getEdgesAndVertices[PedestrianEdge, SidewalkVertex, SidewalkGraphContainer](nearestEdges, graphs.sidewalk)
+        val (edges, vertices) = getEdgesAndVertices(nearestEdges, graphs.sidewalk)
         MapContainer(edges, vertices)
       case _ ⇒ MapContainer(Nil, Nil)
     }
@@ -32,18 +32,18 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
     RampRepository.findNearestRamps(coordinate, radius).toVector
   }
 
-  protected def getEdgesAndVertices[E <: GeoEdge { val id: Option[Long] }, V <: GeoVertex[E], G <: GraphContainer[E, V]](edges: List[E], graph: G) = {
+  protected def getEdgesAndVertices[E <: GeoEdge with BaseEntity, G <: GraphContainer[E, V] forSome { type V <: GeoVertex[E]}](edges: List[E], graph: G) = {
 
     val (edgesC, vertices) = edges.foldLeft((List.empty[Edge], Set.newBuilder[Vertex])) { case ((partialEdges, partialVertices), street) =>
 
-      val vertexFrom: V = graph.findVertex(street.vertexStartId).get
-      val vertexTo: V = graph.findVertex(street.vertexEndId).get
+      val vertexFrom = graph.findVertex(street.vertexStartId).get
+      val vertexTo = graph.findVertex(street.vertexEndId).get
       val edge = Edge(
         id = street.id.map(_.toString).getOrElse(""),
         from = vertexFrom.coordinate,
         to = vertexTo.coordinate)
 
-      (edge :: partialEdges, partialVertices += Vertex(vertexFrom.id, vertexFrom.coordinate) += Vertex(vertexTo.id, vertexTo.coordinate))
+      (edge :: partialEdges, partialVertices += Vertex.createByGeoVertex(vertexFrom) += Vertex.createByGeoVertex(vertexTo))
     }
     (edgesC, vertices.result().toList)
   }

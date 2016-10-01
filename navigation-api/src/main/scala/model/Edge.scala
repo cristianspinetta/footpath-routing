@@ -23,7 +23,7 @@ object EdgeType {
 case class Vertex(id: Long, coordinate: Coordinate)
 
 object Vertex {
-  def createByGeoVertex[V <: GeoVertex[E] forSome { type E <: GeoEdge with BaseEntity }](vertex: V): Vertex = new Vertex(vertex.id, vertex.coordinate)
+  def createByGeoVertex[V <: GeoVertex[_]](vertex: V): Vertex = new Vertex(vertex.id, vertex.coordinate)
 }
 
 case class MapContainer(edges: List[Edge], vertices: List[Vertex])
