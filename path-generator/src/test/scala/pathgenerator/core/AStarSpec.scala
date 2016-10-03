@@ -21,7 +21,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 4L).get
 
-        val aStar = aStarWithTrivialHeuristic(graph, source, target)
+        val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target))
 
         val result = aStar.search
 
@@ -44,7 +44,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 18L).get
 
-        val aStar = aStarWithTrivialHeuristic(graph, source, target)
+        val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target))
 
         val result: Try[List[Edge]] = aStar.search
 
@@ -67,7 +67,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 19L).get
 
-        val aStar = aStarWithTrivialHeuristic(graph, source, target)
+        val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target))
 
         val result: Try[List[Edge]] = aStar.search
 
@@ -97,7 +97,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 18L).get
 
-        val aStar = aStarWithTrivialHeuristic(graph, source, target)
+        val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target))
 
         val result = aStar.search
 
@@ -118,7 +118,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 19L).get
 
-        val aStar = aStarWithTrivialHeuristic(graph, source, target)
+        val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target))
 
         val result = aStar.search
 
@@ -149,7 +149,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 18L).get
 
-        val aStar = aStarWithTrivialHeuristic(graph, source, target)
+        val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target))
 
         val result = aStar.search
 
@@ -170,7 +170,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 19L).get
 
-        val aStar = aStarWithTrivialHeuristic(graph, source, target)
+        val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target))
 
         val result = aStar.search
 
@@ -195,7 +195,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 16888L).get
 
-        val aStar = aStarWithTrivialHeuristic(graph, source, target)
+        val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target))
 
         val result = aStar.search
 

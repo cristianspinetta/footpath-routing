@@ -15,11 +15,13 @@ import scala.reflect.runtime.universe._
  * @param heuristic: Heuristic Function
  * @param gMap: Graph accessing
  * @param startVertex: origin vertex
- * @param targetVertex: target vertex
+ * @param targetVertices: variable argument of the target vertices
  * @param tag: implicit TypeTag supplied by Scala Compiler
  * @tparam N: Vertex Type with which it works
  */
-case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(gMap: GraphContainer[E, N], startVertex: N, targetVertex: N)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
+case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(gMap: GraphContainer[E, N], startVertex: N, targetVertices: N*)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
+
+  private val targetIds: List[Long] = targetVertices.map(_.id).toList
 
   /**
    * The vertices already evaluated.
@@ -61,12 +63,12 @@ case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(
       loop(1)
     } recoverWith {
       case ex: Throwable ⇒
-        logger.error(s"Failure trying to find the short path at ${targetVertex.id}", ex)
+        logger.error(s"Failure trying to find the short path at ${this.printTargetVertex}", ex)
         logCurrentState(0)
         Failure(ex)
     }
   }, { timing: Long ⇒
-    logger.info(s"Found short path from ${startVertex.id} to ${targetVertex.id} in $timing ms.")
+    logger.info(s"Found short path from ${startVertex.id} to ${this.printTargetVertex} in $timing ms.")
   })
 
   @tailrec
@@ -80,9 +82,9 @@ case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(
 
       logger.debug(s"visit vertex ${current.id}")
 
-      if (current.id == targetVertex.id) {
+      if (reachTarget(current)) {
         logger.info(s"Reached the target vertex in $nroLoop loops.")
-        reconstructPath(_cameFrom, targetVertex)
+        reconstructPath(_cameFrom, current)
       } else {
         _closed.add(current)
 
@@ -150,5 +152,11 @@ case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(
     logger.debug(s"G Score: ${gScore mkString " -> "}")
     logger.debug(s"Heuristic - F Score: ${fScore mkString " -> "}")
   }
+
+  private def printTargetVertex: String = {
+    targetVertices.map(_.id) mkString ", "
+  }
+
+  private def reachTarget(vertex: N): Boolean = targetIds.contains(vertex.id)
 
 }

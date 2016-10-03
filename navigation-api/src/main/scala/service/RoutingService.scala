@@ -63,7 +63,7 @@ trait RoutingService extends GraphSupport with LazyLoggerSupport with ApiEnvConf
       case (Some(fromVertex), Some(toVertex)) ⇒
         logger.info(s"Vertex From: ${fromVertex.id}. Vertex To: ${toVertex.id}")
         val aStartFactory = AStar[E, V, GeoHeuristic[E, V]](GeoHeuristic(fromVertex)) _
-        aStartFactory(graphContainer, fromVertex, toVertex)
+        aStartFactory(graphContainer, fromVertex, Seq(toVertex))
           .search
           .map(edges ⇒
             GraphUtils.edgesToIds(edges) map (vertexId ⇒ graphContainer.findVertex(vertexId) match {
