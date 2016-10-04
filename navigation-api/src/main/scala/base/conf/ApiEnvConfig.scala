@@ -16,6 +16,7 @@ object ApiEnvConfig extends EnvConfig with LazyLoggerSupport {
   val Ramp = RampConfiguration(envConfiguration.config.getConfig("ramp"))
   val HTTP = HTTPConfiguration(envConfiguration.config.getConfig("http"))
   val Graph = GraphConfiguration(envConfiguration.config.getConfig("graph"))
+  val Routing = RoutingConfiguration(envConfiguration.config.getConfig("routing"))
 
   logger.info(s"Configuration for env ${envConfiguration.currentEnvironment} loads OK")
 
@@ -47,4 +48,8 @@ case class StreetGraphConf(private val config: Config) {
 }
 case class SidewalkGraphConf(private val config: Config) {
   val inMemory: Boolean = config.getBoolean("in-memory")
+}
+
+case class RoutingConfiguration(private val config: Config) {
+  val maximumWalkRadius = config.getDouble("maximum-walk-radius")
 }

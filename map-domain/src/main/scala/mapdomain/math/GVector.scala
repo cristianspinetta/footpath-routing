@@ -102,7 +102,7 @@ object VectorUtils {
   }
 }
 
-trait Quadrant
+sealed trait Quadrant
 case object Quad1 extends Quadrant
 case object Quad2 extends Quadrant
 case object Quad3 extends Quadrant
