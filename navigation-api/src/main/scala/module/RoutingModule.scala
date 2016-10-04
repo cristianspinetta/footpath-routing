@@ -38,12 +38,11 @@ trait RoutingModule extends ApiEnvConfig {
     logRequest("routing-request", akka.event.Logging.InfoLevel) {
       get {
         path("route") {
-          parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double] /*, 'routingType.as[TypeRouting] ? SidewalkRouting*/ ).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
+          parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double]).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
             val response: Future[ToResponseMarshallable] = Future.successful {
-              RoutingService.searchRouteByType(
+              RoutingService.searchRoute(
                 coordinateFrom = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
-                coordinateTo = Coordinate(routingRequest.toLat, routingRequest.toLng),
-                routingType = routingRequest.routingType).get
+                coordinateTo = Coordinate(routingRequest.toLat, routingRequest.toLng)).get
             }
             complete(response)
           }
