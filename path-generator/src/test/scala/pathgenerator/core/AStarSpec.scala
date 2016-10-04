@@ -15,8 +15,10 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
     val aStarWithTrivialHeuristic = AStar[GraphEdge, GraphVertex[GraphEdge], TrivialHeuristic[GraphEdge, GraphVertex[GraphEdge]]](TrivialHeuristic()) _
 
     "it runs on the Graph A" should {
+
+      val graph: InMemoryGraphContainer[GraphEdge, GraphVertex[GraphEdge]] = abstractGraphPrototype
+
       "resolve correctly the path between 1 and 4" in {
-        val graph: InMemoryGraphContainer[GraphEdge, GraphVertex[GraphEdge]] = abstractGraphPrototype
 
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 4L).get
@@ -39,7 +41,6 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 18" in {
-        val graph: InMemoryGraphContainer[GraphEdge, GraphVertex[GraphEdge]] = abstractGraphPrototype
 
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 18L).get
@@ -62,7 +63,6 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
 
       "resolve correctly the path between 1 and 19" in {
-        val graph: InMemoryGraphContainer[GraphEdge, GraphVertex[GraphEdge]] = abstractGraphPrototype
 
         val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
         val target: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 19L).get
@@ -72,6 +72,53 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val result: Try[List[Edge]] = aStar.search
 
         val expectedPath: List[Long] = List(1, 6, 5, 11, 10, 13, 18, 19)
+
+        result.isSuccess should be(true)
+
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
+      }
+
+      "resolve correctly the path from 1 to 19 or 14" in {
+
+        val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
+        val target1: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 19L).get
+        val target2: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 14L).get
+
+        val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target1, target2))
+
+        val result: Try[List[Edge]] = aStar.search
+
+        val expectedPath: List[Long] = List(1, 2, 3, 4, 8, 9, 14)
+
+        result.isSuccess should be(true)
+
+        val edges = result.get
+
+        val edgesIds: List[Long] = edgesToIds(edges)
+
+        withClue(pathFailureMessage(edgesIds, expectedPath)) {
+          edgesIds should be(expectedPath)
+        }
+      }
+
+      "resolve correctly the path from 1 to 19 or 14 or 7" in {
+
+        val source: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 1L).get
+        val target1: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 19L).get
+        val target2: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 14L).get
+        val target3: GraphVertex[GraphEdge] = graph.vertices.find(_.id == 7L).get
+
+        val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target1, target2, target3))
+
+        val result: Try[List[Edge]] = aStar.search
+
+        val expectedPath: List[Long] = List(1, 2, 3, 7)
 
         result.isSuccess should be(true)
 
@@ -136,7 +183,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
       }
     }
 
-    "it runs on the Graph A neither with edge 10-13 nor 14-18" should {
+    "it runs on the Graph A neither without edge 10-13 nor 14-18" should {
 
       val graph: InMemoryGraphContainer[GraphEdge, GraphVertex[GraphEdge]] = InMemoryGraphContainer(vertices =
         abstractGraphPrototype.vertices.map {

@@ -21,8 +21,6 @@ import scala.reflect.runtime.universe._
  */
 case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(gMap: GraphContainer[E, N], startVertex: N, targetVertices: N*)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
 
-  private val targetIds: List[Long] = targetVertices.map(_.id).toList
-
   /**
    * The vertices already evaluated.
    */
@@ -57,6 +55,8 @@ case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(
   private val _opensQueue: mutable.PriorityQueue[N] = mutable.PriorityQueue(startVertex)(Ordering.by[N, Double] { vertex: N ⇒
     -fScore(vertex.id)
   })
+
+  private val targetIds: List[Long] = targetVertices.map(_.id).toList
 
   def search: Try[List[E]] = withTimeLogging({
     Try {
