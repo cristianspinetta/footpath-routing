@@ -3,7 +3,7 @@ package mapgenerator.source.osm
 import java.net.URL
 
 import base.LazyLoggerSupport
-import conf.MapTestConfig
+import base.conf.MapTestConfig
 
 trait BaseOSMSpec extends MapTestConfig with LazyLoggerSupport {
 

@@ -4,16 +4,21 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-import com.typesafe.config.ConfigFactory
-import conf.ApiEnvConfig
-import service.DirectionService
+import com.typesafe.config.Config
+import base.conf.ApiEnvConfig
+import scalikejdbc.config._
+import module.RoutingModule
 
-import scala.io.StdIn
+import scala.util.{ Failure, Success }
 
-object WebServer extends App with DirectionService with ApiEnvConfig {
+object WebServer extends App with RoutingModule with ApiEnvConfig {
   override implicit val system = ActorSystem()
   override implicit val executor = system.dispatcher
   override implicit val materializer = ActorMaterializer()
+
+  new DBs with TypesafeConfigReader with StandardTypesafeConfig with NoEnvPrefix {
+    override lazy val config: Config = configuration.envConfiguration.config
+  }.setupAll()
 
   override val logger = Logging(system, getClass)
 
@@ -23,6 +28,11 @@ object WebServer extends App with DirectionService with ApiEnvConfig {
   val bindingFuture = Http().bindAndHandle(routes, interface, port)
 
   bindingFuture foreach { binder ⇒
+
+    init().onComplete {
+      case Success(_)   ⇒ logger.info(s"WebServer initialized successfully.")
+      case Failure(exc) ⇒ logger.error(exc, s"WebServer failed to initialize.")
+    }
 
     logger.info(s"Server online at http://$interface:$port/...")
 

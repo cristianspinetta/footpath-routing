@@ -1,10 +1,11 @@
 package mapdomain.graph
 
+import mapdomain.utils.EdgeUtils
 import org.scalatest.{ FlatSpec, Matchers }
 
 class GeoVertexSpec extends FlatSpec with Matchers {
 
-  implicit val geoGraphPrototype: GraphContainer[GeoVertex] = GraphContainer.createGeoNodes(Map(
+  implicit val geoGraphPrototype: InMemoryGeoGraphContainer[GeoEdge, GeoVertex[GeoEdge]] = GraphContainer.createEagerGeoGraph(Map(
     1L -> (List(2L, 6L), Coordinate(1, 1)),
     2L -> (List(1L, 3L, 4L), Coordinate(3, 1)),
     3L -> (List(2L), Coordinate(3, 4)),
@@ -30,8 +31,11 @@ class GeoVertexSpec extends FlatSpec with Matchers {
     23L -> (List(9L, 13L), Coordinate(0, 5))))
 
   "GeoVertex" should "sort its edges by angle correctly" in {
-    GeoVertex.sortEdgesByAngle(geoGraphPrototype.findVertex(5).get).map(_.vertexEndId) shouldBe List[Long](11, 6)
-    GeoVertex.sortEdgesByAngle(geoGraphPrototype.findVertex(11).get).map(_.vertexEndId) shouldBe List[Long](12, 10, 5)
-    GeoVertex.sortEdgesByAngle(geoGraphPrototype.findVertex(15).get).map(_.vertexEndId) shouldBe List[Long](23, 16, 22, 19, 21, 18, 20, 17)
+    val vertex5: GeoVertex[GeoEdge] = geoGraphPrototype.findVertex(5).get
+    val vertex11: GeoVertex[GeoEdge] = geoGraphPrototype.findVertex(11).get
+    val vertex15: GeoVertex[GeoEdge] = geoGraphPrototype.findVertex(15).get
+    EdgeUtils.sortEdgesByAngle(vertex5, vertex5.edges).map(_.vertexEndId) shouldBe List[Long](11, 6)
+    EdgeUtils.sortEdgesByAngle(vertex11, vertex11.edges).map(_.vertexEndId) shouldBe List[Long](12, 10, 5)
+    EdgeUtils.sortEdgesByAngle(vertex15, vertex15.edges).map(_.vertexEndId) shouldBe List[Long](23, 16, 22, 19, 21, 18, 20, 17)
   }
 }

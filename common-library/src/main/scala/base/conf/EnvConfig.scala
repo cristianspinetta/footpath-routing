@@ -1,4 +1,4 @@
-package conf
+package base.conf
 
 import java.io.File
 
@@ -21,8 +21,6 @@ object EnvConfiguration extends LazyLoggerSupport {
     val environment = Option(System.getProperty("environment")).getOrElse(defaultConfig.getString("environment"))
     val envConfiguration = ConfigFactory.parseFile(overrideFile).withFallback(defaultConfig.getConfig(environment))
       .withFallback(defaultConfig)
-
-    logger.info(s"Configuration for env $environment loads OK")
 
     envConfiguration.resolve()
   }

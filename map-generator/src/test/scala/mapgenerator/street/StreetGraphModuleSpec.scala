@@ -1,14 +1,15 @@
-package mapgenerator.source.osm
+package mapgenerator.street
 
-import mapdomain.graph.GraphContainer
-import mapdomain.street.{ OsmStreetEdge, OsmVertex }
+import mapdomain.street.{ StreetEdge, UnsavedStreetGraphContainer, UnsavedStreetVertex }
+import mapgenerator.source.osm._
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
 import org.scalatest.{ FlatSpec, Matchers }
 
-import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
+import scala.collection.immutable.IndexedSeq
+import scala.collection.mutable.ArrayBuffer
 
-class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
+class StreetGraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
   implicit val formats = DefaultFormats
 
@@ -17,10 +18,10 @@ class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
   //  val intersectionVertexCount: Int = 1076
 
   val osmModule: OSMModule = OSMModule(xmlReader.loadNodes, xmlReader.loadWays, xmlReader.loadRelations)
-  val graphModule: GraphModule = GraphModule(osmModule)
-  val graph: GraphContainer[OsmVertex] = graphModule.createGraph
+  val streetGraphModule: StreetGraphModule = StreetGraphModule(osmModule)
+  val graph: UnsavedStreetGraphContainer = streetGraphModule.createGraph
 
-  val otpVertices: ListBuffer[OTPVertex] = ListBuffer(graphJsonParser.vertices: _*)
+  val otpVertices: ArrayBuffer[OTPVertex] = ArrayBuffer(graphJsonParser.vertices: _*)
 
   /**
    * Missing Edge. Difference is OwnEdges - OTPEdges
@@ -29,7 +30,7 @@ class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
    * @param ownEdges
    * @param otpEdges
    */
-  case class MissingEdgesReport(veretxId: Long, ownEdges: List[OsmStreetEdge], otpEdges: List[OTPEdge]) {
+  case class MissingEdgesReport(veretxId: Long, ownEdges: List[StreetEdge], otpEdges: List[OTPEdge]) {
     val difference: Int = ownEdges.size - otpEdges.size
   }
 
@@ -39,7 +40,7 @@ class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
     graph.vertices.size should be(otpVertices.size)
 
-    val graphVertices: Seq[OsmVertex] = graph.vertices.toIndexedSeq
+    val graphVertices: IndexedSeq[UnsavedStreetVertex] = graph.vertices.toIndexedSeq
 
     val edgesReport = StringBuilder.newBuilder
 
@@ -66,7 +67,7 @@ class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
         edge ← otpVertex.outgoingStreetEdges
       } {
 
-        def sameEdge(e: OsmStreetEdge): Boolean = e.vertexStartId == edge.startOsmNodeId && e.vertexEndId == edge.endOsmNodeId
+        def sameEdge(e: StreetEdge): Boolean = e.vertexStartId == edge.startOsmNodeId && e.vertexEndId == edge.endOsmNodeId
 
         if (!vertex.edges.exists(sameEdge)) {
 
@@ -79,7 +80,7 @@ class GraphModuleSpec extends FlatSpec with BaseOSMSpec with Matchers {
 
         //        withClue(s"Edge #${edge.id} with start vertex ${edge.startOsmNodeId} and end vertex ${edge.endOsmNodeId}" +
         //          s" not found in vertex #${graphVertices.indexOf(vertex)} Vertex: ${write(vertex)}. OTP Edge: ${write(edge)}") {
-        //          val sameEdge = (e: OsmStreetEdge)  => (e.osmVertexStart.id == edge.startOsmNodeId && e.osmVertexEnd.id == edge.endOsmNodeId) || (e.osmVertexStart.id == edge.endOsmNodeId && e.osmVertexEnd.id == edge.startOsmNodeId)
+        //          val sameEdge = (e: StreetEdge)  => (e.streetVertexStart.id == edge.startOsmNodeId && e.streetVertexEnd.id == edge.endOsmNodeId) || (e.streetVertexStart.id == edge.endOsmNodeId && e.streetVertexEnd.id == edge.startOsmNodeId)
         //             vertex.edges.exists(sameEdge) should be (true)
         //        }
       }

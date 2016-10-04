@@ -1,12 +1,12 @@
 package model
 
-import mapdomain.graph.{ Coordinate, GeoVertex, GraphContainer }
-import mapdomain.street.OsmStreetEdge
+import mapdomain.graph.{Coordinate, GeoEdge, GeoVertex, GraphContainer}
+import mapdomain.street.StreetEdge
 
 case class Street(id: String, from: Coordinate, to: Coordinate)
 
 object Street {
-  def apply[V <: GeoVertex](osmStreetEdge: OsmStreetEdge)(implicit graph: GraphContainer[V]): Street =
-    new Street(osmStreetEdge.wayId.toString, graph.findVertex(osmStreetEdge.vertexStartId).get.coordinate,
-      graph.findVertex(osmStreetEdge.vertexEndId).get.coordinate)
+  def apply[E <: GeoEdge, V <: GeoVertex[E]](streetEdge: StreetEdge)(implicit graph: GraphContainer[E, V]): Street =
+    new Street(streetEdge.wayId.toString, graph.findVertex(streetEdge.vertexStartId).get.coordinate,
+      graph.findVertex(streetEdge.vertexEndId).get.coordinate)
 }

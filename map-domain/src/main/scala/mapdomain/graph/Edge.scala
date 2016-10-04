@@ -24,9 +24,9 @@ class GeoEdge(override val vertexStartId: Long, override val vertexEndId: Long, 
   override def toString: String = s"GeoEdge(vertexStartId: $vertexStartId, vertexEndId: $vertexEndId, distance: $distance, directed: $directed)"
 
   // To more idiomatic code
-  def retrieveVertexStart[V <: GeoVertex](implicit graph: GraphContainer[V]): Option[V] = graph.findVertex(vertexStartId)
-  def retrieveVertexEnd[V <: GeoVertex](implicit graph: GraphContainer[V]): Option[V] = graph.findVertex(vertexEndId)
-  def retrieveOppositeVertexFor[V <: GeoVertex](vertexId: Long)(implicit graph: GraphContainer[V]): Option[V] = {
+  def retrieveVertexStart[E <: GeoEdge, V <: GeoVertex[E]](implicit graph: GraphContainer[E, V]): Option[V] = graph.findVertex(vertexStartId)
+  def retrieveVertexEnd[E <: GeoEdge, V <: GeoVertex[E]](implicit graph: GraphContainer[E, V]): Option[V] = graph.findVertex(vertexEndId)
+  def retrieveOppositeVertexFor[E <: GeoEdge, V <: GeoVertex[E]](vertexId: Long)(implicit graph: GraphContainer[E, V]): Option[V] = {
     assert(vertexStartId == vertexId || vertexEndId == vertexId,
       s"The supplied vertex $vertexId doesn't belong to this edge [vertexStartId = $vertexStartId, vertexEndId = $vertexEndId]")
     val vertexToSearch: Long = if (vertexStartId == vertexId) vertexEndId else vertexStartId

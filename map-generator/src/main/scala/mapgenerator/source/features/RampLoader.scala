@@ -1,4 +1,4 @@
-package mapgenerator.source.osm
+package mapgenerator.source.features
 
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.Ramp
@@ -28,14 +28,8 @@ object RampLoader2014 extends RampLoaderByType {
 
   def create(line: String): Ramp = {
     val chucks = line.split(";")
-    val number =
-      if (chucks(4).nonEmpty)
-        Some(chucks(4).toInt)
-      else None
     Ramp(wkt2Coordinate(chucks(0)),
-      chucks(2),
-      chucks(3),
-      number,
+      None,
       chucks(5))
   }
 
@@ -52,8 +46,6 @@ object RampLoader2011 extends RampLoaderByType {
   def create(line: String): Ramp = {
     val chucks = line.split(";")
     Ramp(Coordinate(chucks(1).toDouble, chucks(0).toDouble),
-      chucks(2),
-      chucks(2),
       None,
       chucks(2))
   }

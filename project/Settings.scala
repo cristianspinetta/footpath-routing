@@ -6,7 +6,7 @@ import scalariform.formatter.preferences._
 
 object Settings extends Version {
 
-  lazy val basicSettings: Seq[Setting[_]] = Defaults.defaultSettings ++ Seq(
+  lazy val basicSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
     scalaVersion := ScalaVersion,
     resolvers ++= Dependencies.resolutionRepos,
     version <<= version in ThisBuild,
@@ -14,6 +14,7 @@ object Settings extends Version {
     javaOptions in run := Seq(
       "-Duser.timezone=GMT-0",
       "-DenvironmentOverride=./environment-override.conf",
+      "-Denvironment=dev",
       "-Dcom.sun.management.jmxremote.ssl=false",
       "-Dcom.sun.management.jmxremote.authenticate=false",
       "-Dcom.sun.management.jmxremote.port=29290",
@@ -22,6 +23,7 @@ object Settings extends Version {
       "-verbose:gc",
       "-XX:+PrintGCDetails",
       "-XX:+PrintGCTimeStamps",
+      "-XX:+PrintGCDateStamps",
       "-Xloggc:./gc.log",
       "-XX:+HeapDumpOnOutOfMemoryError",
       "-XX:HeapDumpPath=./dumps/heap-dump.hprof",
@@ -52,15 +54,24 @@ object Settings extends Version {
     )
   )
 
+  lazy val assemblySettings = Assembly.settings
+  lazy val notAggregateInAssembly = Assembly.notAggregateInAssembly
+
   lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
     ScalariformKeys.preferences in Compile := formattingPreferences,
     ScalariformKeys.preferences in Test := formattingPreferences
   )
 
-  lazy val settingsForPlayground: Seq[Setting[_]] = Seq(
+  lazy val playgroundSettings: Seq[Setting[_]] = Seq(
     connectInput in run := true,
     cancelable in Global := true
   )
+
+  lazy val DBTestsConfig = TestsSettings.DBTestsConfig
+  lazy val testsSettings: Seq[Setting[_]] = inConfig(DBTestsConfig)(Defaults.testTasks) ++ TestsSettings.testsSettings
+
+  lazy val BenchmarkConfig = Benchmark.BenchConfig
+  lazy val benchmarkSettings = inConfig(BenchmarkConfig)(Defaults.testSettings) ++ Benchmark.settings
 
   def formattingPreferences =
     FormattingPreferences()

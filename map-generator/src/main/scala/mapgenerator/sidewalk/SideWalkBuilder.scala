@@ -1,49 +1,85 @@
 package mapgenerator.sidewalk
 
-import base.LazyLoggerSupport
-import mapdomain.graph.{ GeoEdge, GeoVertex }
+import base.{ LazyLoggerSupport, MeterSupport }
+import mapdomain.graph.{GeoEdge, GeoVertex}
 import mapdomain.sidewalk.{ PedestrianEdge, SidewalkEdge, SidewalkVertex, StreetCrossingEdge }
 
 import scala.collection.Map
+import scala.collection.mutable
 
-case class Builders[V <: GeoVertex](
+case class Builders[E <: GeoEdge, V <: GeoVertex[E]](
   streetCrossingBuilderManager: StreetCrossingBuilderManager,
   sidewalkVertexBuilderManager: SidewalkVertexBuilderManager,
-  sidewalkEdgeBuilderManager: SidewalkEdgeBuilderManager[V])
+  sidewalkEdgeBuilderManager: SidewalkEdgeBuilderManager[E, V])
 
-object SideWalkBuilder extends LazyLoggerSupport {
+object SideWalkBuilder extends LazyLoggerSupport with MeterSupport {
 
   type SidewalkIdentity = (Long, GeoEdge, Boolean) // (street vertex id, street edge object, is at north)
 
-  def build[V <: GeoVertex](failureTolerance: Boolean = false)(implicit idGenerator: SidewalkVertexIDGenerator, builders: Builders[V]): Set[SidewalkVertex] = {
+  def build[V <: GeoVertex[_]](failureTolerance: Boolean = false)
+                           (implicit idGenerator: SidewalkVertexIDGenerator, builders: Builders[_, V]): Set[SidewalkVertex] = withTimeLogging({
 
-    val sidewalkEdgeBuilders: Iterable[SidewalkEdgeBuilder] = builders.sidewalkEdgeBuilderManager.sidewalkOnCornerByKey.values
+    type BuildSidewalkFunc = ((mutable.Set[SidewalkEdge], mutable.Set[SidewalkVertex]), SidewalkEdgeBuilder) ⇒ Unit
 
-    val buildSidewalkWithToleranceFailure: ((Set[SidewalkEdge], Set[SidewalkVertex]), SidewalkEdgeBuilder) ⇒ (Set[SidewalkEdge], Set[SidewalkVertex]) = {
+    logger.info(s"Finally getting started to building the sidewalks as vertices and edges.")
+
+    val sidewalkEdgeBuilders: Vector[SidewalkEdgeBuilder] = builders.sidewalkEdgeBuilderManager.sidewalkOnCornerByKey.values.toVector
+
+    val buildSidewalkWithToleranceFailure: BuildSidewalkFunc = {
       case ((swEdges, vs), builder) ⇒
-        builder.buildFailureTolerance match {
-          case Some((edge: SidewalkEdge, vertexStart: SidewalkVertex, vertexEnd: SidewalkVertex)) ⇒ (swEdges + edge, vs + vertexStart + vertexEnd)
-          case None ⇒ (swEdges, vs)
+        builder
+          .buildFailureTolerance
+          .map { case (edge: SidewalkEdge, vertexStart: SidewalkVertex, vertexEnd: SidewalkVertex) ⇒
+            swEdges += edge
+            vs += vertexStart
+            vs += vertexEnd
         }
     }
-    val buildSidewalkWithNoToleranceFailure: ((Set[SidewalkEdge], Set[SidewalkVertex]), SidewalkEdgeBuilder) ⇒ (Set[SidewalkEdge], Set[SidewalkVertex]) = {
+    val buildSidewalkWithNoToleranceFailure: BuildSidewalkFunc = {
       case ((swEdges, vs), builder) ⇒
         val (edge: SidewalkEdge, vertexStart: SidewalkVertex, vertexEnd: SidewalkVertex) = builder.build
-        (swEdges + edge, vs + vertexStart + vertexEnd)
+        swEdges += edge
+        vs += vertexStart
+        vs += vertexEnd
     }
+
+    logger.info(s"Starting to build sidewalk edges...")
 
     val (sidewalkEdges: Set[SidewalkEdge], verticesFromSidewalk: Set[SidewalkVertex]) = {
-      val fold = sidewalkEdgeBuilders.foldLeft((Set[SidewalkEdge](), Set[SidewalkVertex]())) _
-      if (failureTolerance) fold(buildSidewalkWithToleranceFailure)
-      else fold(buildSidewalkWithNoToleranceFailure)
+
+      val sidewalkEdgeSet: mutable.Set[SidewalkEdge] = mutable.Set()
+      val sidewalkVertexSet: mutable.Set[SidewalkVertex] = mutable.Set()
+
+      def processSidewalk(buildSidewalkFunc: BuildSidewalkFunc): Unit = {
+        sidewalkEdgeBuilders foreach { sidewalkEdgeBuilder =>
+          buildSidewalkFunc((sidewalkEdgeSet, sidewalkVertexSet), sidewalkEdgeBuilder)
+        }
+      }
+
+      if (failureTolerance) processSidewalk(buildSidewalkWithToleranceFailure)
+      else processSidewalk(buildSidewalkWithNoToleranceFailure)
+
+      (sidewalkEdgeSet.toSet, sidewalkVertexSet.toSet)
     }
 
-    val (streetCrossingEdges: Set[StreetCrossingEdge], verticesFromCrossing: Set[SidewalkVertex]) = builders.streetCrossingBuilderManager.builders
-      .foldLeft((Set[StreetCrossingEdge](), Set[SidewalkVertex]())) {
-        case ((scEdges, vs), builder) ⇒
-          val (edge: StreetCrossingEdge, vertexFrom: SidewalkVertex, vertexTo: SidewalkVertex) = builder.build
-          (scEdges + edge, vs + vertexFrom + vertexTo)
+    logger.info(s"Starting to build street crossing edges...")
+
+    val (streetCrossingEdges: Set[StreetCrossingEdge], verticesFromCrossing: Set[SidewalkVertex]) = {
+
+      val streetCrossingEdges = mutable.Set[StreetCrossingEdge]()
+      val sidewalkVertices = mutable.Set[SidewalkVertex]()
+
+      builders.streetCrossingBuilderManager.builders foreach { builder =>
+        val (edge: StreetCrossingEdge, vertexFrom: SidewalkVertex, vertexTo: SidewalkVertex) = builder.build
+        streetCrossingEdges += edge
+        sidewalkVertices += vertexFrom
+        sidewalkVertices += vertexTo
       }
+
+      (streetCrossingEdges.toSet, sidewalkVertices.toSet)
+    }
+
+    logger.info(s"Starting to build sidewalk vertices...")
 
     val vertices: Set[SidewalkVertex] = verticesFromSidewalk ++ verticesFromCrossing
 
@@ -54,7 +90,7 @@ object SideWalkBuilder extends LazyLoggerSupport {
       streetCrossingEdges.toList, (vertex, edge) ⇒ vertex.copy(streetCrossingEdges = edge :: vertex.streetCrossingEdges))
 
     verticesWithSidewalksAndCrossing
-  }
+  }, (time: Long) => logger.info(s"Finish the 'Vertices and Edges Sidewalk Building' phase in $time ms."))
 
   private def uniqueEdges[E <: PedestrianEdge](vertices: Set[SidewalkVertex], edges: List[E]): Map[SidewalkVertex, Set[E]] = {
     vertices.map(vertex ⇒ {
@@ -64,7 +100,7 @@ object SideWalkBuilder extends LazyLoggerSupport {
   }
 
   private def introduceEdges[E <: PedestrianEdge](vertices: Set[SidewalkVertex], edges: List[E],
-    copyF: (SidewalkVertex, E) ⇒ SidewalkVertex): Set[SidewalkVertex] = {
+                                                  copyF: (SidewalkVertex, E) ⇒ SidewalkVertex): Set[SidewalkVertex] = {
     val verticesMap: Map[SidewalkVertex, Set[E]] = uniqueEdges(vertices, edges)
     val finalVertices = for {
       (vertex, edgeSet) ← verticesMap

@@ -5,7 +5,9 @@ object Dependencies extends Version {
   val resolutionRepos = Seq(
     Classpaths.typesafeSnapshots,
     "Typesafe Maven Snapshots" at "http://repo.typesafe.com/typesafe/snapshots/",
-    "Typesafe Maven Releases" at "http://repo.typesafe.com/typesafe/releases/"
+    "Typesafe Maven Releases" at "http://repo.typesafe.com/typesafe/releases/",
+    "Sonatype OSS Releases" at "https://oss.sonatype.org/content/repositories/releases",
+    "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
   )
 
   val slf4jApi                       = "org.slf4j"                  %  "slf4j-api"                          % "1.7.13"
@@ -37,6 +39,8 @@ object Dependencies extends Version {
   val commonsDbcp                    = "commons-dbcp"              % "commons-dbcp"                         % "1.4"
   val h2Connector                    = "com.h2database"            % "h2"                                   % "1.4.192"
 
+  val scalaMeter                     = "com.storm-enroute"         %% "scalameter"                          % "0.7"
+
 
   def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
   def provided  (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "provided")
@@ -44,4 +48,5 @@ object Dependencies extends Version {
   def runtime   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "runtime")
   def container (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "container")
   def optional  (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile,optional")
+  def bench     (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "bench")
 }

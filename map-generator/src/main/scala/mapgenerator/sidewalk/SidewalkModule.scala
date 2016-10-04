@@ -1,37 +1,41 @@
 package mapgenerator.sidewalk
 
-import base.{ FailureReporterSupport, LazyLoggerSupport, LogicError }
-import mapdomain.graph.{ Coordinate, GeoEdge, GeoVertex, GraphContainer }
+import java.util.concurrent.atomic.AtomicLong
+
+import base.{ FailureReporterSupport, LazyLoggerSupport, LogicError, MeterSupport }
+import mapdomain.graph.Coordinate
 import mapdomain.math.{ GVector, VectorUtils }
-import mapdomain.sidewalk.{ SidewalkEdge, SidewalkGraphContainer, SidewalkVertex, Side }
+import mapdomain.sidewalk._
+import mapdomain.street.{ InMemoryStreetGraphContainer, StreetEdge, StreetVertex }
 import mapdomain.utils.EdgeUtils
 
-case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) extends LazyLoggerSupport with FailureReporterSupport {
+case class SidewalkModule(implicit graph: InMemoryStreetGraphContainer) extends LazyLoggerSupport with MeterSupport with FailureReporterSupport {
 
   import mapdomain.utils.PointUtils._
   implicit protected val vertexIdGenerator = SidewalkVertexIDGenerator()
 
   def createSideWalks(distanceToStreet: Double = SidewalkModule.defaultDistanceToStreet,
-    failureTolerance: Boolean = false): SidewalkGraphContainer = {
+    failureTolerance: Boolean = false): InMemorySidewalkGraphContainer = withTimeLogging({
     logger.info(s"Creating Sidewalks for all the graph")
 
     implicit val builders = Builders(StreetCrossingBuilderManager(), SidewalkVertexBuilderManager(), SidewalkEdgeBuilderManager())
-    var verticesVisited = 0
+    val verticesVisited = new AtomicLong(0)
     for (vertex ← graph.vertices if vertex.edges.nonEmpty) { // FIXME a temporary workaround: vertex.edges.nonEmpty
-      verticesVisited += 1
+      val visited = verticesVisited.incrementAndGet()
+      if (visited % 1000 == 0) logger.info(s"$verticesVisited vertices visited.")
       logger.debug(s"Visiting vertex id = ${vertex.id}, number = $verticesVisited. Vertex: $vertex")
       createSidewalkByStreetVertex(vertex, distanceToStreet)
     }
     val vertices: Set[SidewalkVertex] = SideWalkBuilder.build(failureTolerance)
-    SidewalkGraphContainer(vertices.toList)
-  }
+    InMemorySidewalkGraphContainer(vertices.toList)
+  }, (time: Long) ⇒ logger.info(s"Create Sidewalk Graph in $time ms."))
 
-  protected def createSidewalkByStreetVertex(vertex: V, distanceToStreet: Double)(implicit builders: Builders[V]): Unit = {
+  protected def createSidewalkByStreetVertex(vertex: StreetVertex.T, distanceToStreet: Double)(implicit builders: Builders[StreetEdge, StreetVertex[StreetEdge]]): Unit = {
 
-    val sortedEdges: List[GeoEdge] = GeoVertex.sortEdgesByAngle(vertex)
+    val sortedEdges: List[StreetEdge] = EdgeUtils.sortEdgesByAngle(vertex, vertex.edges)
 
     // FIXME a temporary workaround in order to get edges with distinct source and destination
-    val distinctEdges: List[GeoEdge] = sortedEdges.foldLeft(List.empty[GeoEdge]) {
+    val distinctEdges: List[StreetEdge] = sortedEdges.foldLeft(List.empty[StreetEdge]) {
       case (list, edge) ⇒
         if (list.exists(e ⇒ (e.vertexStartId == edge.vertexStartId && e.vertexEndId == edge.vertexEndId) ||
           (e.vertexStartId == edge.vertexEndId && e.vertexStartId == edge.vertexEndId)))
@@ -40,19 +44,19 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
           list :+ edge
     }
 
-    val groupGeoEdges: List[(Option[GeoEdge], Option[GeoEdge])] = distinctEdges.sliding(2).toList match {
+    val groupStreetEdges: List[(Option[StreetEdge], Option[StreetEdge])] = distinctEdges.sliding(2).toList match {
       case Nil                             ⇒ throw LogicError("SidewalkModule.createSidewalkByStreetVertex", s"A vertex without edges: $vertex")
       case list @ (List(singleEdge)) :: xs ⇒ List((Some(singleEdge), None))
       case list ⇒
         list.map {
           case firstEdge :: secondEdge :: Nil ⇒ (Some(firstEdge), Some(secondEdge))
-          case geoEdges ⇒ throw LogicError(
-            "SidewalkModule.createSidewalkByStreetVertex", s"wrong logic, expect a list with one or two elements, but come: $geoEdges")
+          case streetEdges ⇒ throw LogicError(
+            "SidewalkModule.createSidewalkByStreetVertex", s"wrong logic, expect a list with one or two elements, but come: $streetEdges")
         } :+ (Some(distinctEdges.last), Some(distinctEdges.head))
     }
 
-    val cornerVertexBuilders: List[SidewalkVertexBuilder] = (for (geoEdges ← groupGeoEdges) yield {
-      geoEdges match {
+    val cornerVertexBuilders: List[SidewalkVertexBuilder] = (for (streetEdges ← groupStreetEdges) yield {
+      streetEdges match {
         case (Some(firstEdge), Some(secondEdge)) ⇒
           logger.debug(s"creating sidewalk corner between 2 blocks, for edges: FirstEdge: $firstEdge SecondEdge: $secondEdge")
           val cornerVertexBuilders = withFailureLogging(createSideWalksIntersection(distanceToStreet, vertex, firstEdge, secondEdge),
@@ -62,7 +66,7 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
         case (Some(singleEdge), None) ⇒
           val cornerVertexBuilders = createSideWalksForSingleStreet(distanceToStreet, vertex, singleEdge)
           cornerVertexBuilders
-        case _ ⇒ throw LogicError("SidewalkModule.createSidewalkByStreetVertex", s"wrong logic, expect a group of edges with one or two elements, but come: $geoEdges")
+        case _ ⇒ throw LogicError("SidewalkModule.createSidewalkByStreetVertex", s"wrong logic, expect a group of edges with one or two elements, but come: $streetEdges")
       }
     }) flatten
 
@@ -70,8 +74,8 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
     EdgeUtils.pointToEdge[SidewalkVertexBuilder, StreetCrossingBuilder](cornerVertexBuildersInRing, (p1, p2) ⇒ builders.streetCrossingBuilderManager.create(p1, p2))
   }
 
-  protected def createSideWalksIntersection(distance: Double, vertex: GeoVertex, firstEdge: GeoEdge,
-    secondEdge: GeoEdge)(implicit builders: Builders[V]): List[SidewalkVertexBuilder] = {
+  protected def createSideWalksIntersection(distance: Double, vertex: StreetVertex.T, firstEdge: StreetEdge,
+    secondEdge: StreetEdge)(implicit builders: Builders[StreetEdge, StreetVertex[StreetEdge]]): List[SidewalkVertexBuilder] = {
 
     // get vector that represent the given edge
     val firstVector = EdgeUtils.edgeToVector(firstEdge)
@@ -109,9 +113,9 @@ case class SidewalkModule[V <: GeoVertex](implicit graph: GraphContainer[V]) ext
     List(intersectedVertex)
   }
 
-  protected def createSideWalksForSingleStreet(distance: Double, vertex: GeoVertex, edge: GeoEdge)(implicit builders: Builders[V]): List[SidewalkVertexBuilder] = {
+  protected def createSideWalksForSingleStreet(distance: Double, vertex: StreetVertex.T, edge: StreetEdge)(implicit builders: Builders[StreetEdge, StreetVertex[StreetEdge]]): List[SidewalkVertexBuilder] = {
 
-    def createRightVector(edge: GeoEdge): GVector = {
+    def createRightVector(edge: StreetEdge): GVector = {
       val vertexStart = edge.retrieveVertexStart.get
       val gvector = EdgeUtils.edgeToVector(edge)
       if (gvector.source ~= vertexStart.coordinate.toPoint)

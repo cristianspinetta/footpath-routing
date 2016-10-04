@@ -1,56 +1,94 @@
 package mapdomain.graph
 
-import mapdomain.utils.GraphUtils
+import scala.collection.Map
 
-class GraphContainer[N <: Vertex](val vertices: List[N]) {
-
+trait GraphContainer[E <: Edge, V <: Vertex[E]] {
   /**
    * Find vertex by ID
    * @param id: Long
    * @return
    */
-  def findVertex(id: Long): Option[N] = vertices.find(_.id == id) // TODO: replace by a DB query
+  def findVertex(id: Long): Option[V]
 
-  def copy(vertices: List[N]): GraphContainer[N] = GraphContainer(vertices)
-  def copy(): GraphContainer[N] = GraphContainer(vertices)
+  def neighbours(vertex: V): List[V]
 
-  /**
-   * Create a new GraphContainer with maximal connected subgraph that this graph contains
-   * @return The connected graph
-   */
-  def purge: GraphContainer[N] = GraphUtils.getConnectedComponent(this, GraphContainer.apply)
+
 }
 
-object GraphContainer {
+trait InMemoryGraphContainer[E <: Edge, V <: Vertex[E]] extends GraphContainer[E, V] {
 
-  def apply[N <: Vertex](vertices: List[N]): GraphContainer[N] = new GraphContainer(vertices)
+  type Self = InMemoryGraphContainer[E, V]
 
-  def createGeoNodes(nodeData: Map[Long, (List[Long], Coordinate)]): GraphContainer[GeoVertex] = {
+  val vertices: List[V]
 
-    val nodes: List[GeoVertex] = nodeData.toList map {
-      case (nodeId, (edgeIds, nodeCoordinate)) ⇒
-        new GeoVertex(nodeId,
-          edgeIds.map(neighbourId ⇒ GeoEdge(nodeId, neighbourId, nodeCoordinate.distanceTo(nodeData(neighbourId)._2))),
-          nodeCoordinate)
-    }
+  val vertexById: Map[Long, V] = vertices.map(v => v.id -> v) toMap
+  /**
+   * Find vertex by ID
+   *
+   * @param id : Long
+   * @return an option of vertex
+   */
+  def findVertex(id: Long): Option[V] = vertexById.get(id)
 
-    new GraphContainer(nodes)
+  override def neighbours(vertex: V): List[V] = vertex.edges.flatMap(edge ⇒ findVertex(edge.vertexEndId) toList)
+
+}
+
+class InMemoryGraphContainerImpl[E <: Edge, V <: Vertex[E]](val vertices: List[V]) extends InMemoryGraphContainer[E, V]
+
+object InMemoryGraphContainer {
+  def apply[E <: Edge, V <: Vertex[E]](vertices: List[V]): InMemoryGraphContainer[E, V] = new InMemoryGraphContainerImpl(vertices)
+
+  def joinGraphs[E <: Edge, V <: Vertex[E], G <: InMemoryGraphContainer[E, V]](graphs: List[G], constructor: (List[V]) ⇒ G): G = {
+    val vertices: List[V] = graphs.flatMap(graph ⇒ graph.vertices)
+    constructor(vertices)
   }
+}
 
-  def findClosestVertex[V <: GeoVertex](graph: GraphContainer[V], coordinate: Coordinate): Option[(V, Double)] = graph.vertices match {
+trait GeoGraphContainer[E <: GeoEdge, V <: GeoVertex[E]] extends GraphContainer[E, V] {
+  def findNearest(coordinate: Coordinate): Option[V]
+}
+
+object GeoGraphContainer {
+
+  def findNearest[E <: GeoEdge, V <: GeoVertex[E]](vertices: Traversable[V], coordinate: Coordinate): Option[V] = vertices match {
     case Nil ⇒ None
     case list ⇒
-      val (closestVertex, distance) = list.tail.foldLeft((list.head, list.head.coordinate.distanceTo(coordinate))) {
+      val (closestVertex, _) = list.tail.foldLeft((list.head, list.head.coordinate.distanceTo(coordinate))) {
         case (before @ (partialClosest: V, distanceToBefore: Double), next: V) ⇒
           val distanceToNext: Double = next.coordinate.distanceTo(coordinate)
           if (distanceToNext < distanceToBefore) (next, distanceToNext)
           else before
       }
-      Some((closestVertex, distance))
+      Some(closestVertex)
   }
 
-  def joinGraphs[V <: Vertex](graphs: List[GraphContainer[V]]) = {
-    val vertices: List[V] = graphs.flatMap(graph ⇒ graph.vertices)
-    GraphContainer(vertices)
+  def neighbours[E <: GeoEdge, V <: GeoVertex[E]](vertex: V)(implicit graph: GraphContainer[E, V]): List[V] = vertex.edges.flatMap(edge ⇒ graph.findVertex(edge.vertexEndId) toList)
+}
+
+
+trait InMemoryGeoGraphContainer[E <: GeoEdge, V <: GeoVertex[E]] extends InMemoryGraphContainer[E, V] with GeoGraphContainer[E, V] {
+  //  val constructor: Constructor = (vertices: List[V]) ⇒ new InMemoryGeoGraphContainer(vertices)
+
+  // FIXME reemplazar por GeoSearch
+  override def findNearest(coordinate: Coordinate): Option[V] = GeoGraphContainer.findNearest[E, V](vertices, coordinate)
+}
+
+class InMemoryGeoGraphContainerImpl[E <: GeoEdge, V <: GeoVertex[E]](val vertices: List[V]) extends InMemoryGeoGraphContainer[E, V]
+
+object InMemoryGeoGraphContainer {
+  def apply[E <: GeoEdge, V <: GeoVertex[E]](vertices: List[V]): InMemoryGeoGraphContainer[E, V] = new InMemoryGeoGraphContainerImpl(vertices)
+}
+
+object GraphContainer {
+
+  def createEagerGeoGraph(vertexData: Map[Long, (List[Long], Coordinate)]): InMemoryGeoGraphContainer[GeoEdge, GeoVertex[GeoEdge]] = {
+    val vertices: List[GeoVertex[GeoEdge]] = vertexData.toList map {
+      case (nodeId, (edgeIds, nodeCoordinate)) ⇒
+        new GeoVertex[GeoEdge](nodeId,
+          edgeIds.map(neighbourId ⇒ GeoEdge(nodeId, neighbourId, nodeCoordinate.distanceTo(vertexData(neighbourId)._2))),
+          nodeCoordinate)
+    }
+    InMemoryGeoGraphContainer(vertices)
   }
 }

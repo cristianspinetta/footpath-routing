@@ -1,5 +1,6 @@
 package mapgenerator.source.osm.model
 
+import scala.annotation.tailrec
 import scala.collection.immutable.ListSet
 import scala.collection.mutable
 
@@ -39,7 +40,7 @@ object Area {
     //    if (innerRingNodes.nonEmpty && outerRingNodes.nonEmpty)
     Some(new Area(parent, nodes, innerRingWays, outerRingWays, innerRingNodes, outerRingNodes))
     //    else
-    //      None
+    //    None
   }
 
   private def constructRings(ways: Vector[Way]): List[List[Long]] = {
@@ -61,49 +62,61 @@ object Area {
 
       // TODO: aca habia un precheck para situaciones raras que no implementamos.
 
-      if (waysByEndpoint.isEmpty)
-        closedRings.result()
-      else {
-
-        def createRing(enpoint: Long,
-          waysByEndpoint: MultiMapWithWay,
-          partialRings: List[Long] = List.empty): Option[List[Long]] = {
-          assume(partialRings.headOption.forall(_ == enpoint), "the provided endpoint must be equal to the first node in the Partial Ring")
-
-          waysByEndpoint.get(enpoint).flatMap { was ⇒
-
-            val way = ways.head
-            val nodeIds = way.nodeIds
-            val firstEndpoint = nodeIds.head
-            val otherEndpoint = nodeIds.last
-
-            waysByEndpoint.removeBinding(firstEndpoint, way)
-            waysByEndpoint.removeBinding(otherEndpoint, way)
-
-            val (newPartialRings, newFirstEndpoint): (List[Long], Long) =
-              if (partialRings.headOption.contains(firstEndpoint))
-                (nodeIds.reverse ::: partialRings, otherEndpoint)
-              else
-                (nodeIds ::: partialRings, firstEndpoint)
-
-            if (newPartialRings.head == newPartialRings.last)
-              Some(newPartialRings)
-            else
-              createRing(newFirstEndpoint, waysByEndpoint, newPartialRings)
-          }
-
-        }
-
-        def processAllRings(waysByEndpoint: MultiMapWithWay): List[List[Long]] = {
-          waysByEndpoint.toList match {
-            case (nodeId, _) :: wbeTail ⇒
-              createRing(nodeId, waysByEndpoint).toList ::: processAllRings(waysByEndpoint)
-            case _ ⇒ List.empty
-          }
-        }
-
-        processAllRings(waysByEndpoint)
-      }
+      // FIXME implementar!
+      closedRings.result()
+      //      if (waysByEndpoint.isEmpty)
+      //        closedRings.result()
+      //      else {
+      //
+      //        def createRing(enpoint: Long,
+      //          waysByEndpoint: MultiMapWithWay,
+      //          partialRings: List[Long] = List.empty): Option[List[Long]] = {
+      //          assume(partialRings.headOption.forall(_ == enpoint), "the provided endpoint must be equal to the first node in the Partial Ring")
+      //
+      //          waysByEndpoint.get(enpoint).flatMap { was ⇒
+      //
+      //            val way = ways.head
+      //            val nodeIds = way.nodeIds
+      //            val firstEndpoint = nodeIds.head
+      //            val otherEndpoint = nodeIds.last
+      //
+      //            waysByEndpoint.removeBinding(firstEndpoint, way)
+      //            waysByEndpoint.removeBinding(otherEndpoint, way)
+      //
+      //            val (newPartialRings, newFirstEndpoint): (List[Long], Long) =
+      //              if (partialRings.headOption.contains(firstEndpoint))
+      //                (nodeIds.reverse ::: partialRings, otherEndpoint)
+      //              else
+      //                (nodeIds ::: partialRings, firstEndpoint)
+      //
+      //            if (newPartialRings.head == newPartialRings.last)
+      //              Some(newPartialRings)
+      //            else
+      //              createRing(newFirstEndpoint, waysByEndpoint, newPartialRings)
+      //          }
+      //
+      //        }
+      //
+      //        def processAllRings(waysByEndpoint: MultiMapWithWay): List[List[Long]] = {
+      //          @tailrec
+      //          def iter(expression: MultiMapWithWay, acc: List[List[Long]] = Nil): List[List[Long]] = {
+      //            expression.toList match {
+      //              case (nodeId, _) :: wbeTail ⇒
+      //                //                createRing(nodeId, waysByEndpoint).toList ::: processAllRings(waysByEndpoint)
+      //                iter(expression, acc ::: createRing(nodeId, expression).toList)
+      //              case _ ⇒ acc
+      //            }
+      //          }
+      //          iter(waysByEndpoint, Nil)
+      //          //          waysByEndpoint.toList match {
+      //          //            case (nodeId, _) :: wbeTail ⇒
+      //          //              createRing(nodeId, waysByEndpoint).toList ::: processAllRings(waysByEndpoint)
+      //          //            case _ ⇒ List.empty
+      //          //          }
+      //        }
+      //
+      //        processAllRings(waysByEndpoint)
+      //      }
     }
   }
 }

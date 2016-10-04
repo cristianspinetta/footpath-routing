@@ -15,11 +15,11 @@ import scala.reflect.runtime.universe._
  * @param heuristic: Heuristic Function
  * @param gMap: Graph accessing
  * @param startVertex: origin vertex
- * @param targetVertex: target vertex
+ * @param targetVertices: variable argument of the target vertices
  * @param tag: implicit TypeTag supplied by Scala Compiler
  * @tparam N: Vertex Type with which it works
  */
-case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContainer[N], startVertex: N, targetVertex: N)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
+case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(gMap: GraphContainer[E, N], startVertex: N, targetVertices: N*)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
 
   /**
    * The vertices already evaluated.
@@ -56,21 +56,23 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
     -fScore(vertex.id)
   })
 
-  def search: Try[List[Edge]] = withTimeLoggingInMicro({
+  private val targetIds: List[Long] = targetVertices.map(_.id).toList
+
+  def search: Try[List[E]] = withTimeLogging({
     Try {
       loop(1)
     } recoverWith {
       case ex: Throwable ⇒
-        logger.error(s"Failure trying to find the short path at ${targetVertex.id}", ex)
+        logger.error(s"Failure trying to find the short path at ${this.printTargetVertex}", ex)
         logCurrentState(0)
         Failure(ex)
     }
   }, { timing: Long ⇒
-    logger.info(s"Found short path from ${startVertex.id} to ${targetVertex.id} in $timing µs.")
+    logger.info(s"Found short path from ${startVertex.id} to ${this.printTargetVertex} in $timing ms.")
   })
 
   @tailrec
-  private def loop(nroLoop: Int): List[Edge] = {
+  private def loop(nroLoop: Int): List[E] = {
 
     logCurrentState(nroLoop)
 
@@ -80,17 +82,18 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
 
       logger.debug(s"visit vertex ${current.id}")
 
-      if (current.id == targetVertex.id)
-        reconstructPath(_cameFrom, targetVertex)
-      else {
+      if (reachTarget(current)) {
+        logger.info(s"Reached the target vertex in $nroLoop loops.")
+        reconstructPath(_cameFrom, current)
+      } else {
         _closed.add(current)
 
-        val ns: List[N] = current.neighbours(gMap)
+        val ns: List[N] = gMap neighbours current
 
         ns foreach eachNeighbour(current)
 
         if (_opensQueue nonEmpty) loop(nroLoop + 1)
-        else throw new RuntimeException("failure!!")
+        else throw new RuntimeException(s"Failed searching the short path due to the open queue in A* is empty. Loop $nroLoop")
       }
     }
   }
@@ -117,7 +120,7 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
     }
   }
 
-  private def reconstructPath(_cameFrom: mutable.Map[N, N], targetVertex: N)(implicit tag: TypeTag[N]): List[Edge] = {
+  private def reconstructPath(_cameFrom: mutable.Map[N, N], targetVertex: N)(implicit tag: TypeTag[N]): List[E] = {
     var current = targetVertex
     var totalPathBuilder = List.newBuilder[N]
     totalPathBuilder += current
@@ -126,19 +129,20 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
       totalPathBuilder += current
     }
     val totalPath: List[N] = totalPathBuilder.result()
-    val (edges: List[Edge], _) = totalPath.tail.foldLeft((List.empty[Edge], totalPath.head)) {
-      case ((listEdges, beforeVertex), current: N) ⇒
+    val (edges: List[E], _) = totalPath.tail.foldLeft((List.empty[E], totalPath.head)) {
+      case ((listEs, beforeVertex), current: N) ⇒
         current.getEdgesFor(beforeVertex.id) match {
-          case Some(edge) ⇒ (edge :: listEdges, current)
+          case Some(edge) ⇒ (edge :: listEs, current)
           case None ⇒
             logger.warn(s"Could not find the edge between the vectors ${beforeVertex.id} and ${current.id}")
-            (listEdges, current)
+            (listEs, current)
         }
     }
     edges
   }
 
   private def logCurrentState(nroLoop: Int): Unit = {
+    if (nroLoop % 100 == 0) logger.info(s"Loop $nroLoop looking for the target vertex.")
     logger.debug(s"-----------------------------------")
     logger.debug(s"Initialize loop #$nroLoop")
     logger.debug(s"-----------------------------------")
@@ -148,5 +152,11 @@ case class AStar[N <: Vertex, M <: Heuristic[N]](heuristic: M)(gMap: GraphContai
     logger.debug(s"G Score: ${gScore mkString " -> "}")
     logger.debug(s"Heuristic - F Score: ${fScore mkString " -> "}")
   }
+
+  private def printTargetVertex: String = {
+    targetVertices.map(_.id) mkString ", "
+  }
+
+  private def reachTarget(vertex: N): Boolean = targetIds.contains(vertex.id)
 
 }

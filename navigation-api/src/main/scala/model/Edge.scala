@@ -1,31 +1,29 @@
 package model
 
-import mapdomain.graph.Coordinate
+import mapdomain.graph.{BaseEntity, Coordinate, GeoEdge, GeoVertex}
 
-case class Edge(from: Coordinate, to: Coordinate)
+import scala.language.existentials
 
-object Edge {
+case class Edge(id: String, from: Coordinate, to: Coordinate)
 
-  def pointToEdge(coordinates: Seq[Coordinate]): List[Edge] = {
-    coordinates.sliding(2).toList.flatMap {
-      case fst :: snd :: Nil ⇒ List(Edge(fst, snd))
-      case _                 ⇒ List.empty
-    }
-  }
-}
-
-trait EdgeType
+sealed trait EdgeType
 case object StreetEdgeType extends EdgeType
 case object SidewalkEdgeType extends EdgeType
 case object WayEdgeType extends EdgeType
 case object WayAreaEdgeType extends EdgeType
 
 object EdgeType {
-  def apply(edgeType: String): EdgeType = edgeType match {
-    case "street"   ⇒ StreetEdgeType
-    case "sidewalk" ⇒ SidewalkEdgeType
-    case "way"      ⇒ WayEdgeType
-    case "wayArea"  ⇒ WayAreaEdgeType
-    case _          ⇒ StreetEdgeType
-  }
+  val keyMap: Map[String, EdgeType] = Map(
+    "street" -> StreetEdgeType,
+    "sidewalk" -> SidewalkEdgeType,
+    "way" -> WayEdgeType,
+    "wayArea" -> WayAreaEdgeType) withDefaultValue StreetEdgeType
 }
+
+case class Vertex(id: Long, coordinate: Coordinate)
+
+object Vertex {
+  def createByGeoVertex[V <: GeoVertex[_]](vertex: V): Vertex = new Vertex(vertex.id, vertex.coordinate)
+}
+
+case class MapContainer(edges: List[Edge], vertices: List[Vertex])

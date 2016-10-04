@@ -7,7 +7,6 @@ import sql.SpatialSQLSupport
 case class Stop(
   id: Option[Long] = None,
   coordinate: Coordinate,
-  cellNumber: Int,
   nextStopId: Option[Long] = None,
   nextStop: Option[Stop] = None,
   previousStopId: Option[Long] = None,
@@ -19,6 +18,8 @@ case class Stop(
   isAccessible: Boolean)
 
 object Stop extends SQLSyntaxSupport[Stop] {
+
+  override val tableName = "stop"
 
   override val useSnakeCaseColumnName = false
 
@@ -35,7 +36,6 @@ trait StopRepository extends SpatialSQLSupport {
   private def stop(s: ResultName[Stop], tableAlias: String)(implicit rs: WrappedResultSet): Stop = {
     new Stop(
       id = Some(rs.long(s.id)),
-      cellNumber = rs.int(s.cellNumber),
       isAccessible = rs.boolean(s.isAccessible),
       coordinate = coordinateFromResultSet(rs, tableAlias),
       nextStopId = rs.get(s.nextStopId),
@@ -52,12 +52,11 @@ trait StopRepository extends SpatialSQLSupport {
       .copy(travelInfo = Some(TravelInfoRepository.travelInfo(ti)(rs)))
   }
 
-  def create(latitude: Long, longitude: Long, cellNumber: Int, isAccessible: Boolean, pathId: Long)(implicit session: DBSession = Stop.autoSession): Stop = {
+  def create(latitude: Long, longitude: Long, isAccessible: Boolean, pathId: Long)(implicit session: DBSession = Stop.autoSession): Stop = {
     val coordinate = Coordinate(latitude, longitude)
     val id = withSQL {
       insert.into(Stop).namedValues(
         Stop.column.coordinate -> positionToSQL(coordinate),
-        Stop.column.cellNumber -> cellNumber,
         Stop.column.isAccessible -> isAccessible,
         Stop.column.pathId -> pathId)
     }.updateAndReturnGeneratedKey().apply()
@@ -65,7 +64,6 @@ trait StopRepository extends SpatialSQLSupport {
     new Stop(
       id = Some(id),
       coordinate = coordinate,
-      cellNumber = cellNumber,
       pathId = Some(pathId),
       isAccessible = isAccessible)
   }
@@ -89,7 +87,6 @@ trait StopRepository extends SpatialSQLSupport {
     withSQL {
       update(Stop).set(
         Stop.column.coordinate -> positionToSQL(stop.coordinate),
-        Stop.column.cellNumber -> stop.cellNumber,
         Stop.column.nextStopId -> stop.nextStopId,
         Stop.column.previousStopId -> stop.previousStopId,
         Stop.column.pathId -> stop.pathId,

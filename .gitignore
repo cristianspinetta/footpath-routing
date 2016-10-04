@@ -130,4 +130,5 @@ local.properties
 .recommenders/
 
 navigation-api/src/main/resources/sources/
+
 environment-override.conf

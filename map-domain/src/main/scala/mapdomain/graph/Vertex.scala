@@ -1,46 +1,37 @@
 package mapdomain.graph
 
-import scala.math._
-
-trait Vertex {
+trait Vertex[E <: Edge] {
   val id: Long
-  val edges: List[Edge]
+  val edges: List[E]
 
-  def neighbours[V <: Vertex](graph: GraphContainer[V]): List[V] = edges.flatMap(edge ⇒ graph.findVertex(edge.vertexEndId) toList)
-  def getEdgesFor(vertexId: Long): Option[Edge] = edges.find(_.vertexEndId == vertexId)
+  def getEdgesFor(vertexId: Long): Option[E] = edges.find(_.vertexEndId == vertexId)
   def distanceToNeighbour(vertexId: Long): Double
 }
 
-case class GraphVertex(id: Long, edges: List[Edge]) extends Vertex {
+case class GraphVertex[E <: GraphEdge](id: Long, edges: List[E]) extends Vertex[E] {
   def distanceToNeighbour(vertexId: Long): Double = this.getEdgesFor(vertexId).map(_.distance).getOrElse(0)
 }
 
 object GraphVertex {
-  def createWithEdges(id: Long, edges: List[Int]): GraphVertex = GraphVertex(id, edges.map(GraphEdge(id, _)))
-  def removeEdge(source: GraphVertex, to: Long): GraphVertex = source.copy(edges = source.edges.filterNot(_.vertexEndId == to))
+  def createWithEdges(id: Long, edges: List[Int]): GraphVertex[GraphEdge] = GraphVertex(id, edges.map(GraphEdge(id, _)))
+  def removeEdge[E <: GraphEdge](source: GraphVertex[E], to: Long): GraphVertex[E] = source.copy(edges = source.edges.filterNot(_.vertexEndId == to))
 }
 
-class GeoVertex(override val id: Long, override val edges: List[GeoEdge], val coordinate: Coordinate) extends Vertex {
+class GeoVertex[E <: GeoEdge](override val id: Long, override val edges: List[E], val coordinate: Coordinate) extends Vertex[E] {
   //  def removeEdgeAt(to: Long): GeoVertex = this.copy(edges = edges.filterNot(_.vertexEndId == to))
   def distanceToNeighbour(vertexId: Long): Double = this.getEdgesFor(vertexId).map(_.distance).getOrElse(0) // TODO report access by getOrElse
-  def distanceTo(vertex: GeoVertex): Double = this.coordinate.distanceTo(vertex.coordinate)
+  def distanceTo[E <: GeoEdge](vertex: GeoVertex[E]): Double = this.coordinate.distanceTo(vertex.coordinate)
   //  def removeEdge(source: GeoVertex, to: Long): GeoVertex = source.copy(edges = source.edges.filterNot(_.vertexEndId == to))
 
   override def toString: String = s"GeoVertex(id: $id, edges: $edges, coordinate: $coordinate)"
 }
 object GeoVertex {
-  def createWithEdges(id: Long, edges: List[(Long, Coordinate)], coordinate: Coordinate): GeoVertex = {
-    val edge: (Long, Double) ⇒ GeoEdge = GeoEdge(id) _
+  def createWithEdges(id: Long, edges: List[(Long, Coordinate)], coordinate: Coordinate): GeoVertex[GeoEdge] = {
+    val edge: (Long, Double) ⇒ GeoEdge = GeoEdge(id)
 
     new GeoVertex(id, edges.map {
       case (neighbourId, neighbourCoordinate) ⇒
         edge(neighbourId, neighbourCoordinate.distanceTo(coordinate))
     }, coordinate)
-  }
-
-  def sortEdgesByAngle[T <: GeoVertex](from: GeoVertex)(implicit graph: GraphContainer[T]): List[GeoEdge] = {
-    from.edges.sortBy(edge ⇒ { // FIXME: Ver de mejorar el ordenamiento
-      from.coordinate.angleTo(graph.findVertex(edge.vertexEndId).get.coordinate)
-    })(Ordering[Double])
   }
 }

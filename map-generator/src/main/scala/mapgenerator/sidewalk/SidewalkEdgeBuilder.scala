@@ -4,12 +4,13 @@ import base.LazyLoggerSupport
 import mapdomain.graph.{ GeoEdge, GeoVertex, GraphContainer }
 import mapdomain.math.GVector
 import mapdomain.sidewalk.{ Side, SidewalkEdge, SidewalkVertex }
+import mapdomain.street.StreetEdge
 
 import scala.collection.Map
 import scala.collection.concurrent.TrieMap
 import scala.util.{ Failure, Success, Try }
 
-case class SidewalkEdgeBuilderManager[V <: GeoVertex](implicit graph: GraphContainer[V], idGenerator: SidewalkVertexIDGenerator) extends LazyLoggerSupport {
+case class SidewalkEdgeBuilderManager[E <: GeoEdge, V <: GeoVertex[E]](implicit graph: GraphContainer[E, V], idGenerator: SidewalkVertexIDGenerator) extends LazyLoggerSupport {
 
   type SidewalkIdentity = (Long, GeoEdge, Boolean) // (street vertex id, street edge object, is at north)
 
@@ -17,9 +18,9 @@ case class SidewalkEdgeBuilderManager[V <: GeoVertex](implicit graph: GraphConta
 
   def addSideWalk(key: String,
     from: SidewalkVertexBuilder,
-    streetEdgeBelongTo: GeoEdge,
+    streetEdgeBelongTo: StreetEdge,
     segment: GVector,
-    side: Side): SidewalkEdgeBuilder = {
+    side: Side): SidewalkEdgeBuilder = this.synchronized {
     _sidewalkOnCornerByKey.get(key) match {
       case Some(sidewalkEdgeBuilder @ SidewalkEdgeBuilder(_, _, Some(_), _, _, _)) ⇒
         logger.debug(s"Get a created Sidewalk Edge Builder: ${sidewalkEdgeBuilder.readable}")
@@ -42,12 +43,12 @@ case class SidewalkEdgeBuilderManager[V <: GeoVertex](implicit graph: GraphConta
 }
 
 case class SidewalkEdgeBuilder(key: String, from: SidewalkVertexBuilder, to: Option[SidewalkVertexBuilder],
-    streetEdgeBelongTo: GeoEdge, segment: GVector, side: Side) extends LazyLoggerSupport {
+    streetEdgeBelongTo: StreetEdge, segment: GVector, side: Side) extends LazyLoggerSupport {
 
   def build(implicit idGenerator: SidewalkVertexIDGenerator): (SidewalkEdge, SidewalkVertex, SidewalkVertex) = {
     val vertexStart: SidewalkVertex = from.build
     val vertexEnd: SidewalkVertex = to.get.build
-    (SidewalkEdge(vertexStart.id, vertexEnd.id, key, streetEdgeBelongTo, side), vertexStart, vertexEnd)
+    (SidewalkEdge(vertexStart.id, vertexEnd.id, key, side, streetEdgeBelongTo.id), vertexStart, vertexEnd)
   }
 
   def buildFailureTolerance(implicit idGenerator: SidewalkVertexIDGenerator): Option[(SidewalkEdge, SidewalkVertex, SidewalkVertex)] = {
@@ -56,7 +57,8 @@ case class SidewalkEdgeBuilder(key: String, from: SidewalkVertexBuilder, to: Opt
     } match {
       case Success(x) ⇒ Some(x)
       case Failure(exc) ⇒
-        logger.error(s"Building a Sidewalk with Failure Tolerance. Failed trying to build the following sidewalk edge: $readable")
+        logger.error(s"Building a Sidewalk with Failure Tolerance. Failed trying to build the following sidewalk edge: $readable. Reason: ${exc.getMessage}")
+        //        exc.printStackTrace()
         None
     }
   }
