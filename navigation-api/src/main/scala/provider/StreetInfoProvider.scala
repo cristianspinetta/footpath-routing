@@ -1,6 +1,7 @@
 package provider
 
-import mapdomain.street.{ StreetInfo, StreetRepositorySupport }
+import mapdomain.repository.street.StreetRepositorySupport
+import mapdomain.street.StreetInfo
 
 import scala.collection.concurrent.TrieMap
 

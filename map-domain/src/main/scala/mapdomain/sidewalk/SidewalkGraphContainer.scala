@@ -2,6 +2,7 @@ package mapdomain.sidewalk
 
 import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph._
+import mapdomain.repository.sidewalk.{ RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository }
 import mapdomain.utils.GraphUtils
 
 import scala.collection.concurrent.TrieMap
