@@ -39,11 +39,9 @@ trait RoutingModule extends ApiEnvConfig {
       get {
         path("route") {
           parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double]).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
-            val response: Future[ToResponseMarshallable] = Future.successful {
-              RoutingService.searchRoute(
-                coordinateFrom = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
-                coordinateTo = Coordinate(routingRequest.toLat, routingRequest.toLng)).get
-            }
+            val response = RoutingService.searchRoute(
+              coordinateFrom = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
+              coordinateTo = Coordinate(routingRequest.toLat, routingRequest.toLng))
             complete(response)
           }
         } ~

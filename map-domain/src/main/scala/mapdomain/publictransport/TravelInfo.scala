@@ -6,9 +6,7 @@ case class TravelInfo(
   id: Option[Long] = None,
   description: String,
   firstStopId: Option[Long] = None,
-  firstStop: Option[Stop] = None,
-  lastStopId: Option[Long] = None,
-  lastStop: Option[Stop] = None)
+  lastStopId: Option[Long] = None)
 
 object TravelInfo extends SQLSyntaxSupport[TravelInfo] {
 

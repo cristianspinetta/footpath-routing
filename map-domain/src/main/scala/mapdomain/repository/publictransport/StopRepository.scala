@@ -9,8 +9,6 @@ trait StopRepository extends SpatialSQLSupport {
 
   val s = Stop.syntax("s")
 
-  val (ns, ps, p, ti) = (Stop.syntax("ns"), Stop.syntax("ps"), PathRepository.p, TravelInfoRepository.ti)
-
   def stop(s: SyntaxProvider[Stop])(rs: WrappedResultSet): Stop = stop(s.resultName, s.tableAliasName)(rs)
 
   private def stop(s: ResultName[Stop], tableAlias: String)(implicit rs: WrappedResultSet): Stop = {
@@ -22,14 +20,6 @@ trait StopRepository extends SpatialSQLSupport {
       previousStopId = rs.get(s.previousStopId),
       pathId = rs.get(s.pathId),
       travelInfoId = rs.get(s.travelInfoId))
-  }
-
-  private def stop(s: SyntaxProvider[Stop], ns: SyntaxProvider[Stop], ps: SyntaxProvider[Stop], p: SyntaxProvider[Path], ti: SyntaxProvider[TravelInfo])(rs: WrappedResultSet): Stop = {
-    stop(s)(rs)
-      .copy(nextStop = Some(stop(ns)(rs)))
-      .copy(previousStop = Some(stop(ps)(rs)))
-      .copy(path = Some(PathRepository.path(p)(rs)))
-      .copy(travelInfo = Some(TravelInfoRepository.travelInfo(ti)(rs)))
   }
 
   def create(latitude: Long, longitude: Long, isAccessible: Boolean, pathId: Long)(implicit session: DBSession = Stop.autoSession): Stop = {
@@ -50,17 +40,11 @@ trait StopRepository extends SpatialSQLSupport {
 
   def find(id: Long)(implicit session: DBSession = Stop.autoSession): Option[Stop] = {
     withSQL {
-      select.all(s, ns, ps, p, ti)
+      select.all(s)
         .append(selectLatitudeAndLongitude(s))
-        .append(selectLatitudeAndLongitude(ns))
-        .append(selectLatitudeAndLongitude(ps))
         .from(Stop as s)
-        .leftJoin(Stop as ns).on(s.nextStopId, ns.id)
-        .leftJoin(Stop as ps).on(s.previousStopId, ps.id)
-        .leftJoin(Path as p).on(s.pathId, p.id)
-        .leftJoin(TravelInfo as ti).on(s.travelInfoId, ti.id)
         .where.eq(s.id, id)
-    }.map(stop(s, ns, ps, p, ti)).single().apply()
+    }.map(stop(s)).single().apply()
   }
 
   def save(stop: Stop)(implicit session: DBSession = Stop.autoSession): Stop = {

@@ -31,8 +31,6 @@ class TravelInfoRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAf
     travelInfo.description shouldBe "any description"
     travelInfo.firstStopId shouldBe firstStop.id
     travelInfo.lastStopId shouldBe lastStop.id
-    travelInfo.firstStop.get.pathId shouldBe path.id
-    travelInfo.lastStop.get.pathId shouldBe path.id
 
     TravelInfoRepository.deleteAll
   }

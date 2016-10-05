@@ -7,6 +7,7 @@ import mapdomain.repository.street.{ StreetInfoRepository, StreetRepositorySuppo
 import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp }
 import mapdomain.street._
 import mapgenerator.sidewalk.SidewalkModule
+import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
 import provider.RampProvider
@@ -81,8 +82,17 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
   def createRamps() = Try {
     logger.info(s"Starting to create ramps")
     withTimeLogging({
-      saveRamps(RampProvider.ramps)
+      saveRamps(getRampsFromFile)
     }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
+  }
+
+  private def getRampsFromFile: Vector[Ramp] = {
+
+    lazy val rampPath2014: String = configuration.Ramp.sourceFile2014Path
+    lazy val rampPath2011: String = configuration.Ramp.sourceFile2011Path
+    lazy val rampParser: RampLoader = RampLoaderByCSV(Seq((rampPath2014, RampLoader2014), (rampPath2011, RampLoader2011)))
+
+    rampParser.loadRamps
   }
 
   private def saveRamps(ramps: Vector[Ramp]) = Try {

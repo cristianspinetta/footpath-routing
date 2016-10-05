@@ -8,8 +8,6 @@ trait TravelInfoRepository extends SpatialSQLSupport {
 
   val ti = TravelInfo.syntax("ti")
 
-  val (fs, ls) = (Stop.syntax("fs"), Stop.syntax("ls"))
-
   def travelInfo(ti: SyntaxProvider[TravelInfo])(rs: WrappedResultSet): TravelInfo = travelInfo(ti.resultName)(rs)
 
   private def travelInfo(ti: ResultName[TravelInfo])(implicit rs: WrappedResultSet): TravelInfo = {
@@ -18,12 +16,6 @@ trait TravelInfoRepository extends SpatialSQLSupport {
       description = rs.string(ti.description),
       firstStopId = rs.get(ti.firstStopId),
       lastStopId = rs.get(ti.lastStopId))
-  }
-
-  private def travelInfo(ti: SyntaxProvider[TravelInfo], fs: SyntaxProvider[Stop], ls: SyntaxProvider[Stop])(rs: WrappedResultSet): TravelInfo = {
-    travelInfo(ti)(rs)
-      .copy(firstStop = Some(StopRepository.stop(fs)(rs)))
-      .copy(lastStop = Some(StopRepository.stop(ls)(rs)))
   }
 
   def create(description: String)(implicit session: DBSession = TravelInfo.autoSession): TravelInfo = {
@@ -37,14 +29,10 @@ trait TravelInfoRepository extends SpatialSQLSupport {
 
   def find(id: Long)(implicit session: DBSession = TravelInfo.autoSession): Option[TravelInfo] = withSQL {
     select
-      .all(ti, fs, ls)
-      .append(selectLatitudeAndLongitude(fs))
-      .append(selectLatitudeAndLongitude(ls))
+      .all(ti)
       .from(TravelInfo as ti)
-      .leftJoin(Stop as fs).on(ti.firstStopId, fs.id)
-      .leftJoin(Stop as ls).on(ti.lastStopId, ls.id)
       .where.eq(ti.id, id)
-  }.map(travelInfo(ti, fs, ls)).single().apply()
+  }.map(travelInfo(ti)).single().apply()
 
   /*def find(id: Long)(implicit session: DBSession = TravelInfo.autoSession): Option[TravelInfo] = DB readOnly { implicit session: DBSession ⇒
     sql"""

@@ -33,13 +33,9 @@ class StopRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll
     secondStop = StopRepository.find(secondStop.id.get).get
     secondStop.isAccessible shouldBe true
     secondStop.previousStopId shouldBe firstStop.id
-    secondStop.previousStop.get.isAccessible shouldBe false
     coordinateAssertion(secondStop.coordinate, Coordinate(12, 13))
     secondStop.nextStopId shouldBe thirdStop.id
-    secondStop.nextStop.get.isAccessible shouldBe true
-    secondStop.path.get.coordinates shouldBe coordinates
     secondStop.pathId shouldBe path.id
-    secondStop.travelInfo.get.description shouldBe travelInfo.description
     secondStop.travelInfoId shouldBe travelInfo.id
 
     StopRepository.deleteAll

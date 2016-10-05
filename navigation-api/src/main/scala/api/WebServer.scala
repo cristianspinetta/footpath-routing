@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
+import base.Contexts
 import com.typesafe.config.Config
 import base.conf.ApiEnvConfig
 import scalikejdbc.config._
@@ -12,7 +13,7 @@ import module.RoutingModule
 import scala.util.{ Failure, Success }
 
 object WebServer extends App with RoutingModule with ApiEnvConfig {
-  override implicit val system = ActorSystem()
+  override implicit val system = Contexts.system
   override implicit val executor = system.dispatcher
   override implicit val materializer = ActorMaterializer()
 

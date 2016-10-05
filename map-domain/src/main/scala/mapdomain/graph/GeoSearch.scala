@@ -20,4 +20,8 @@ object GeoSearch {
     getPosition: T ⇒ Seq[Coordinate])(implicit bf: CanBuildFrom[C, T, That[T]]) = {
     otherElems.par.filter(other ⇒ getPosition(other).exists(_.distanceTo(startPosition) <= radius)).to[That]
   }
+
+  def findNearest[T](startPosition: Coordinate, radius: Double, otherElems: Traversable[T], getPosition: T ⇒ Seq[Coordinate]) = {
+    otherElems.min(Ordering.by ((t: T) => getPosition(t).map(_.distanceTo(startPosition)).min))
+  }
 }
