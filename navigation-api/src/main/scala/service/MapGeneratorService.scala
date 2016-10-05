@@ -2,7 +2,9 @@ package service
 
 import base.{ LazyLoggerSupport, MeterSupport }
 import base.conf.ApiEnvConfig
-import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp, RampRepository, SidewalkRepositorySupport }
+import mapdomain.repository.sidewalk.{ RampRepository, SidewalkRepositorySupport }
+import mapdomain.repository.street.{ StreetInfoRepository, StreetRepositorySupport }
+import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp }
 import mapdomain.street._
 import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }

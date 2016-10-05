@@ -2,6 +2,7 @@ package mapdomain.street
 
 import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph._
+import mapdomain.repository.street.{ StreetRepositorySupport, StreetVertexRepository }
 import mapdomain.utils.GraphUtils
 
 import scala.collection.concurrent.TrieMap

@@ -2,11 +2,12 @@ package service
 
 import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
-import mapdomain.graph.{ Edge => _, Vertex => _, _ }
+import mapdomain.graph.{Edge => _, Vertex => _, _}
+import mapdomain.repository.sidewalk.RampRepository
 import mapdomain.sidewalk._
-import mapdomain.street.{ StreetEdge, StreetGraphContainer, StreetVertex }
+import mapdomain.street.StreetEdge
 import model._
-import provider.{ GraphSupport, RampProvider }
+import provider.GraphSupport
 
 import scala.util.Try
 
