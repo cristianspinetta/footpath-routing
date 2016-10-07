@@ -42,7 +42,8 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
       val edge = Edge(
         id = street.id.map(_.toString).getOrElse(""),
         from = vertexFrom.coordinate,
-        to = vertexTo.coordinate)
+        to = vertexTo.coordinate,
+        `type` = EdgeType.create(street))
 
       (edge :: partialEdges, partialVertices += Vertex.createByGeoVertex(vertexFrom) += Vertex.createByGeoVertex(vertexTo))
     }

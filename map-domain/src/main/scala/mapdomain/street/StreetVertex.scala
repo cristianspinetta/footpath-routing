@@ -14,8 +14,6 @@ class StreetVertex[E <: StreetEdge](override val id: Long, override val edges: L
 
 object StreetVertex extends SQLSyntaxSupport[StreetVertex[StreetEdge]] {
 
-  type T = StreetVertex[StreetEdge]
-
   override val tableName = "street_vertex"
 
   override val columns = Seq("id", "coordinate")

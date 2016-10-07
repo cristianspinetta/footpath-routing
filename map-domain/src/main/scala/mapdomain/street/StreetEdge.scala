@@ -3,8 +3,14 @@ package mapdomain.street
 import mapdomain.graph.{ BaseEntity, GeoEdge }
 import scalikejdbc._
 
-class StreetEdge(override val vertexStartId: Long, override val vertexEndId: Long, override val distance: Double, val wayId: Long, val streetInfoId: Long, val id: Option[Long] = None)
-  extends GeoEdge(vertexStartId, vertexEndId, distance, directed = true) with BaseEntity
+trait StreetEdge extends GeoEdge with BaseEntity {
+  val vertexStartId: Long
+  val vertexEndId: Long
+  val distance: Double
+  val wayId: Long
+  val streetInfoId: Long
+  val id: Option[Long] = None
+}
 
 object StreetEdge extends SQLSyntaxSupport[StreetEdge] {
 
@@ -14,16 +20,25 @@ object StreetEdge extends SQLSyntaxSupport[StreetEdge] {
 
   override val useSnakeCaseColumnName = false
 
-  def apply(streetVertexStart: StreetVertex.T, streetVertexEnd: StreetVertex.T, distance: Double, wayId: Long, streetInfoId: Long): StreetEdge =
-    new StreetEdge(streetVertexStart.id, streetVertexEnd.id, distance, wayId, streetInfoId)
+  def create(streetVertexStart: StreetVertex[StreetEdge], streetVertexEnd: StreetVertex[StreetEdge], distance: Double, wayId: Long, streetInfoId: Long): StreetEdge =
+    new StreetEdgeImpl(streetVertexStart.id, streetVertexEnd.id, distance, wayId, streetInfoId)
 
-  def apply(id: Option[Long] = None, streetVertexStartId: Long, streetVertexEndId: Long, distance: Double, wayId: Long, streetInfoId: Long): StreetEdge = new StreetEdge(streetVertexStartId, streetVertexEndId, distance, wayId, streetInfoId, id)
+  def create(id: Option[Long] = None, streetVertexStartId: Long, streetVertexEndId: Long, distance: Double, wayId: Long, streetInfoId: Long): StreetEdge = new StreetEdgeImpl(streetVertexStartId, streetVertexEndId, distance, wayId, streetInfoId, id)
 
+  def apply(vertexStartId: Long, vertexEndId: Long, distance: Double, wayId: Long, streetInfoId: Long, id: Option[Long] = None): StreetEdge = {
+    new StreetEdgeImpl(vertexStartId, vertexEndId, distance, wayId, streetInfoId, id)
+  }
 }
 
+class StreetEdgeImpl(val vertexStartId: Long, val vertexEndId: Long, val distance: Double, val wayId: Long, val streetInfoId: Long, override val id: Option[Long] = None)
+  extends StreetEdge with BaseEntity
+
 case class StreetEdgeUnsaved(override val vertexStartId: Long, override val vertexEndId: Long, override val distance: Double, override val wayId: Long, streetInfo: StreetInfo)
-    extends StreetEdge(vertexStartId, vertexEndId, distance, wayId, streetInfo.id.getOrElse(0)) {
-  def build(streetInfoId: Long): StreetEdge = StreetEdge(None, vertexStartId, vertexEndId, distance, wayId, streetInfoId)
+    extends StreetEdge {
+
+  override val streetInfoId: Long = streetInfo.id.getOrElse(0)
+
+  def build(streetInfoId: Long): StreetEdge = StreetEdge.create(None, vertexStartId, vertexEndId, distance, wayId, streetInfoId)
 }
 
 case class StreetInfo(id: Option[Long] = None, address: Option[String], wayId: Long)

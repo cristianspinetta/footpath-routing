@@ -20,8 +20,7 @@ trait Edge {
 
 case class GraphEdge(vertexStartId: Long, vertexEndId: Long, distance: Double = 10, override val directed: Boolean = true) extends Edge
 
-class GeoEdge(override val vertexStartId: Long, override val vertexEndId: Long, override val distance: Double, override val directed: Boolean = true) extends Edge {
-  override def toString: String = s"GeoEdge(vertexStartId: $vertexStartId, vertexEndId: $vertexEndId, distance: $distance, directed: $directed)"
+trait GeoEdge extends Edge {
 
   // To more idiomatic code
   def retrieveVertexStart[E <: GeoEdge, V <: GeoVertex[E]](implicit graph: GraphContainer[E, V]): Option[V] = graph.findVertex(vertexStartId)
@@ -33,12 +32,16 @@ class GeoEdge(override val vertexStartId: Long, override val vertexEndId: Long, 
     graph.findVertex(vertexToSearch)
   }
 
+  override def toString: String = s"GeoEdge(vertexStartId: $vertexStartId, vertexEndId: $vertexEndId, distance: $distance, directed: $directed)"
+}
+
+class GeoEdgeImpl(val vertexStartId: Long, val vertexEndId: Long, val distance: Double, override val directed: Boolean = true) extends GeoEdge {
   // TODO antes de usarlo en el mapa agregar un id
 }
 
 object GeoEdge {
 
-  def apply(vertexStart: Long, vertexEnd: Long, distance: Double, directed: Boolean = true): GeoEdge = new GeoEdge(vertexStart, vertexEnd, distance, directed)
+  def apply(vertexStart: Long, vertexEnd: Long, distance: Double, directed: Boolean = true): GeoEdge = new GeoEdgeImpl(vertexStart, vertexEnd, distance, directed)
 
-  def apply(vertexStart: Long)(vertexEnd: Long, distance: Double): GeoEdge = new GeoEdge(vertexStart, vertexEnd, distance)
+  def apply(vertexStart: Long)(vertexEnd: Long, distance: Double): GeoEdge = new GeoEdgeImpl(vertexStart, vertexEnd, distance)
 }

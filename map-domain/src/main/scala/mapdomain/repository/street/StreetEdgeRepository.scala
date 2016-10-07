@@ -12,7 +12,7 @@ trait StreetEdgeRepository extends SpatialSQLSupport {
   def streetEdge(e: SyntaxProvider[StreetEdge])(rs: WrappedResultSet): StreetEdge = streetEdge(e.resultName)(rs)
 
   private def streetEdge(e: ResultName[StreetEdge])(implicit rs: WrappedResultSet): StreetEdge = {
-    new StreetEdge(
+    StreetEdge(
       rs.long(e.vertexStartId),
       rs.long(e.vertexEndId),
       rs.double(e.distance),
