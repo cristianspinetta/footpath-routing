@@ -85,7 +85,7 @@ object GraphContainer {
   def createEagerGeoGraph(vertexData: Map[Long, (List[Long], Coordinate)]): InMemoryGeoGraphContainer[GeoEdge, GeoVertex[GeoEdge]] = {
     val vertices: List[GeoVertex[GeoEdge]] = vertexData.toList map {
       case (nodeId, (edgeIds, nodeCoordinate)) ⇒
-        new GeoVertex[GeoEdge](nodeId,
+        GeoVertex[GeoEdge](nodeId,
           edgeIds.map(neighbourId ⇒ GeoEdge(nodeId, neighbourId, nodeCoordinate.distanceTo(vertexData(neighbourId)._2))),
           nodeCoordinate)
     }

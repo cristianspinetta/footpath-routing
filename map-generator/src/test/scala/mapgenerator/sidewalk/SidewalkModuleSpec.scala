@@ -60,7 +60,7 @@ class SidewalkModuleSpec extends FlatSpec with Matchers {
     val id = new AtomicLong(0)
     val vertices: List[StreetVertex[StreetEdge]] = vertexData.toList map {
       case (nodeId, (edgeIds, nodeCoordinate)) ⇒
-        new StreetVertex(nodeId,
+        StreetVertex(nodeId,
           edgeIds.map(neighbourId ⇒ StreetEdge(nodeId, neighbourId, nodeCoordinate.distanceTo(vertexData(neighbourId)._2), 0, 0, Some(id.addAndGet(1)))),
           nodeCoordinate)
     }
@@ -70,7 +70,7 @@ class SidewalkModuleSpec extends FlatSpec with Matchers {
   def createSidewalkGraph(vertexData: Map[Long, (List[Long], Coordinate)]): InMemorySidewalkGraphContainer = {
     val vertices: List[SidewalkVertex] = vertexData.toList map {
       case (nodeId, (edgeIds, nodeCoordinate)) ⇒
-        new SidewalkVertex(nodeId, nodeCoordinate,
+        SidewalkVertex(nodeId, nodeCoordinate,
           edgeIds.map(neighbourId ⇒ SidewalkEdge(nodeId, neighbourId, s"fake-key-$nodeId-$neighbourId", NorthSide, None)),
           Nil, 0)
     }

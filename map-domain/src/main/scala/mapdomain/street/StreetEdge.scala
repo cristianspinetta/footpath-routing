@@ -31,9 +31,9 @@ object StreetEdge extends SQLSyntaxSupport[StreetEdge] {
 }
 
 class StreetEdgeImpl(val vertexStartId: Long, val vertexEndId: Long, val distance: Double, val wayId: Long, val streetInfoId: Long, override val id: Option[Long] = None)
-  extends StreetEdge with BaseEntity
+  extends StreetEdge
 
-case class StreetEdgeUnsaved(override val vertexStartId: Long, override val vertexEndId: Long, override val distance: Double, override val wayId: Long, streetInfo: StreetInfo)
+case class StreetEdgeUnsaved(vertexStartId: Long, vertexEndId: Long, distance: Double, wayId: Long, streetInfo: StreetInfo)
     extends StreetEdge {
 
   override val streetInfoId: Long = streetInfo.id.getOrElse(0)
