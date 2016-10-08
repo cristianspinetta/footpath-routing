@@ -19,13 +19,14 @@ trait ModelFormatter extends DefaultJsonProtocol with CaseObjectSerializationSup
       case _ ⇒ throw DeserializationException("Coordinate expected")
     }
   }
-  implicit val EdgeTypeFormat = caseObjectJsonFormat[EdgeType](StreetEdgeType, SidewalkEdgeType, WayEdgeType, WayAreaEdgeType)
+  implicit val EdgeTypeFormat = caseObjectJsonFormat[EdgeType](StreetEdgeType, SidewalkEdgeType, StreetCrossingEdgeType)
+  implicit val VertexTypeFormat = caseObjectJsonFormat[VertexType](StreetVertexType, SidewalkVertexType)
   implicit val RampFormat = jsonFormat4(Ramp.apply)
   implicit val EdgeFormat = jsonFormat4(Edge.apply)
-  implicit val VertexFormat = jsonFormat2(Vertex.apply)
+  implicit val VertexFormat = jsonFormat3(Vertex.apply)
   implicit val MapContainerFormat = jsonFormat2(MapContainer.apply)
   implicit val StreetFormat = jsonFormat3(Street.apply)
   implicit val SidewalkFormat = jsonFormat2(Sidewalk.apply)
 
-  implicit val EdgeTypeUnmarshaller = Unmarshaller.strict[String, EdgeType](EdgeType.keyMap)
+  implicit val EdgeTypeUnmarshaller = Unmarshaller.strict[String, EdgeType](EdgeTypeFormat.mapping)
 }

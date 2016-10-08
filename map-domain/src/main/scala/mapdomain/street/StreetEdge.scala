@@ -3,7 +3,7 @@ package mapdomain.street
 import mapdomain.graph.{ BaseEntity, GeoEdge }
 import scalikejdbc._
 
-trait StreetEdge extends GeoEdge with BaseEntity {
+sealed trait StreetEdge extends GeoEdge with BaseEntity {
   val vertexStartId: Long
   val vertexEndId: Long
   val distance: Double
@@ -21,16 +21,16 @@ object StreetEdge extends SQLSyntaxSupport[StreetEdge] {
   override val useSnakeCaseColumnName = false
 
   def create(streetVertexStart: StreetVertex[StreetEdge], streetVertexEnd: StreetVertex[StreetEdge], distance: Double, wayId: Long, streetInfoId: Long): StreetEdge =
-    new StreetEdgeImpl(streetVertexStart.id, streetVertexEnd.id, distance, wayId, streetInfoId)
+    new StreetEdgeSaved(streetVertexStart.id, streetVertexEnd.id, distance, wayId, streetInfoId)
 
-  def create(id: Option[Long] = None, streetVertexStartId: Long, streetVertexEndId: Long, distance: Double, wayId: Long, streetInfoId: Long): StreetEdge = new StreetEdgeImpl(streetVertexStartId, streetVertexEndId, distance, wayId, streetInfoId, id)
+  def create(id: Option[Long] = None, streetVertexStartId: Long, streetVertexEndId: Long, distance: Double, wayId: Long, streetInfoId: Long): StreetEdge = new StreetEdgeSaved(streetVertexStartId, streetVertexEndId, distance, wayId, streetInfoId, id)
 
   def apply(vertexStartId: Long, vertexEndId: Long, distance: Double, wayId: Long, streetInfoId: Long, id: Option[Long] = None): StreetEdge = {
-    new StreetEdgeImpl(vertexStartId, vertexEndId, distance, wayId, streetInfoId, id)
+    new StreetEdgeSaved(vertexStartId, vertexEndId, distance, wayId, streetInfoId, id)
   }
 }
 
-class StreetEdgeImpl(val vertexStartId: Long, val vertexEndId: Long, val distance: Double, val wayId: Long, val streetInfoId: Long, override val id: Option[Long] = None)
+class StreetEdgeSaved(val vertexStartId: Long, val vertexEndId: Long, val distance: Double, val wayId: Long, val streetInfoId: Long, override val id: Option[Long] = None)
   extends StreetEdge
 
 case class StreetEdgeUnsaved(vertexStartId: Long, vertexEndId: Long, distance: Double, wayId: Long, streetInfo: StreetInfo)

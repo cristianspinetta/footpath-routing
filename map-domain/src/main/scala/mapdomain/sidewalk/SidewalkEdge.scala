@@ -5,13 +5,13 @@ import mapdomain.graph._
 import mapdomain.math.Line
 import scalikejdbc._
 
-trait PedestrianEdge extends GeoEdge with BaseEntity {
+sealed trait PedestrianEdge extends GeoEdge with BaseEntity {
   val distance: Double = 1
   def from(implicit graphContainer: SidewalkGraphContainer): Option[SidewalkVertex] = graphContainer.findVertex(vertexStartId)
   def to(implicit graphContainer: SidewalkGraphContainer): Option[SidewalkVertex] = graphContainer.findVertex(vertexEndId)
 }
 
-trait Side
+sealed trait Side
 case object NorthSide extends Side
 case object SouthSide extends Side
 
@@ -41,8 +41,8 @@ object SidewalkEdge extends FailureReporterSupport with LazyLoggerSupport with S
 }
 
 case class StreetCrossingEdge(override val vertexStartId: Long, override val vertexEndId: Long,
-  keyValue: String, override val id: Option[Long] = None, rampStartId: Option[Long] = None,
-  rampEndId: Option[Long] = None) extends PedestrianEdge
+                              keyValue: String, override val id: Option[Long] = None, rampStartId: Option[Long] = None,
+                              rampEndId: Option[Long] = None) extends PedestrianEdge
 
 object StreetCrossingEdge extends SQLSyntaxSupport[StreetCrossingEdge] {
 
@@ -51,33 +51,3 @@ object StreetCrossingEdge extends SQLSyntaxSupport[StreetCrossingEdge] {
   override val useSnakeCaseColumnName = false
 
 }
-
-trait SidewalkVertex extends GeoVertex[PedestrianEdge] {
-
-  val coordinate: Coordinate
-  val sidewalkEdges: List[SidewalkEdge]
-  val streetCrossingEdges: List[StreetCrossingEdge]
-  val streetVertexBelongToId: Long
-
-  val edges: List[PedestrianEdge] = sidewalkEdges ++ streetCrossingEdges
-
-  override def getEdgesFor(vertexId: Long): Option[PedestrianEdge] = edges.find(edge ⇒ edge.vertexEndId == vertexId || edge.vertexStartId == vertexId)
-
-  def copy(id: Long = id, coordinate: Coordinate = coordinate, sidewalkEdges: List[SidewalkEdge] = sidewalkEdges,
-           streetCrossingEdges: List[StreetCrossingEdge] = streetCrossingEdges, streetVertexBelongToId: Long = streetVertexBelongToId): SidewalkVertex = {
-    SidewalkVertex(id, coordinate, sidewalkEdges, streetCrossingEdges, streetVertexBelongToId)
-  }
-}
-
-object SidewalkVertex extends SQLSyntaxSupport[SidewalkVertex] {
-  override val tableName = "sidewalk_vertex"
-  override val useSnakeCaseColumnName = false
-
-  def apply(id: Long, coordinate: Coordinate, sidewalkEdges: List[SidewalkEdge],
-            streetCrossingEdges: List[StreetCrossingEdge], streetVertexBelongToId: Long): SidewalkVertex = {
-    new SidewalkVertexImpl(id, coordinate, sidewalkEdges, streetCrossingEdges, streetVertexBelongToId)
-  }
-}
-
-class SidewalkVertexImpl(val id: Long, val coordinate: Coordinate, val sidewalkEdges: List[SidewalkEdge],
-                              val streetCrossingEdges: List[StreetCrossingEdge], val streetVertexBelongToId: Long) extends SidewalkVertex

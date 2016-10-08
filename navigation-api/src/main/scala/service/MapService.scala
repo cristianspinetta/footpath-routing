@@ -9,6 +9,7 @@ import mapdomain.street.StreetEdge
 import model._
 import provider.GraphSupport
 
+import scala.language.existentials
 import scala.util.Try
 
 trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
