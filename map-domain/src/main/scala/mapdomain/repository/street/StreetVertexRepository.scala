@@ -13,8 +13,8 @@ trait StreetVertexRepository extends SpatialSQLSupport {
   val edge2 = StreetEdge.syntax("edge2")
   val neighbour = StreetVertex.syntax("neighbour")
 
-  protected def streetVertex(v: SyntaxProvider[StreetVertex.T], withEdges: Boolean = true)(rs: WrappedResultSet): StreetVertex.T = {
-    val vertex: StreetVertex.T = StreetVertex(rs.long(v.resultName.id), Nil, coordinateFromResultSet(rs, v.tableAliasName))
+  protected def streetVertex(v: SyntaxProvider[StreetVertex[StreetEdge]], withEdges: Boolean = true)(rs: WrappedResultSet): StreetVertex[StreetEdge] = {
+    val vertex: StreetVertex[StreetEdge] = StreetVertex(rs.long(v.resultName.id), Nil, coordinateFromResultSet(rs, v.tableAliasName))
     if (withEdges) {
       val streetEdges: List[StreetEdge] = StreetEdgeRepository.findStreetEdgesByStreetVertex(vertex.id)
       vertex.copy(edges = streetEdges)
@@ -36,7 +36,7 @@ trait StreetVertexRepository extends SpatialSQLSupport {
     streetVertices
   }
 
-  def find(id: Long)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex.T] = withSQL {
+  def find(id: Long)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex[StreetEdge]] = withSQL {
     select
       .all(v)
       .append(selectLatitudeAndLongitude(v))
@@ -45,14 +45,14 @@ trait StreetVertexRepository extends SpatialSQLSupport {
   }.map(streetVertex(v)).single().apply()
 
   // FIXME adaptar a streaming @see https://github.com/tkawachi/scalikejdbc-stream
-  def findAll(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex.T] = withSQL {
+  def findAll(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex[StreetEdge]] = withSQL {
     select
       .all(v)
       .append(selectLatitudeAndLongitude(v))
       .from(StreetVertex as v)
   }.map(streetVertex(v)).list().apply()
 
-  def findAllWithoutOf(ids: List[Long])(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex.T] = withSQL {
+  def findAllWithoutOf(ids: List[Long])(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex[StreetEdge]] = withSQL {
     select
       .all(v)
       .append(selectLatitudeAndLongitude(v))
@@ -60,7 +60,7 @@ trait StreetVertexRepository extends SpatialSQLSupport {
       .where.notIn(v.id, ids)
   }.map(streetVertex(v)).list().apply()
 
-  def findNearest(coordinate: Coordinate)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex.T] = withSQL {
+  def findNearest(coordinate: Coordinate)(implicit session: DBSession = StreetVertex.autoSession): Option[StreetVertex[StreetEdge]] = withSQL {
     select
       .all(v)
       .append(selectLatitudeAndLongitude(v))
@@ -73,7 +73,7 @@ trait StreetVertexRepository extends SpatialSQLSupport {
     deleteFrom(StreetVertex)
   }.update.apply()
 
-  def findNeighbours(vertexId: Long)(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex.T] = DB readOnly { implicit session ⇒
+  def findNeighbours(vertexId: Long)(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex[StreetEdge]] = DB readOnly { implicit session ⇒
     sql"""
        select
         distinct ${neighbour.result.*} ${selectLatitudeAndLongitude(neighbour)}
