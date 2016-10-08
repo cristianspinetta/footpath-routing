@@ -30,7 +30,7 @@ case class SidewalkModule(implicit graph: InMemoryStreetGraphContainer) extends 
     InMemorySidewalkGraphContainer(vertices.toList)
   }, (time: Long) ⇒ logger.info(s"Create Sidewalk Graph in $time ms."))
 
-  protected def createSidewalkByStreetVertex(vertex: StreetVertex.T, distanceToStreet: Double)(implicit builders: Builders[StreetEdge, StreetVertex[StreetEdge]]): Unit = {
+  protected def createSidewalkByStreetVertex(vertex: StreetVertex[StreetEdge], distanceToStreet: Double)(implicit builders: Builders[StreetEdge, StreetVertex[StreetEdge]]): Unit = {
 
     val sortedEdges: List[StreetEdge] = EdgeUtils.sortEdgesByAngle(vertex, vertex.edges)
 
@@ -74,7 +74,7 @@ case class SidewalkModule(implicit graph: InMemoryStreetGraphContainer) extends 
     EdgeUtils.pointToEdge[SidewalkVertexBuilder, StreetCrossingBuilder](cornerVertexBuildersInRing, (p1, p2) ⇒ builders.streetCrossingBuilderManager.create(p1, p2))
   }
 
-  protected def createSideWalksIntersection(distance: Double, vertex: StreetVertex.T, firstEdge: StreetEdge,
+  protected def createSideWalksIntersection(distance: Double, vertex: StreetVertex[StreetEdge], firstEdge: StreetEdge,
     secondEdge: StreetEdge)(implicit builders: Builders[StreetEdge, StreetVertex[StreetEdge]]): List[SidewalkVertexBuilder] = {
 
     // get vector that represent the given edge
@@ -113,7 +113,7 @@ case class SidewalkModule(implicit graph: InMemoryStreetGraphContainer) extends 
     List(intersectedVertex)
   }
 
-  protected def createSideWalksForSingleStreet(distance: Double, vertex: StreetVertex.T, edge: StreetEdge)(implicit builders: Builders[StreetEdge, StreetVertex[StreetEdge]]): List[SidewalkVertexBuilder] = {
+  protected def createSideWalksForSingleStreet(distance: Double, vertex: StreetVertex[StreetEdge], edge: StreetEdge)(implicit builders: Builders[StreetEdge, StreetVertex[StreetEdge]]): List[SidewalkVertexBuilder] = {
 
     def createRightVector(edge: StreetEdge): GVector = {
       val vertexStart = edge.retrieveVertexStart.get

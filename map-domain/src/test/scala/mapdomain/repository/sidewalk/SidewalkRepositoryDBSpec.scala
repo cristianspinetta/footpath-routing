@@ -42,7 +42,7 @@ class SidewalkRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfte
     val wayId: Long = 2
     val streetInfoId = StreetInfoRepository.create(StreetInfo(None, Some("an address"), wayId))
 
-    val streetEdge = StreetEdge(None, 5, 6, 10, wayId, streetInfoId)
+    val streetEdge = StreetEdge(5, 6, 10, wayId, streetInfoId, None)
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
     val edge1Id = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk2.id, sidewalk1.id, "key1", NorthSide, savedStreetEdge.id))
@@ -77,8 +77,7 @@ class SidewalkRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfte
 
     // findNeighbours should filter not accessible edge and ramps
     val edge1 = SidewalkEdgeRepository.find(edge1Id)
-    edge1.isAccessible = false
-    SidewalkEdgeRepository.save(edge1)
+    SidewalkEdgeRepository.save(edge1.copy(isAccessible = false))
     ramp1.isAccessible = false
     RampRepository.save(ramp1)
 
@@ -96,8 +95,7 @@ class SidewalkRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfte
 
     // findNeighbours without neighbours
     val edge2 = SidewalkEdgeRepository.find(edge2Id)
-    edge2.isAccessible = false
-    SidewalkEdgeRepository.save(edge2)
+    SidewalkEdgeRepository.save(edge2.copy(isAccessible = false))
     neighbours = SidewalkVertexRepository.findNeighbours(sidewalk1.id)
     neighbours.size shouldBe 0
   }
@@ -129,7 +127,7 @@ class SidewalkRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfte
     val wayId: Long = 2
     val streetInfoId = StreetInfoRepository.create(StreetInfo(None, Some("an address"), wayId))
 
-    val streetEdge = StreetEdge(None, 5, 6, 10, wayId, streetInfoId)
+    val streetEdge = StreetEdge(5, 6, 10, wayId, streetInfoId, None)
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
 

@@ -42,14 +42,14 @@ case class LazyStreetGraphContainer() extends StreetGraphContainer with StreetRe
     }
   }
 
-  override def neighbours(vertex: StreetVertex.T): List[StreetVertex.T] = streetVertexRepository.findNeighbours(vertex.id) // FIXME usar mapa para cachear
+  override def neighbours(vertex: StreetVertex[StreetEdge]): List[StreetVertex[StreetEdge]] = streetVertexRepository.findNeighbours(vertex.id) // FIXME usar mapa para cachear
 }
 
-case class InMemoryStreetGraphContainer(vertices: List[StreetVertex.T]) extends StreetGraphContainer with InMemoryGeoGraphContainer[StreetEdge, StreetVertex.T] with LazyLoggerSupport with MeterSupport {
+case class InMemoryStreetGraphContainer(vertices: List[StreetVertex[StreetEdge]]) extends StreetGraphContainer with InMemoryGeoGraphContainer[StreetEdge, StreetVertex[StreetEdge]] with LazyLoggerSupport with MeterSupport {
 
   protected val totalVertices: Long = vertices.size
 
-  override def findNearest(coordinate: Coordinate): Option[StreetVertex.T] = GeoGraphContainer.findNearest[StreetEdge, StreetVertex.T](vertices, coordinate)
+  override def findNearest(coordinate: Coordinate): Option[StreetVertex[StreetEdge]] = GeoGraphContainer.findNearest[StreetEdge, StreetVertex[StreetEdge]](vertices, coordinate)
 
   /**
    * Find vertex by ID
@@ -57,9 +57,9 @@ case class InMemoryStreetGraphContainer(vertices: List[StreetVertex.T]) extends 
    * @param id : Long
    * @return
    */
-  override def findVertex(id: Long): Option[StreetVertex.T] = vertexById.get(id)
+  override def findVertex(id: Long): Option[StreetVertex[StreetEdge]] = vertexById.get(id)
 
-  override def neighbours(vertex: StreetVertex.T): List[StreetVertex.T] = GeoGraphContainer.neighbours[StreetEdge, StreetVertex.T](vertex)(this)
+  override def neighbours(vertex: StreetVertex[StreetEdge]): List[StreetVertex[StreetEdge]] = GeoGraphContainer.neighbours[StreetEdge, StreetVertex[StreetEdge]](vertex)(this)
 
   lazy val streets: List[StreetEdge] = for {
     vertex ← vertices
