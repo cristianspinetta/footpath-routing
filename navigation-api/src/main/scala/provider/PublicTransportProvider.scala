@@ -10,5 +10,5 @@ trait PublicTransportProviderSupport {
 
 object PublicTransportProvider extends PublicTransportRepositorySupport {
 
-  def findNearestStops(startPosition: Coordinate, radius: Double): List[Stop] = ???
+  def findNearestStops(startPosition: Coordinate, radius: Double): List[Stop] = stopRepository.findNearestStops(startPosition, radius)
 }

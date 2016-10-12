@@ -27,6 +27,7 @@ object Dependencies extends Version {
   val akkaHttpCore                   = "com.typesafe.akka"         %%  "akka-http-core"                     % AkkaVersion
   val akkaHttpCors                   = "ch.megard"                 %% "akka-http-cors"                      % "0.1.2"
   val jodaTime                       = "joda-time"                 %   "joda-time"                          % "2.9.3"
+  val cats                           = "org.typelevel"             %%  "cats"                               % "0.5.0"
 
   val scalaReflect                   = "org.scala-lang"            %   "scala-reflect"                      % ScalaVersion
   val scalaXml                       = "org.scala-lang.modules"    %%  "scala-xml"                          % "1.0.5"

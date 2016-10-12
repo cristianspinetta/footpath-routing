@@ -47,6 +47,13 @@ trait StopRepository extends SpatialSQLSupport {
     }.map(stop(s)).single().apply()
   }
 
+  def findNearestStops(coordinate: Coordinate, radius: Double)(implicit session: DBSession = Stop.autoSession): List[Stop] = withSQL {
+    select.all(s)
+      .append(selectLatitudeAndLongitude(s))
+      .from(Stop as s)
+      .where.append(clauseNearestByDistance(coordinate, radius, s, "coordinate"))
+  }.map(stop(s)).list().apply()
+
   def save(stop: Stop)(implicit session: DBSession = Stop.autoSession): Stop = {
     withSQL {
       update(Stop).set(

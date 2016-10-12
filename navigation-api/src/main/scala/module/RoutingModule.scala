@@ -1,10 +1,12 @@
 package module
 
+import java.io.Serializable
+
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.{ HttpResponse, StatusCode }
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ ExceptionHandler, MethodRejection, RejectionHandler }
@@ -17,6 +19,7 @@ import provider.GraphSupport
 import service.{ MapGeneratorService, MapService, RoutingService }
 import scalikejdbc.ConnectionPool
 import spray.json._
+import cats.implicits._
 
 import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
 
@@ -39,10 +42,11 @@ trait RoutingModule extends ApiEnvConfig {
       get {
         path("route") {
           parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double]).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
-            val response = RoutingService.searchRoute(
-              coordinateFrom = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
-              coordinateTo = Coordinate(routingRequest.toLat, routingRequest.toLng))
-            complete(response)
+            def routeResult: Future[ToResponseMarshallable] = RoutingService.searchRoute(
+              from = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
+              to = Coordinate(routingRequest.toLat, routingRequest.toLng))
+              .bimap[ToResponseMarshallable, ToResponseMarshallable](searchRoutingError ⇒ BadRequest -> "", routes ⇒ OK -> routes).merge[ToResponseMarshallable]
+            complete(routeResult)
           }
         } ~
           path("health-check") {
