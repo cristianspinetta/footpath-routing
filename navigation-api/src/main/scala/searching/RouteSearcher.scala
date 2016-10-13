@@ -98,7 +98,7 @@ trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
     logger.info("Searching paths between stops...")
     import cats.implicits._
 
-    val travelInfoIds: List[Long] = nearestStops.stopsFrom.map(s => s.travelInfoId.get).distinct.intersect(nearestStops.stopsTo.map(s => s.travelInfoId.get).distinct)
+    val travelInfoIds: List[Long] = nearestStops.stopsFrom.map(s => s.travelInfoId).distinct.intersect(nearestStops.stopsTo.map(s => s.travelInfoId).distinct)
 
     val candidatePaths: List[PathBuilder] = travelInfoIds map candidatePathByTravelInfo(from, to)(nearestStops)
 

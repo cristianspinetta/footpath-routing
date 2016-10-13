@@ -1,5 +1,7 @@
 package mapdomain.repository.publictransport
 
+import mapdomain.graph.Coordinate
+import mapdomain.publictransport.{ Path, StopUnsaved, TravelInfo }
 import mapdomain.repository.BaseRepositoryDBSpec
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
 import scalikejdbc.config.DBs
@@ -18,19 +20,24 @@ class TravelInfoRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAf
   override def afterAll(): Unit = DBs.closeAll()
 
   "Travel Info Repository" should "create travelInfo correctly" in {
-    var travelInfo = TravelInfoRepository.create("any description")
 
-    val path = PathRepository.create("some coordinates")
-    val firstStop = StopRepository.create(10l, 11l, isAccessible = false, path.id.get)
-    val lastStop = StopRepository.create(12l, 13l, isAccessible = true, path.id.get)
+    var travelInfo: TravelInfo = TravelInfoRepository.create("any description")
+    val path: Path = PathRepository.create("some coordinates")
 
-    travelInfo = travelInfo.copy(firstStopId = firstStop.id, lastStopId = lastStop.id)
+    val firstStop = StopRepository.create(
+      StopUnsaved(Coordinate(10l, 11l), sequence = 1, pathId = path.id.get,
+        travelInfoId = travelInfo.id.get, isAccessible = false))
+    val lastStop = StopRepository.create(
+      StopUnsaved(Coordinate(12l, 13l), sequence = 2, pathId = path.id.get,
+        travelInfoId = travelInfo.id.get, isAccessible = true))
+
+    travelInfo = travelInfo.copy(firstStopId = Some(firstStop.id), lastStopId = Some(lastStop.id))
     TravelInfoRepository.save(travelInfo)
 
     travelInfo = TravelInfoRepository.find(travelInfo.id.get).get
     travelInfo.description shouldBe "any description"
-    travelInfo.firstStopId shouldBe firstStop.id
-    travelInfo.lastStopId shouldBe lastStop.id
+    travelInfo.firstStopId shouldBe Some(firstStop.id)
+    travelInfo.lastStopId shouldBe Some(lastStop.id)
 
     TravelInfoRepository.deleteAll
   }

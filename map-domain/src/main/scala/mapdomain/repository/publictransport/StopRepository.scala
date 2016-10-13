@@ -1,7 +1,7 @@
 package mapdomain.repository.publictransport
 
 import mapdomain.graph.Coordinate
-import mapdomain.publictransport.{ Path, Stop, TravelInfo }
+import mapdomain.publictransport.{ Path, Stop, StopUnsaved, TravelInfo }
 import scalikejdbc.{ DBSession, WrappedResultSet, _ }
 import sql.SpatialSQLSupport
 
@@ -12,30 +12,30 @@ trait StopRepository extends SpatialSQLSupport {
   def stop(s: SyntaxProvider[Stop])(rs: WrappedResultSet): Stop = stop(s.resultName, s.tableAliasName)(rs)
 
   private def stop(s: ResultName[Stop], tableAlias: String)(implicit rs: WrappedResultSet): Stop = {
-    new Stop(
-      id = Some(rs.long(s.id)),
+    Stop(
+      id = rs.long(s.id),
       isAccessible = rs.boolean(s.isAccessible),
       coordinate = coordinateFromResultSet(rs, tableAlias),
       nextStopId = rs.get(s.nextStopId),
       previousStopId = rs.get(s.previousStopId),
+      sequence = rs.get(s.sequence),
       pathId = rs.get(s.pathId),
       travelInfoId = rs.get(s.travelInfoId))
   }
 
-  def create(latitude: Long, longitude: Long, isAccessible: Boolean, pathId: Long)(implicit session: DBSession = Stop.autoSession): Stop = {
-    val coordinate = Coordinate(latitude, longitude)
+  def create(stopUnsaved: StopUnsaved)(implicit session: DBSession = Stop.autoSession): Stop = {
     val id = withSQL {
       insert.into(Stop).namedValues(
-        Stop.column.coordinate -> positionToSQL(coordinate),
-        Stop.column.isAccessible -> isAccessible,
-        Stop.column.pathId -> pathId)
+        Stop.column.coordinate -> positionToSQL(stopUnsaved.coordinate),
+        Stop.column.nextStopId -> stopUnsaved.nextStopId,
+        Stop.column.previousStopId -> stopUnsaved.previousStopId,
+        Stop.column.sequence -> stopUnsaved.sequence,
+        Stop.column.pathId -> stopUnsaved.pathId,
+        Stop.column.travelInfoId -> stopUnsaved.travelInfoId,
+        Stop.column.isAccessible -> stopUnsaved.isAccessible)
     }.updateAndReturnGeneratedKey().apply()
 
-    new Stop(
-      id = Some(id),
-      coordinate = coordinate,
-      pathId = Some(pathId),
-      isAccessible = isAccessible)
+    Stop.createByUnsaved(id, stopUnsaved)
   }
 
   def find(id: Long)(implicit session: DBSession = Stop.autoSession): Option[Stop] = {
