@@ -26,7 +26,7 @@ object WebServer extends App with RoutingModule with ApiEnvConfig {
   private val interface: String = configuration.HTTP.interface
   private val port: Int = configuration.HTTP.port
 
-  val bindingFuture = Http().bindAndHandle(routes, interface, port)
+  val bindingFuture = Http().bindAndHandle(wsRoutes, interface, port)
 
   bindingFuture foreach { binder ⇒
 

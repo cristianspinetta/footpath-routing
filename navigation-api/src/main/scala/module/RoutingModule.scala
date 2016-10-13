@@ -1,25 +1,24 @@
 package module
 
-import java.io.Serializable
-
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.{ HttpResponse, StatusCode }
+import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ ExceptionHandler, MethodRejection, RejectionHandler }
 import akka.stream.Materializer
 import ch.megard.akka.http.cors.CorsDirectives
 import base.conf.ApiEnvConfig
+import cats.data.Xor
 import mapdomain.graph.Coordinate
 import model._
 import provider.GraphSupport
 import service.{ MapGeneratorService, MapService, RoutingService }
 import scalikejdbc.ConnectionPool
 import spray.json._
-import cats.implicits._
+import searching.SearchRoutingErrors._
 
 import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
 
@@ -37,15 +36,18 @@ trait RoutingModule extends ApiEnvConfig {
     Await.result(graphFut, configuration.Graph.loadingTimeout)
   }
 
-  val routes = CorsDirectives.cors() {
+  val wsRoutes = CorsDirectives.cors() {
     logRequest("routing-request", akka.event.Logging.InfoLevel) {
       get {
         path("route") {
           parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double]).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
-            def routeResult: Future[ToResponseMarshallable] = RoutingService.searchRoute(
+            val routeResult = RoutingService.searchRoute(
               from = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
-              to = Coordinate(routingRequest.toLat, routingRequest.toLng))
-              .bimap[ToResponseMarshallable, ToResponseMarshallable](searchRoutingError ⇒ BadRequest -> "", routes ⇒ OK -> routes).merge[ToResponseMarshallable]
+              to = Coordinate(routingRequest.toLat, routingRequest.toLng)).value.map[ToResponseMarshallable] {
+              case Xor.Right(routes) ⇒ OK -> routes
+              case Xor.Left(NoStops) ⇒ BadRequest -> "Could not find stops."
+              case Xor.Left(NoPath) ⇒ BadRequest -> "Could not find a path."
+            }
             complete(routeResult)
           }
         } ~
