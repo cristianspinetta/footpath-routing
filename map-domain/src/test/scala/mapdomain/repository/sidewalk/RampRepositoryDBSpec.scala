@@ -27,7 +27,22 @@ class RampRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll
     ramp.address shouldBe "Callao 523"
     ramp.isAccessible shouldBe false
 
-    RampRepository.findAll.size shouldBe 1
+    RampRepository.create(15, 16, "Callao 523", false)
+
+    RampRepository.findAll.size shouldBe 2
+
+    var nearest = RampRepository.findRampsInRectangle(Coordinate(20, 20), Coordinate(10, 10))
+    nearest.size shouldBe 2
+
+    nearest = RampRepository.findRampsInRectangle(Coordinate(20, 13), Coordinate(10, 10))
+    nearest.size shouldBe 1
+    nearest.head.id shouldBe ramp.id
+
+    nearest = RampRepository.findRampsInRectangle(Coordinate(20, 20), Coordinate(10, 13))
+    nearest.head.id should not be ramp.id
+
+    nearest = RampRepository.findRampsInRectangle(Coordinate(60, 60), Coordinate(50, 50))
+    nearest.size shouldBe 0
   }
 
 }

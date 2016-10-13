@@ -47,6 +47,20 @@ trait RoutingModule extends ApiEnvConfig {
             complete(response)
           }
         } ~
+          path("reportableElements") {
+            parameters('northeast.as[String], 'southwest.as[String]).as(ReportableElementsRequest) { reportablElementsRequest ⇒
+              val response: Future[ToResponseMarshallable] = Future.successful {
+                val northeastCoordinates = reportablElementsRequest.northeast.split(",")
+                val southwestCoordinates = reportablElementsRequest.southwest.split(",")
+                val list = MapService.reportableElements(
+                  Coordinate(northeastCoordinates.head.toDouble, northeastCoordinates.last.toDouble),
+                  Coordinate(southwestCoordinates.head.toDouble, southwestCoordinates.last.toDouble)
+                ).get
+                ReportableElementsResponse(list)
+              }
+              complete(response)
+            }
+          } ~
           path("health-check") {
             val dbStatus: Either[String, String] = if (ConnectionPool.isInitialized()) Right("DB connected")
             else Left("DB is not connected")
@@ -82,6 +96,7 @@ trait RoutingModule extends ApiEnvConfig {
                 }
               }
           } ~
+
           pathPrefix("private") {
             pathPrefix("create") {
               path("street") {

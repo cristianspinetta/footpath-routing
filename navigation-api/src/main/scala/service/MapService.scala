@@ -34,6 +34,11 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
     RampRepository.findNearestRamps(coordinate, radius).toVector
   }
 
+  def reportableElements(northEast: Coordinate, southWest: Coordinate): Try[Vector[ReportableElement]] = Try {
+    val ramps = RampRepository.findRampsInRectangle(northEast, southWest)
+    ramps.map(r => ReportableElement(r)).toVector
+  }
+
   protected def getEdgesAndVertices[E <: GeoEdge with BaseEntity, G <: GraphContainer[E, V] forSome { type V <: GeoVertex[E]}](edges: List[E], graph: G) = {
 
     val (edgesC, vertices) = edges.foldLeft((List.empty[Edge], Set.newBuilder[Vertex])) { case ((partialEdges, partialVertices), street) =>

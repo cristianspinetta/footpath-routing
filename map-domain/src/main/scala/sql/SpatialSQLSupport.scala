@@ -44,6 +44,14 @@ trait SpatialSQLSupport {
          | and ${distance(coordinate, s, positionColumnName)} <= $radDistance""".stripMargin
   }
 
+  def clauseGetElementsInRectangle(northEast: Coordinate, southWest: Coordinate, s: SyntaxProvider[_], positionColumnName: String): SQLSyntax = {
+    sqls"""
+     y(${s.column(positionColumnName)}) >= ${southWest.radLatitude}
+     and y(${s.column(positionColumnName)}) <= ${northEast.radLatitude}
+     and x(${s.column(positionColumnName)}) >= ${southWest.radLongitude}
+     and x(${s.column(positionColumnName)}) <= ${northEast.radLongitude}""".stripMargin
+  }
+
 }
 
 object SpatialSQLSupport extends SpatialSQLSupport

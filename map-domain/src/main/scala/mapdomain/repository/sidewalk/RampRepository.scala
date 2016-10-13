@@ -76,6 +76,13 @@ trait RampRepository extends SpatialSQLSupport {
       .where.append(clauseNearestByDistance(coordinate, radius, r, "coordinate"))
   }.map(ramp(r)(_)).list().apply()
 
+  def findRampsInRectangle(northEast: Coordinate, southWest: Coordinate)(implicit session: DBSession = Ramp.autoSession): List[Ramp] = withSQL {
+    select(r.resultAll)
+      .append(selectLatitudeAndLongitude(r))
+      .from(Ramp as r)
+      .where.append(clauseGetElementsInRectangle(northEast, southWest, r, "coordinate"))
+  }.map(ramp(r)(_)).list().apply()
+
 }
 
 object RampRepository extends RampRepository
