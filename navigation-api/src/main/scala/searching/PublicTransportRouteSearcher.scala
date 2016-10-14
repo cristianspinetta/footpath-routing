@@ -1,6 +1,6 @@
 package searching
 
-import base.LazyLoggerSupport
+import base.{LazyLoggerSupport, MeterSupport}
 import cats.data.{Xor, XorT}
 import cats.implicits._
 import mapdomain.graph._
@@ -18,11 +18,11 @@ trait PublicTransportRouteSearcherSupport {
 object PublicTransportRouteSearcher extends PublicTransportRouteSearcher
 
 sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
-    with GraphSupport with PublicTransportProviderSupport with LazyLoggerSupport {
+    with GraphSupport with PublicTransportProviderSupport with LazyLoggerSupport with MeterSupport {
 
-  def search(from: Coordinate, to: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, List[Route]] = {
+  def search(from: Coordinate, to: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, List[Route]] = withTimeLogging({
     searchNearestStops(from, to).flatMap(searchPathsByDirectTransport(from, to))
-  }
+  }, (time: Long) => logger.info(s"Execute Search route for Public Transport took $time ms."))
 
   protected def searchNearestStops(coordinateFrom: Coordinate, coordinateTo: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, NearestStops] = XorT {
     logger.info(s"Searching nearest stops...")

@@ -9,7 +9,7 @@ import provider.GraphSupport
 import searching.SearchRoutingErrors._
 import searching.RouteSearcherSupport
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 trait RoutingService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with RouteSearcherSupport {
   val walkRadius: Double = configuration.Routing.maximumWalkRadius
