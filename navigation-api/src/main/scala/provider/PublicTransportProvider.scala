@@ -10,7 +10,8 @@ import spray.json._
 import scala.annotation.tailrec
 
 trait PublicTransportProviderSupport {
-  def publicTransportProvider = FakePublicTransportProvider
+  // def publicTransportProvider = FakePublicTransportProvider
+  def publicTransportProvider = PublicTransportProvider
 }
 
 trait PublicTransportProvider extends PublicTransportRepositorySupport with MeterSupport with LazyLoggerSupport {
@@ -41,7 +42,8 @@ object PublicTransportProvider extends PublicTransportProvider
 trait FakePublicTransportProvider extends PublicTransportProvider {
   import module.Protocol._
 
-  val travelInfo = TravelInfo(id = Some(1), description = "Line 150", firstStopId = Some(1), lastStopId = Some(10))
+  val travelInfo = TravelInfo(id = 1, description = "Line 150", firstStopId = 1, lastStopId = 10,
+    branch = "A", name = "Linea 123", sentido = "Forward", `type` = "BUS")
 
   val paths = List(
     Path(Some(1), coordinates = List(Coordinate(-34.618462, -58.397534), Coordinate(-34.618573, -58.399862)).toJson.compactPrint),
@@ -71,7 +73,7 @@ trait FakePublicTransportProvider extends PublicTransportProvider {
     GeoSearch.findNearestByRadius(startPosition, radius, stops, (stop: Stop) ⇒ Seq(stop.coordinate))
   }
 
-  override def findTravelInfo(id: Long): TravelInfo = if (travelInfo.id.get == id) travelInfo else throw new RuntimeException(s"Unknown Travel Info. ID = $id")
+  override def findTravelInfo(id: Long): TravelInfo = if (travelInfo.id == id) travelInfo else throw new RuntimeException(s"Unknown Travel Info. ID = $id")
 
   override def pathRepository: PathRepository = new PathRepository {
     override def find(id: Long)(implicit session: DBSession = Path.autoSession): Option[Path] = paths.find(_.id.get == id)
