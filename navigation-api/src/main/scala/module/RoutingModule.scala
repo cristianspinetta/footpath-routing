@@ -1,27 +1,28 @@
 package module
 
 import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
+import akka.event.LoggingAdapter
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.{HttpEntity, HttpRequest, HttpResponse, StatusCode}
 import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model.{ HttpEntity, HttpResponse, StatusCode }
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.directives.{LogEntry, LoggingMagnet}
-import akka.http.scaladsl.server.{ExceptionHandler, MethodRejection, RejectionHandler, RouteResult}
+import akka.http.scaladsl.server.directives.LoggingMagnet
+import akka.http.scaladsl.server.{ ExceptionHandler, MethodRejection, RejectionHandler, RouteResult }
 import akka.stream.Materializer
-import ch.megard.akka.http.cors.CorsDirectives
+import base.ApiSnapshots
 import base.conf.ApiEnvConfig
 import cats.data.Xor
+import ch.megard.akka.http.cors.CorsDirectives
 import mapdomain.graph.Coordinate
 import model._
 import provider.GraphSupport
-import service.{MapGeneratorService, MapService, RoutingService}
 import scalikejdbc.ConnectionPool
-import spray.json._
 import searching.SearchRoutingErrors._
+import service.{ MapGeneratorService, MapService, RoutingService }
+import spray.json._
 
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
 
 trait RoutingModule extends ApiEnvConfig {
   implicit val system: ActorSystem
@@ -33,12 +34,17 @@ trait RoutingModule extends ApiEnvConfig {
   val logger: LoggingAdapter
 
   def init() = Future {
-    val graphFut = Future(GraphSupport.getGraphSet) // Load graph
+    logger.info("Application starting...")
+    val graphFut = Future {
+      ApiSnapshots.initialize()
+      GraphSupport.getGraphSet
+    } // Load graph
     Await.result(graphFut, configuration.Graph.loadingTimeout)
+    logger.info("Application started successfully...")
   }
 
   def requestMethodAndResponseStatusAsInfo(result: RouteResult): Unit = {
-    def message(status: StatusCode, body: Option[String] = None): String = s"Result: $status${body.map(b => s" - $b").getOrElse("")}"
+    def message(status: StatusCode, body: Option[String] = None): String = s"Result: $status${body.map(b ⇒ s" - $b").getOrElse("")}"
     def truncatedString(string: String): String = {
       val maxSize = 100
       if (string.length > maxSize)
@@ -47,18 +53,18 @@ trait RoutingModule extends ApiEnvConfig {
         super.toString
     }
     result match {
-      case RouteResult.Complete(res) =>
+      case RouteResult.Complete(res) ⇒
         res.entity match {
-          case HttpEntity.Strict(contentType, data)  if res.status == OK => logger.info(message(res.status, Some(truncatedString(data.utf8String))))
-          case HttpEntity.Strict(contentType, data) => logger.info(message(res.status, Some(data.utf8String)))
-          case _ => logger.info(message(res.status))
+          case HttpEntity.Strict(contentType, data) if res.status == OK ⇒ logger.info(message(res.status, Some(truncatedString(data.utf8String))))
+          case HttpEntity.Strict(contentType, data) ⇒ logger.info(message(res.status, Some(data.utf8String)))
+          case _ ⇒ logger.info(message(res.status))
         }
-      case _                         => // no log entries for rejections
+      case _ ⇒ // no log entries for rejections
     }
   }
 
   val wsRoutes = CorsDirectives.cors() {
-    logResult(LoggingMagnet(_ => requestMethodAndResponseStatusAsInfo)) {
+    logResult(LoggingMagnet(_ ⇒ requestMethodAndResponseStatusAsInfo)) {
       logRequest("routing-request", akka.event.Logging.InfoLevel) {
         get {
           path("route") {
@@ -66,10 +72,10 @@ trait RoutingModule extends ApiEnvConfig {
               val routeResult = RoutingService.searchRoute(
                 from = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
                 to = Coordinate(routingRequest.toLat, routingRequest.toLng)).value.map[ToResponseMarshallable] {
-                case Xor.Right(routes) ⇒ OK -> routes
-                case Xor.Left(NoStops) ⇒ BadRequest -> "Could not find stops."
-                case Xor.Left(NoPath) ⇒ BadRequest -> "Could not find a path."
-              }
+                  case Xor.Right(routes) ⇒ OK -> routes
+                  case Xor.Left(NoStops) ⇒ BadRequest -> "Could not find stops."
+                  case Xor.Left(NoPath)  ⇒ BadRequest -> "Could not find a path."
+                }
               complete(routeResult)
             }
           } ~
@@ -145,9 +151,9 @@ trait RoutingModule extends ApiEnvConfig {
 
   implicit def rejectionHandler = RejectionHandler.newBuilder()
     .handleAll[MethodRejection] { methodRejections ⇒
-    val names = methodRejections.map(_.supported.name)
-    complete((MethodNotAllowed, s"Can't do that! Supported: ${names mkString " or "}!"))
-  }
+      val names = methodRejections.map(_.supported.name)
+      complete((MethodNotAllowed, s"Can't do that! Supported: ${names mkString " or "}!"))
+    }
     .handleNotFound { complete((NotFound, "Not here!")) }
     .result()
 

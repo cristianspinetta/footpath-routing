@@ -81,13 +81,13 @@ private object StreetGraphProviderDB extends StreetGraphProvider with LazyLogger
   override val streetGraph: StreetGraphContainer = LazyStreetGraphContainer()
 }
 private object StreetGraphProviderInMemory extends StreetGraphProvider with LazyLoggerSupport {
-  override val streetGraph: StreetGraphContainer = InMemoryStreetGraphContainer.createFromDB
+  override val streetGraph: StreetGraphContainer = InMemoryStreetGraphContainer.createFromSnapshot
 }
 
 private object SidewalkGraphProviderDB extends SidewalkGraphProvider with LazyLoggerSupport {
   override val sidewalkGraph: SidewalkGraphContainer = LazySidewalkGraphContainer()
 }
 private object SidewalkGraphProviderInMemory extends SidewalkGraphProvider with LazyLoggerSupport {
-  override val sidewalkGraph: SidewalkGraphContainer = InMemorySidewalkGraphContainer.createFromDB
+  override val sidewalkGraph: SidewalkGraphContainer = InMemorySidewalkGraphContainer.createFromSnapshot
 }
 

@@ -21,7 +21,7 @@ trait InMemoryGraphContainer[E <: Edge, V <: Vertex[E]] extends GraphContainer[E
 
   val vertices: List[V]
 
-  val vertexById: Map[Long, V] = vertices.map(v => v.id -> v) toMap
+  val vertexById: Map[Long, V]
   /**
    * Find vertex by ID
    *
@@ -34,7 +34,9 @@ trait InMemoryGraphContainer[E <: Edge, V <: Vertex[E]] extends GraphContainer[E
 
 }
 
-class InMemoryGraphContainerImpl[E <: Edge, V <: Vertex[E]](val vertices: List[V]) extends InMemoryGraphContainer[E, V]
+class InMemoryGraphContainerImpl[E <: Edge, V <: Vertex[E]](val vertices: List[V]) extends InMemoryGraphContainer[E, V] {
+  val vertexById: Map[Long, V] = vertices.map(v => v.id -> v) toMap
+}
 
 object InMemoryGraphContainer {
   def apply[E <: Edge, V <: Vertex[E]](vertices: List[V]): InMemoryGraphContainer[E, V] = new InMemoryGraphContainerImpl(vertices)
@@ -74,7 +76,9 @@ trait InMemoryGeoGraphContainer[E <: GeoEdge, V <: GeoVertex[E]] extends InMemor
   override def findNearest(coordinate: Coordinate): Option[V] = GeoGraphContainer.findNearest[E, V](vertices, coordinate)
 }
 
-class InMemoryGeoGraphContainerImpl[E <: GeoEdge, V <: GeoVertex[E]](val vertices: List[V]) extends InMemoryGeoGraphContainer[E, V]
+class InMemoryGeoGraphContainerImpl[E <: GeoEdge, V <: GeoVertex[E]](val vertices: List[V]) extends InMemoryGeoGraphContainer[E, V] {
+  val vertexById: Map[Long, V] = vertices.map(v => v.id -> v) toMap
+}
 
 object InMemoryGeoGraphContainer {
   def apply[E <: GeoEdge, V <: GeoVertex[E]](vertices: List[V]): InMemoryGeoGraphContainer[E, V] = new InMemoryGeoGraphContainerImpl(vertices)

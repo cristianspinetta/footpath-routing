@@ -1,12 +1,13 @@
 package mapdomain.repository.sidewalk
 
+import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk._
 import scalikejdbc._
 import scalikejdbc.interpolation.SQLSyntax._
 import sql.SpatialSQLSupport
 
-trait SidewalkVertexRepository extends SpatialSQLSupport {
+trait SidewalkVertexRepository extends SpatialSQLSupport with MeterSupport with LazyLoggerSupport {
 
   val s = SidewalkVertex.syntax("s")
   val sidewalkEdge1 = SidewalkEdge.syntax("sidewalkEdge1")
@@ -52,12 +53,14 @@ trait SidewalkVertexRepository extends SpatialSQLSupport {
   }.map(sidewalkVertex(s)).single().apply()
 
   // FIXME adaptar a streaming @see https://github.com/tkawachi/scalikejdbc-stream
-  def findAll(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = withSQL {
-    select
-      .all(s)
-      .append(selectLatitudeAndLongitude(s))
-      .from(SidewalkVertex as s)
-  }.map(sidewalkVertex(s)).list().apply()
+  def findAll(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = withTimeLogging(
+    withSQL {
+      select
+        .all(s)
+        .append(selectLatitudeAndLongitude(s))
+        .from(SidewalkVertex as s)
+    }.map(sidewalkVertex(s)).list().apply(),
+    (time: Long) ⇒ logger.info(s"Getting of all Sidewalk Vertex finished in $time ms."))
 
   def findAllWithoutOf(ids: List[Long])(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = withSQL {
     select

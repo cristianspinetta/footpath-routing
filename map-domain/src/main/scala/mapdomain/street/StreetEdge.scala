@@ -21,16 +21,16 @@ object StreetEdge extends SQLSyntaxSupport[StreetEdge] {
   override val useSnakeCaseColumnName = false
 
   def create(streetVertexStart: StreetVertex[StreetEdge], streetVertexEnd: StreetVertex[StreetEdge], distance: Double, wayId: Long, streetInfoId: Long): StreetEdge =
-    new StreetEdgeSaved(streetVertexStart.id, streetVertexEnd.id, distance, wayId, streetInfoId)
+    StreetEdgeSaved(streetVertexStart.id, streetVertexEnd.id, distance, wayId, streetInfoId)
 
   def create(id: Option[Long] = None, streetVertexStartId: Long, streetVertexEndId: Long, distance: Double, wayId: Long, streetInfoId: Long): StreetEdge = new StreetEdgeSaved(streetVertexStartId, streetVertexEndId, distance, wayId, streetInfoId, id)
 
   def apply(vertexStartId: Long, vertexEndId: Long, distance: Double, wayId: Long, streetInfoId: Long, id: Option[Long] = None): StreetEdge = {
-    new StreetEdgeSaved(vertexStartId, vertexEndId, distance, wayId, streetInfoId, id)
+    StreetEdgeSaved(vertexStartId, vertexEndId, distance, wayId, streetInfoId, id)
   }
 }
 
-class StreetEdgeSaved(val vertexStartId: Long, val vertexEndId: Long, val distance: Double, val wayId: Long, val streetInfoId: Long, override val id: Option[Long] = None)
+case class StreetEdgeSaved(vertexStartId: Long, vertexEndId: Long, distance: Double, wayId: Long, streetInfoId: Long, override val id: Option[Long] = None)
   extends StreetEdge
 
 case class StreetEdgeUnsaved(vertexStartId: Long, vertexEndId: Long, distance: Double, wayId: Long, streetInfo: StreetInfo)

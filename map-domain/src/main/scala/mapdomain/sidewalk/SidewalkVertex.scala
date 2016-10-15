@@ -27,9 +27,9 @@ object SidewalkVertex extends SQLSyntaxSupport[SidewalkVertex] {
 
   def apply(id: Long, coordinate: Coordinate, sidewalkEdges: List[SidewalkEdge],
     streetCrossingEdges: List[StreetCrossingEdge], streetVertexBelongToId: Long): SidewalkVertex = {
-    new SidewalkVertexImpl(id, coordinate, sidewalkEdges, streetCrossingEdges, streetVertexBelongToId)
+    SidewalkVertexImpl(id, coordinate, sidewalkEdges, streetCrossingEdges, streetVertexBelongToId)
   }
 }
 
-class SidewalkVertexImpl(val id: Long, val coordinate: Coordinate, val sidewalkEdges: List[SidewalkEdge],
-  val streetCrossingEdges: List[StreetCrossingEdge], val streetVertexBelongToId: Long) extends SidewalkVertex
+case class SidewalkVertexImpl(id: Long, coordinate: Coordinate, sidewalkEdges: List[SidewalkEdge],
+  streetCrossingEdges: List[StreetCrossingEdge], streetVertexBelongToId: Long) extends SidewalkVertex

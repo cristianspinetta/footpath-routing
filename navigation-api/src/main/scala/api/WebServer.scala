@@ -30,10 +30,7 @@ object WebServer extends App with RoutingModule with ApiEnvConfig {
 
   bindingFuture foreach { binder ⇒
 
-    init().onComplete {
-      case Success(_)   ⇒ logger.info(s"WebServer initialized successfully.")
-      case Failure(exc) ⇒ logger.error(exc, s"WebServer failed to initialize.")
-    }
+    init().onFailure { case exc: Throwable ⇒ logger.error(exc, s"WebServer failed to initialize.") }
 
     logger.info(s"Server online at http://$interface:$port/...")
 

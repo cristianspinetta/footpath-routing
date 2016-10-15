@@ -1,15 +1,15 @@
 package searching
 
-import base.{LazyLoggerSupport, MeterSupport}
-import cats.data.{Xor, XorT}
+import base.{ LazyLoggerSupport, MeterSupport }
+import cats.data.{ Xor, XorT }
 import cats.implicits._
 import mapdomain.graph._
 import mapdomain.publictransport.Stop
 import model._
-import provider.{GraphSupport, PublicTransportProviderSupport}
+import provider.{ GraphSupport, PublicTransportProviderSupport }
 import SearchRoutingErrors._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait PublicTransportRouteSearcherSupport {
   protected val publicTransportRouteSearcher = PublicTransportRouteSearcher
@@ -20,9 +20,11 @@ object PublicTransportRouteSearcher extends PublicTransportRouteSearcher
 sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
     with GraphSupport with PublicTransportProviderSupport with LazyLoggerSupport with MeterSupport {
 
-  def search(from: Coordinate, to: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, List[Route]] = withTimeLogging({
+  import base.XorTSugars._
+
+  def search(from: Coordinate, to: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, List[Route]] = withTimeLoggingAsync({
     searchNearestStops(from, to).flatMap(searchPathsByDirectTransport(from, to))
-  }, (time: Long) => logger.info(s"Execute Search route for Public Transport took $time ms."))
+  }, (time: Long) ⇒ logger.info(s"Execute Search route for Public Transport took $time ms."))
 
   protected def searchNearestStops(coordinateFrom: Coordinate, coordinateTo: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, NearestStops] = XorT {
     logger.info(s"Searching nearest stops...")
@@ -44,7 +46,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
     val travelInfoIds: List[Long] = nearestStops.stopsFrom.map(s ⇒ s.travelInfoId).distinct.intersect(nearestStops.stopsTo.map(s ⇒ s.travelInfoId).distinct)
 
-    val candidatePaths: List[PathBuilder] = travelInfoIds flatMap (travelInfoId => candidatePathByTravelInfo(from, to)(nearestStops)(travelInfoId) toList)
+    val candidatePaths: List[PathBuilder] = travelInfoIds flatMap (travelInfoId ⇒ candidatePathByTravelInfo(from, to)(nearestStops)(travelInfoId) toList)
 
     val traverseU: XorT[Future, SearchRoutingError, List[Route]] = candidatePaths.traverseU(pathBuilder ⇒ {
       //      pathBuilder.build match {
@@ -63,10 +65,10 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
   protected def candidatePathByTravelInfo(from: Coordinate, to: Coordinate)(nearestStops: NearestStops)(travelInfoId: Long): Option[PathBuilder] = {
     if (PathBuilder.canReachDestination(nearestStops.stopsFrom, nearestStops.stopsTo))
-    Some(PathBuilder(from, to)(
-      travelInfoId = travelInfoId,
-      stopsFrom = nearestStops.stopsFrom.filter(_.travelInfoId == travelInfoId),
-      stopsTo = nearestStops.stopsTo.filter(_.travelInfoId == travelInfoId)))
+      Some(PathBuilder(from, to)(
+        travelInfoId = travelInfoId,
+        stopsFrom = nearestStops.stopsFrom.filter(_.travelInfoId == travelInfoId),
+        stopsTo = nearestStops.stopsTo.filter(_.travelInfoId == travelInfoId)))
     else
       None
   }
@@ -90,7 +92,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
       for {
         walkFrom ← walkFromFut
-        transportPublicPath <- transportPublicPathFut
+        transportPublicPath ← transportPublicPathFut
         walkTo ← walkToFut
       } yield {
         Route(List(walkFrom, transportPublicPath, walkTo))
@@ -100,12 +102,13 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
   protected def publicTransportPath(stopFrom: Stop, stopTo: Stop)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
     Future[Xor[SearchRoutingError, Path]] {
-//      val travelInfo = publicTransportProvider.findTravelInfo(stopFrom.travelInfoId)
+      //      val travelInfo = publicTransportProvider.findTravelInfo(stopFrom.travelInfoId)
       val coordinates = publicTransportProvider.getPathBetweenStops(stopFrom, stopTo)
       Xor.Right(Path(coordinates, PathDescription(BusPath, "stop from address", "stop to address")))
-    } recover { case exc: Throwable =>
-      logger.error(s"An error occur trying to build the path between stops. $stopFrom, $stopTo", exc)
-      Xor.Left(NoPathBetweenStops)
+    } recover {
+      case exc: Throwable ⇒
+        logger.error(s"An error occur trying to build the path between stops. $stopFrom, $stopTo", exc)
+        Xor.Left(NoPathBetweenStops)
     }
   }
 

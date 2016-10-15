@@ -1,10 +1,12 @@
 package mapdomain.sidewalk
 
-import base.{ LazyLoggerSupport, MeterSupport }
+import base.{LazyLoggerSupport, MeterSupport}
 import mapdomain.graph._
-import mapdomain.repository.sidewalk.{ RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository }
+import mapdomain.repository.sidewalk.{RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository}
+import mapdomain.snapshot.sidewalk.SidewalkVertexSnapshot
 import mapdomain.utils.GraphUtils
 
+import scala.collection.Map
 import scala.collection.concurrent.TrieMap
 
 trait SidewalkGraphContainer extends GeoGraphContainer[PedestrianEdge, SidewalkVertex] {
@@ -46,7 +48,9 @@ case class LazySidewalkGraphContainer() extends SidewalkGraphContainer with Side
   override def findNearestStreetCrossing(coordinate: Coordinate, radius: Double): List[StreetCrossingEdge] = streetCrossingEdgeRepository.findNearestSidewalks(coordinate, radius)
 }
 
-case class InMemorySidewalkGraphContainer(vertices: List[SidewalkVertex]) extends SidewalkGraphContainer with InMemoryGraphContainer[PedestrianEdge, SidewalkVertex] with LazyLoggerSupport with MeterSupport {
+case class InMemorySidewalkGraphContainer(vertexById: Map[Long, SidewalkVertex]) extends SidewalkGraphContainer with InMemoryGraphContainer[PedestrianEdge, SidewalkVertex] with LazyLoggerSupport with MeterSupport {
+
+  val  vertices: List[SidewalkVertex] = vertexById.values.toList
 
   var ramps: List[Ramp] = List()
 
@@ -120,10 +124,19 @@ case class InMemorySidewalkGraphContainer(vertices: List[SidewalkVertex]) extend
 
 object InMemorySidewalkGraphContainer extends LazyLoggerSupport with MeterSupport {
 
+  def apply(vertices: List[SidewalkVertex]): InMemorySidewalkGraphContainer = new InMemorySidewalkGraphContainer(vertices.map(v => v.id -> v) toMap)
+
   def createFromDB: InMemorySidewalkGraphContainer = withTimeLogging({
     logger.info("Getting Sidewalk Graph from DB")
     val graph = InMemorySidewalkGraphContainer(SidewalkVertexRepository.findAll)
     graph.ramps = RampRepository.findAll
     graph
   }, (time: Long) => logger.info(s"Loading Sidewalk Graph from DB finished in $time ms."))
+
+  def createFromSnapshot: InMemorySidewalkGraphContainer = withTimeLogging({
+    logger.info("Getting Sidewalk Graph from Snapshot")
+    val graph = InMemorySidewalkGraphContainer(SidewalkVertexSnapshot.get().toMap)
+    graph.ramps = RampRepository.findAll
+    graph
+  }, (time: Long) => logger.info(s"Loading Sidewalk Graph from Snapshot finished in $time ms."))
 }

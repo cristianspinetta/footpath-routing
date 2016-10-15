@@ -3,8 +3,10 @@ package mapdomain.street
 import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph._
 import mapdomain.repository.street.{ StreetRepositorySupport, StreetVertexRepository }
+import mapdomain.snapshot.street.StreetVertexSnapshot
 import mapdomain.utils.GraphUtils
 
+import scala.collection.Map
 import scala.collection.concurrent.TrieMap
 
 trait StreetGraphContainer extends GeoGraphContainer[StreetEdge, StreetVertex[StreetEdge]] {
@@ -45,7 +47,9 @@ case class LazyStreetGraphContainer() extends StreetGraphContainer with StreetRe
   override def neighbours(vertex: StreetVertex[StreetEdge]): List[StreetVertex[StreetEdge]] = streetVertexRepository.findNeighbours(vertex.id) // FIXME usar mapa para cachear
 }
 
-case class InMemoryStreetGraphContainer(vertices: List[StreetVertex[StreetEdge]]) extends StreetGraphContainer with InMemoryGeoGraphContainer[StreetEdge, StreetVertex[StreetEdge]] with LazyLoggerSupport with MeterSupport {
+case class InMemoryStreetGraphContainer(override val vertexById: Map[Long, StreetVertex[StreetEdge]]) extends StreetGraphContainer with InMemoryGeoGraphContainer[StreetEdge, StreetVertex[StreetEdge]] with LazyLoggerSupport with MeterSupport {
+
+  val vertices: List[StreetVertex[StreetEdge]] = vertexById.values.toList
 
   protected val totalVertices: Long = vertices.size
 
@@ -75,14 +79,22 @@ case class InMemoryStreetGraphContainer(vertices: List[StreetVertex[StreetEdge]]
 }
 
 object InMemoryStreetGraphContainer extends LazyLoggerSupport with MeterSupport {
+  def apply(vertices: List[StreetVertex[StreetEdge]]): InMemoryStreetGraphContainer = InMemoryStreetGraphContainer(vertices.map(v ⇒ (v.id, v)) toMap)
 
   def createFromDB: InMemoryStreetGraphContainer = withTimeLogging({
     logger.info("Getting Street Graph from DB")
     InMemoryStreetGraphContainer(StreetVertexRepository.findAll)
-  }, (time: Long) ⇒ logger.info(s"Loading Street Graph finished from DB in $time ms."))
+  }, (time: Long) ⇒ logger.info(s"Loading Street Graph from DB finished in $time ms."))
+
+  def createFromSnapshot: InMemoryStreetGraphContainer = withTimeLogging({
+    logger.info("Getting Street Graph from Snapshot")
+    InMemoryStreetGraphContainer(StreetVertexSnapshot.get().toMap)
+  }, (time: Long) ⇒ logger.info(s"Loading Street Graph from Snapshot finished in $time ms."))
 }
 
 case class UnsavedStreetGraphContainer(vertices: List[UnsavedStreetVertex]) extends InMemoryGeoGraphContainer[StreetEdgeUnsaved, UnsavedStreetVertex] with LazyLoggerSupport with MeterSupport {
+
+  val vertexById: Map[Long, UnsavedStreetVertex] = vertices.map(v ⇒ v.id -> v) toMap
 
   /**
    * Create a new InMemoryStreetGraphContainer with maximal connected subgraph that this graph contains

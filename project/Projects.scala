@@ -51,7 +51,7 @@ object Projects extends Build {
     .settings(mainClass in assembly := Some("api.WebServer"))
 
   lazy val mapDomain = Project("map-domain", file("map-domain"))
-    .dependsOn(commonLibrary)
+    .dependsOn(commonLibrary, snapshots)
     .configs(BenchmarkConfig, DBTestsConfig)
     .settings(testsSettings: _*)
     .settings(benchmarkSettings: _*)
@@ -64,6 +64,16 @@ object Projects extends Build {
     .settings(notAggregateInAssembly: _*)
 
   lazy val commonLibrary = Project("common-library", file("common-library"))
+    .settings(basicSettings: _*)
+    .settings(formatSettings: _*)
+    .settings(libraryDependencies ++=
+      compile(typesafeConfig, logbackCore, logbackClassic) ++
+        test(scalatest, mockito))
+    .settings(noPublishing: _*)
+    .settings(notAggregateInAssembly: _*)
+
+  lazy val snapshots = Project("snapshots", file("snapshots"))
+    .dependsOn(commonLibrary)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
