@@ -52,10 +52,31 @@ java \
     -jar /path/to/footpath-routing-api.jar
 ```
 
-**Environment** available: *dev*, *prod*.
+**Environment available:** *dev* and *prod*.
 
 ### Running tests
 
 * **Unit tests:** `sbt test`
 * **Benchmarks:** `sbt bench:test`
 * **DB with local MariaDB:** `sbt bdt:test`
+
+### Snapshots settings
+
+This is the configuration available for the snapshots:
+
+```
+snapshots {
+  attempts.threshold = 5
+  time.between.attempts = 30 seconds
+  time.between.reload.for-outdated-file = 60 seconds
+  cron.thread.pool.size = 10
+  files-path = "/tmp/snapshots"
+  max.difference.percentage = 80
+
+  street-vertex.cron-expression = "0 0 0/1 1/1 * ? *"
+  sidewalk-vertex.cron-expression = "0 0 0/1 1/1 * ? *"
+}
+```
+When the app is started, it searches in the folder specified by `snapshots.files-path` key the snapshot files. 
+If exists and it is in valid time, it uses them, otherwise it creates them through fetching the data from the suitable source.
+As you can notice, it's possible specify the time and the place where the snapshots live.
