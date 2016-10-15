@@ -11,7 +11,7 @@ import searching.RouteSearcherSupport
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-trait RoutingService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with RouteSearcherSupport {
+trait RoutingService extends LazyLoggerSupport with ApiEnvConfig with RouteSearcherSupport {
   val walkRadius: Double = configuration.Routing.maximumWalkRadius
   implicit val routingExecutionContext: ExecutionContext = Contexts.routingExecutionContext
 

@@ -9,12 +9,11 @@ import mapdomain.utils.GraphUtils
 import model.{Path, PathDescription, WalkPath}
 import pathgenerator.core.AStar
 import pathgenerator.graph.GeoHeuristic
-import provider.GraphSupport
+import provider.{ GraphSupport, StreetEdgeSupport, StreetInfoSupport }
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Try}
-
 import SearchRoutingErrors._
 
 trait WalkRouteSearcherSupport {
@@ -26,7 +25,7 @@ object WalkRouteSearcher extends WalkRouteSearcher {
   val walkRadius: Double = configuration.Routing.maximumWalkRadius
 }
 
-sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
+sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with StreetEdgeSupport with StreetInfoSupport {
 
   def search(coordinateFrom: Coordinate, coordinateTo: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
     Future(searchPathOnGraph(graphs.sidewalk, coordinateFrom, coordinateTo).get)
@@ -38,7 +37,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
   }
 
   protected def searchPathOnGraph[E <: GeoEdge, V <: GeoVertex[E] : TypeTag](graphContainer: GeoGraphContainer[E, V], coordinateFrom: Coordinate,
-                                                                   coordinateTo: Coordinate): Try[List[V]] = {
+                                                                             coordinateTo: Coordinate): Try[List[V]] = {
     (graphContainer.findNearest(coordinateFrom), graphContainer.findNearest(coordinateTo)) match {
       case (Some(fromVertex), Some(toVertex)) ⇒
         logger.info(s"Vertex From: ${fromVertex.id}. Vertex To: ${toVertex.id}")
@@ -57,13 +56,25 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
   protected def createWalkPath(vertices: List[SidewalkVertex]): Path = {
     val path: List[Coordinate] = vertices.map(_.coordinate)
     vertices match {
-      case firstVertex :: xs =>
-        val from = "Av. Independencia 2258" // FIXME extract info from vertex
-      val to = "Av. Rivadavia 1685"
+      case firstVertex :: secondVertex :: xs =>
+        val from = getAddress(firstVertex, secondVertex) // FIXME calculate altitude
+        val beforeLast :: last :: _ = vertices.takeRight(2)
+        val to = getAddress(beforeLast, last)
         Path(path, PathDescription(WalkPath, from, to))
       case Nil =>
         Path(path, PathDescription(WalkPath, "-", "-"))
     }
+  }
+
+  private def getAddress(vertexFrom: SidewalkVertex, vertexTo: SidewalkVertex): String = {
+    vertexFrom.getSidewalkEdgeFor(vertexTo.id)
+      .map(_.streetEdgeBelongToId.get)
+      .flatMap(streetEdgeId =>
+        streetInfoProvider.findByStreetEdgeId(streetEdgeId).address)
+      .getOrElse {
+        logger.warn(s"Street Info without address [Vertex From = ${vertexFrom.id}, Vertex To = ${vertexTo.id}]")
+        "-"
+      }
   }
 
 }

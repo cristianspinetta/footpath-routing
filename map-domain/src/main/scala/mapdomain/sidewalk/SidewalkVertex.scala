@@ -13,7 +13,11 @@ trait SidewalkVertex extends GeoVertex[PedestrianEdge] {
 
   val edges: List[PedestrianEdge] = sidewalkEdges ++ streetCrossingEdges
 
-  override def getEdgesFor(vertexId: Long): Option[PedestrianEdge] = edges.find(edge ⇒ edge.vertexEndId == vertexId || edge.vertexStartId == vertexId)
+  override def getEdgesFor(vertexId: Long): Option[PedestrianEdge] = getEdgesFor(vertexId, edges)
+  def getSidewalkEdgeFor(vertexId: Long): Option[SidewalkEdge] = getEdgesFor(vertexId, sidewalkEdges)
+  def getCrossingEdgeFor(vertexId: Long): Option[StreetCrossingEdge] = getEdgesFor(vertexId, streetCrossingEdges)
+
+  private def getEdgesFor[E <: PedestrianEdge](vertexId: Long, edges: List[E]): Option[E] = edges.find(edge ⇒ edge.vertexEndId == vertexId || edge.vertexStartId == vertexId)
 
   def copy(id: Long = id, coordinate: Coordinate = coordinate, sidewalkEdges: List[SidewalkEdge] = sidewalkEdges,
     streetCrossingEdges: List[StreetCrossingEdge] = streetCrossingEdges, streetVertexBelongToId: Long = streetVertexBelongToId): SidewalkVertex = {
