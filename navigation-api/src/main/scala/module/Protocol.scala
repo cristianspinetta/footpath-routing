@@ -2,7 +2,7 @@ package module
 
 import base.CaseObjectSerializationSupport
 import mapdomain.sidewalk.Ramp
-import model.{ReportableElement, RouteFormatter, _}
+import model.{ ReportableElement, RouteFormatter, _ }
 import spray.json._
 
 final case class RoutingRequest(fromLng: Double, fromLat: Double, toLng: Double, toLat: Double, routingType: TypeRouting = SidewalkRouting)
@@ -28,7 +28,7 @@ trait Protocol extends DefaultJsonProtocol with CaseObjectSerializationSupport w
   implicit val RampResponseFormat = jsonFormat1(RampResponse.apply)
   implicit val SidewalkResponseFormat = jsonFormat1(SidewalkResponse.apply)
   implicit val EdgeResponseFormat = jsonFormat2(EdgeResponse.apply)
-  implicit val ReportableElementsResponseFormat = jsonFormat6(ReportableElement.apply)
+  implicit val ReportableElementsResponseFormat = jsonFormat1(ReportableElementsResponse.apply)
 
 }
 

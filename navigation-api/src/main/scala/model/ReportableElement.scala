@@ -4,27 +4,26 @@ import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.Ramp
 
 sealed trait ReportableElementType
-case object RampType extends ReportableElementType
-case object SidewalkType extends ReportableElementType
+case object RAMP extends ReportableElementType
+case object SIDEWALK extends ReportableElementType
 
-class ReportableElement(id: Long,
-                              `type`: ReportableElementType,
-                              position: Coordinate,
-                              from: Coordinate,
-                              to: Coordinate,
-                              enabled: Boolean
-                            )
+case class ReportableElement(id: Long,
+  `type`: ReportableElementType,
+  position: Option[Coordinate] = None,
+  from: Option[Coordinate] = None,
+  to: Option[Coordinate] = None,
+  enabled: Boolean)
 
 object ReportableElement {
 
+  def apply(element: ReportableElement) = new ReportableElement(
+    element.id, element.`type`, element.position, element.from, element.to, element.enabled)
+
   def apply(ramp: Ramp): ReportableElement = new ReportableElement(
     id = ramp.id.get,
-    `type` = RampType,
-    position = ramp.coordinate,
-    enabled = ramp.isAccessible,
-    from = null,
-    to = null
-  )
+    `type` = RAMP,
+    position = Some(ramp.coordinate),
+    enabled = ramp.isAccessible)
 
 }
 
