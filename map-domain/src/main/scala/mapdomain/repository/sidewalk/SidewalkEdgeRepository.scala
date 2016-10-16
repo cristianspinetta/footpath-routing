@@ -7,7 +7,7 @@ import sql.SpatialSQLSupport
 
 trait SidewalkEdgeRepository extends SpatialSQLSupport {
 
-  val (se, sv) = (SidewalkEdge.syntax("se"), SidewalkVertex.syntax("sv"))
+  val (se, svs, sve) = (SidewalkEdge.syntax("se"), SidewalkVertex.syntax("svs"), SidewalkVertex.syntax("sve"))
 
   def getSide(code: Int) = if (code == 0) NorthSide else SouthSide
 
@@ -66,8 +66,8 @@ trait SidewalkEdgeRepository extends SpatialSQLSupport {
   def findNearestSidewalks(coordinate: Coordinate, radius: Double)(implicit session: DBSession = SidewalkEdge.autoSession): List[SidewalkEdge] = withSQL {
     select
       .from(SidewalkEdge as se)
-      .leftJoin(SidewalkVertex as sv).on(se.vertexStartId, sv.id) // FIXME hacer join con vertices end, agregando un on en el left join
-      .where.append(clauseNearestByDistance(coordinate, radius, sv, "coordinate"))
+      .leftJoin(SidewalkVertex as svs).on(se.vertexStartId, svs.id) // FIXME hacer join con vertices end, agregando un on en el left join
+      .where.append(clauseNearestByDistance(coordinate, radius, svs, "coordinate"))
   }.map(sidewalkEdge(se)).list().apply()
 
   def deleteAll(implicit session: DBSession = SidewalkEdge.autoSession): Unit = withSQL {
@@ -81,6 +81,15 @@ trait SidewalkEdgeRepository extends SpatialSQLSupport {
         .where.eq(se.vertexStartId, vertexId).or.eq(se.vertexEndId, vertexId)
     }.map(sidewalkEdge(se)).list.apply()
   }
+
+  def findSidewalksInRectangle(northEast: Coordinate, southWest: Coordinate)(implicit session: DBSession = SidewalkEdge.autoSession): List[SidewalkEdge] = withSQL {
+    select
+      .from(SidewalkEdge as se)
+      .leftJoin(SidewalkVertex as svs).on(se.vertexStartId, svs.id)
+      .leftJoin(SidewalkVertex as sve).on(se.vertexEndId, sve.id)
+      .where.append(clauseGetElementsInRectangle(northEast, southWest, svs, "coordinate"))
+      .and.append(clauseGetElementsInRectangle(northEast, southWest, sve, "coordinate"))
+  }.map(sidewalkEdge(se)).list().apply()
 
 }
 

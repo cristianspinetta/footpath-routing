@@ -1,7 +1,8 @@
 package model
 
 import mapdomain.graph.Coordinate
-import mapdomain.sidewalk.Ramp
+import mapdomain.repository.sidewalk.SidewalkVertexRepository
+import mapdomain.sidewalk.{ Ramp, SidewalkEdge }
 
 sealed trait ReportableElementType
 case object RAMP extends ReportableElementType
@@ -24,6 +25,13 @@ object ReportableElement {
     `type` = RAMP,
     position = Some(ramp.coordinate),
     enabled = ramp.isAccessible)
+
+  def apply(edge: SidewalkEdge): ReportableElement = new ReportableElement(
+    id = edge.id.get,
+    `type` = SIDEWALK,
+    from = Some(SidewalkVertexRepository.find(edge.vertexStartId).get.coordinate),
+    to = Some(SidewalkVertexRepository.find(edge.vertexEndId).get.coordinate),
+    enabled = edge.isAccessible)
 
 }
 

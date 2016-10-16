@@ -3,7 +3,7 @@ package service
 import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
 import mapdomain.graph.{Edge => _, Vertex => _, _}
-import mapdomain.repository.sidewalk.RampRepository
+import mapdomain.repository.sidewalk.{RampRepository, SidewalkEdgeRepository}
 import mapdomain.sidewalk._
 import mapdomain.street.StreetEdge
 import model._
@@ -36,7 +36,8 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
 
   def reportableElements(northEast: Coordinate, southWest: Coordinate): Try[Vector[ReportableElement]] = Try {
     val ramps = RampRepository.findRampsInRectangle(northEast, southWest)
-    ramps.map(r => ReportableElement(r)).toVector
+    val sidewalks = SidewalkEdgeRepository.findSidewalksInRectangle(northEast, southWest)
+    ramps.map(r => ReportableElement(r)).toVector ++ sidewalks.map(s => ReportableElement(s)).toVector
   }
 
   protected def getEdgesAndVertices[E <: GeoEdge with BaseEntity, G <: GraphContainer[E, V] forSome { type V <: GeoVertex[E]}](edges: List[E], graph: G) = {
