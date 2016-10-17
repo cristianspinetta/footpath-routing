@@ -115,6 +115,14 @@ trait RoutingModule extends ApiEnvConfig {
                   }
                   complete(response)
                 }
+            } ~
+            pathPrefix("associate") {
+              path("ramp") {
+                val response: Future[ToResponseMarshallable] = Future.successful {
+                  MapGeneratorService.associateRampsToSidewalks() map (_ ⇒ "") get
+                }
+                complete(response)
+              }
             }
           }
       }

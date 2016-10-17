@@ -29,6 +29,7 @@ case class OSMConfiguration(config: Config) {
 case class RampConfiguration(config: Config) {
   val sourceFile2014Path: String = config.getString("source-file-2014")
   val sourceFile2011Path: String = config.getString("source-file-2011")
+  val sourceFileRampAssociationPath: String = config.getString("ramps-association")
 }
 
 case class HTTPConfiguration(config: Config) {

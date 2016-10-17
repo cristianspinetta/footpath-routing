@@ -65,6 +65,19 @@ trait StreetCrossingEdgeRepository extends SpatialSQLSupport {
       StreetCrossingEdge.column.rampStartId -> null)
   }.update().apply()
 
+  def save(edge: StreetCrossingEdge)(implicit session: DBSession = StreetCrossingEdge.autoSession): StreetCrossingEdge = {
+    withSQL {
+      update(StreetCrossingEdge).set(
+        StreetCrossingEdge.column.vertexStartId -> edge.vertexStartId,
+        StreetCrossingEdge.column.vertexEndId -> edge.vertexEndId,
+        StreetCrossingEdge.column.keyValue -> edge.keyValue,
+        StreetCrossingEdge.column.rampStartId -> edge.rampStartId,
+        StreetCrossingEdge.column.rampEndId -> edge.rampEndId
+      ).where.eq(StreetCrossingEdge.column.id, edge.id)
+    }.update.apply()
+    edge
+  }
+
 }
 
 object StreetCrossingEdgeRepository extends StreetCrossingEdgeRepository

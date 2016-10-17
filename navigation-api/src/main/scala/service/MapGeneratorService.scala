@@ -1,13 +1,13 @@
 package service
 
-import base.{ LazyLoggerSupport, MeterSupport }
+import base.{LazyLoggerSupport, MeterSupport}
 import base.conf.ApiEnvConfig
-import mapdomain.repository.sidewalk.{ RampRepository, SidewalkRepositorySupport }
-import mapdomain.repository.street.{ StreetInfoRepository, StreetRepositorySupport }
-import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp }
+import mapdomain.repository.sidewalk.{RampRepository, SidewalkRepositorySupport, StreetCrossingEdgeRepository}
+import mapdomain.repository.street.{StreetInfoRepository, StreetRepositorySupport}
+import mapdomain.sidewalk.{InMemorySidewalkGraphContainer, Ramp, StreetCrossingEdge}
 import mapdomain.street._
 import mapgenerator.sidewalk.SidewalkModule
-import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
+import mapgenerator.source.osm.{OSMModule, OSMReaderByXml}
 import mapgenerator.street.StreetGraphModule
 import provider.RampProvider
 import scalikejdbc.DB
@@ -88,6 +88,19 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
   private def saveRamps(ramps: Vector[Ramp]) = Try {
     DB localTx { implicit session ⇒
       ramps foreach RampRepository.createRamp
+    }
+  }
+
+  def associateRampsToSidewalks() = Try {
+    logger.info(s"Starting to associate ramps to sidewalks")
+    withTimeLogging({
+      updateStreetCrossingEdges(RampProvider.associateRampsToSidewalks)
+    }, (time: Long) ⇒ logger.info(s"Associated ramps to sidewalks in $time ms."))
+  }
+
+  private def updateStreetCrossingEdges(edges: List[StreetCrossingEdge]) = Try {
+    DB localTx { implicit session ⇒
+      edges foreach StreetCrossingEdgeRepository.save
     }
   }
 
