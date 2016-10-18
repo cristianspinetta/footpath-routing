@@ -60,6 +60,14 @@ trait StreetCrossingEdgeRepository extends SpatialSQLSupport {
     }.map(streetCrossingEdge(sce)).list.apply()
   }
 
+  def findCrossingEdgesByRamp(rampId: Long)(implicit session: DBSession = StreetCrossingEdge.autoSession): List[StreetCrossingEdge] = DB readOnly { implicit session ⇒
+    withSQL {
+      select
+        .from(StreetCrossingEdge as sce)
+        .where.eq(sce.rampStartId, rampId).or.eq(sce.rampEndId, rampId)
+    }.map(streetCrossingEdge(sce)).list.apply()
+  }
+
   def deleteStartRamp(crossingEdgeId: Long)(implicit session: DBSession = StreetCrossingEdge.autoSession): Unit = withSQL {
     update(StreetCrossingEdge).set(
       StreetCrossingEdge.column.rampStartId -> null)

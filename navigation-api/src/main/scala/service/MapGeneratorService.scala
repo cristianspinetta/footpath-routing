@@ -6,6 +6,7 @@ import mapdomain.repository.sidewalk.{RampRepository, SidewalkRepositorySupport,
 import mapdomain.repository.street.{StreetInfoRepository, StreetRepositorySupport}
 import mapdomain.sidewalk.{InMemorySidewalkGraphContainer, Ramp, StreetCrossingEdge}
 import mapdomain.street._
+import mapdomain.utils.EdgeUtils
 import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.osm.{OSMModule, OSMReaderByXml}
 import mapgenerator.street.StreetGraphModule
@@ -94,7 +95,8 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
   def associateRampsToSidewalks() = Try {
     logger.info(s"Starting to associate ramps to sidewalks")
     withTimeLogging({
-      updateStreetCrossingEdges(RampProvider.associateRampsToSidewalks)
+      val edges = RampProvider.associateRampsToSidewalks
+      updateStreetCrossingEdges(edges)
     }, (time: Long) ⇒ logger.info(s"Associated ramps to sidewalks in $time ms."))
   }
 

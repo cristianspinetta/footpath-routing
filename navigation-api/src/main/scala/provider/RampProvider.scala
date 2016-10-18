@@ -4,6 +4,7 @@ import base.conf.ApiEnvConfig
 import mapdomain.graph.Coordinate
 import mapdomain.repository.sidewalk.{RampRepository, SidewalkVertexRepository, StreetCrossingEdgeRepository}
 import mapdomain.sidewalk.{Ramp, StreetCrossingEdge}
+import mapdomain.utils.EdgeUtils
 import mapgenerator.source.features.{RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV}
 
 import scala.io.Source
