@@ -16,6 +16,10 @@ import scalikejdbc.DB
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
+trait MapGeneratorServiceSupport {
+  val mapGeneratorService: MapGeneratorService = MapGeneratorService
+}
+
 trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with StreetRepositorySupport with SidewalkRepositorySupport {
 
   def createStreets(): Try[_] = Try {

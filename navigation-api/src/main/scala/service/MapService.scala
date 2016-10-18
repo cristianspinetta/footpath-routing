@@ -7,12 +7,16 @@ import mapdomain.repository.sidewalk.RampRepository
 import mapdomain.sidewalk._
 import mapdomain.street.StreetEdge
 import model._
-import provider.GraphSupport
+import provider.{GraphSupport, PublicTransportProviderSupport}
 
 import scala.language.existentials
 import scala.util.Try
 
-trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
+trait MapServiceSupport {
+  val mapService: MapService = MapService
+}
+
+trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with PublicTransportProviderSupport {
 
   def edges(edgeType: EdgeType, startPosition: Coordinate, radius: Double): Try[MapContainer] = Try {
     logger.info(s"Getting edges. Type: $edgeType")
@@ -32,6 +36,21 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
 
   def ramps(coordinate: Coordinate, radius: Double): Try[Vector[Ramp]] = Try {
     RampRepository.findNearestRamps(coordinate, radius).toVector
+  }
+
+  def publicTransportPaths(coordinate: Coordinate, radius: Double): Try[List[PublicTransportPath]] = Try {
+    publicTransportProvider.findNearestStops(coordinate, radius)
+        .map(_.travelInfoId)
+        .distinct
+        .map(publicTransportProvider.findTravelInfo)
+      .map(travelInfo => {
+        val coordinates: List[Coordinate] = publicTransportProvider
+          .getPathBetweenStops(
+            publicTransportProvider.findStop(travelInfo.firstStopId),
+            publicTransportProvider.findStop(travelInfo.lastStopId))
+        val stops: List[Stop] = publicTransportProvider.findStopfindByTravelInfoId(travelInfo.id) map Stop.createByDomainStop
+        PublicTransportPath(travelInfo.id, travelInfo.title, coordinates, stops)
+      })
   }
 
   protected def getEdgesAndVertices[E <: GeoEdge with BaseEntity, G <: GraphContainer[E, V] forSome { type V <: GeoVertex[E]}](edges: List[E], graph: G) = {

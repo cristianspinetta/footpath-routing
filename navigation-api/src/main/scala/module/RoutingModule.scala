@@ -19,12 +19,12 @@ import model._
 import provider.GraphSupport
 import scalikejdbc.ConnectionPool
 import searching.SearchRoutingErrors._
-import service.{ MapGeneratorService, MapService, RoutingService }
+import service.{ MapGeneratorServiceSupport, MapServiceSupport, RoutingServiceSupport }
 import spray.json._
 
 import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
 
-trait RoutingModule extends ApiEnvConfig {
+trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGeneratorServiceSupport with RoutingServiceSupport {
   implicit val system: ActorSystem
   implicit def executor: ExecutionContextExecutor
   implicit val materializer: Materializer
@@ -69,7 +69,7 @@ trait RoutingModule extends ApiEnvConfig {
         get {
           path("route") {
             parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double]).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
-              val routeResult = RoutingService.searchRoute(
+              val routeResult = routingService.searchRoute(
                 from = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
                 to = Coordinate(routingRequest.toLat, routingRequest.toLng)).value.map[ToResponseMarshallable] {
                   case Xor.Right(routes) ⇒ OK -> routes
@@ -98,7 +98,7 @@ trait RoutingModule extends ApiEnvConfig {
               path("edges") {
                 parameters('edgeType.as[EdgeType], 'radius ? 1.0D, 'lat.as[Double], 'lng.as[Double]).as(EdgeRequest) { edgeRequest ⇒
                   val response: Future[ToResponseMarshallable] = Future.successful {
-                    val mapContainer = MapService.edges(edgeRequest.edgeType, Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius).get
+                    val mapContainer = mapService.edges(edgeRequest.edgeType, Coordinate(edgeRequest.lat, edgeRequest.lng), edgeRequest.radius).get
                     EdgeResponse(mapContainer.edges, mapContainer.vertices)
                   }
                   complete(response)
@@ -107,8 +107,17 @@ trait RoutingModule extends ApiEnvConfig {
                 path("ramps") {
                   parameters('lat.as[Double], 'lng.as[Double], 'radius ? 1.0D).as(RampRequest) { rampRequest: RampRequest ⇒
                     val response: Future[ToResponseMarshallable] = Future.successful {
-                      val list = MapService.ramps(Coordinate(rampRequest.lat, rampRequest.lng), rampRequest.radius).get
+                      val list = mapService.ramps(Coordinate(rampRequest.lat, rampRequest.lng), rampRequest.radius).get
                       RampResponse(list)
+                    }
+                    complete(response)
+                  }
+                } ~
+                path("public-transport-paths") {
+                  parameters('lat.as[Double], 'lng.as[Double], 'radius ? 1.0D).as(PublicTransportPathsRequest) { publicTransportRequestRequest: PublicTransportPathsRequest ⇒
+                    val response: Future[ToResponseMarshallable] = Future.successful {
+                      PublicTransportPathsResponse(
+                        mapService.publicTransportPaths(Coordinate(publicTransportRequestRequest.lat, publicTransportRequestRequest.lng), publicTransportRequestRequest.radius).get)
                     }
                     complete(response)
                   }
@@ -118,19 +127,19 @@ trait RoutingModule extends ApiEnvConfig {
               pathPrefix("create") {
                 path("street") {
                   val response: Future[ToResponseMarshallable] = Future.successful {
-                    MapGeneratorService.createStreets() map (_ ⇒ "") get
+                    mapGeneratorService.createStreets() map (_ ⇒ "") get
                   }
                   complete(response)
                 } ~
                   path("sidewalk") {
                     val response: Future[ToResponseMarshallable] = Future.successful {
-                      MapGeneratorService.createSidewalks() map (_ ⇒ "") get
+                      mapGeneratorService.createSidewalks() map (_ ⇒ "") get
                     }
                     complete(response)
                   } ~
                   path("ramp") {
                     val response: Future[ToResponseMarshallable] = Future.successful {
-                      MapGeneratorService.createRamps() map (_ ⇒ "") get
+                      mapGeneratorService.createRamps() map (_ ⇒ "") get
                     }
                     complete(response)
                   }

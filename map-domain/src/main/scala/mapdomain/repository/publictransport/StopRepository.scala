@@ -47,6 +47,15 @@ trait StopRepository extends SpatialSQLSupport {
     }.map(stop(s)).single().apply()
   }
 
+  def findByTravelInfoId(travelInfoId: Long)(implicit session: DBSession = Stop.autoSession): List[Stop] = {
+    withSQL {
+      select.all(s)
+        .append(selectLatitudeAndLongitude(s))
+        .from(Stop as s)
+        .where.eq(s.travelInfoId, travelInfoId)
+    }.map(stop(s)).list().apply()
+  }
+
   def findNearestStops(coordinate: Coordinate, radius: Double)(implicit session: DBSession = Stop.autoSession): List[Stop] = withSQL {
     select.all(s)
       .append(selectLatitudeAndLongitude(s))

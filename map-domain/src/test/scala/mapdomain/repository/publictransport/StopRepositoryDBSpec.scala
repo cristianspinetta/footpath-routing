@@ -44,7 +44,10 @@ class StopRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll
     Some(secondStopFromDB.pathId) shouldBe path.id
     secondStopFromDB.travelInfoId shouldBe travelInfo.id
 
-    StopRepository.deleteAll
+    val stopsByTravelInfo = StopRepository.findByTravelInfoId(travelInfo.id)
+
+    stopsByTravelInfo.size shouldBe 3
+
   }
 
 }

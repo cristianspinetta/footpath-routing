@@ -3,14 +3,16 @@ package mapdomain.publictransport
 import scalikejdbc._
 
 case class TravelInfo(
-  id: Long,
-  description: String,
-  firstStopId: Long,
-  lastStopId: Long,
-  branch: String,
-  name: String,
-  sentido: String,
-  `type`: String)
+    id: Long,
+    description: String,
+    firstStopId: Long,
+    lastStopId: Long,
+    branch: String,
+    name: String,
+    sentido: String,
+    `type`: String) {
+  val title: String = s"$name-$branch-$sentido (${`type`})"
+}
 
 case class TravelInfoUnsaved(
   description: String,

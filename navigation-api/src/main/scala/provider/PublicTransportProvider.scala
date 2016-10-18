@@ -22,6 +22,10 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
 
   def findTravelInfo(id: Long): TravelInfo = travelInfoRepository.find(id).get
 
+  def findStop(id: Long): Stop = stopRepository.find(id).get
+
+  def findStopfindByTravelInfoId(id: Long): List[Stop] = stopRepository.findByTravelInfoId(id)
+
   def getPathBetweenStops(stopFrom: Stop, stopTo: Stop): List[Coordinate] = withTimeLogging({
 
     @tailrec
@@ -29,7 +33,9 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
       if (from.id == destination.id) accumulatedPaths
       else {
         val nextStop: Stop = stopRepository.find(from.nextStopId.get).get
-        findNextPaths(nextStop, destination, pathRepository.find(nextStop.pathId).get :: accumulatedPaths)
+        // FIXME: cambiar pathId por un Option
+        val newAccumulatedPaths = pathRepository.find(nextStop.pathId).map(_ :: accumulatedPaths).getOrElse(accumulatedPaths)
+        findNextPaths(nextStop, destination, newAccumulatedPaths)
       }
     }
 

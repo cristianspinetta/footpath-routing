@@ -27,6 +27,8 @@ trait ModelFormatter extends DefaultJsonProtocol with CaseObjectSerializationSup
   implicit val MapContainerFormat = jsonFormat2(MapContainer.apply)
   implicit val StreetFormat = jsonFormat3(Street.apply)
   implicit val SidewalkFormat = jsonFormat2(Sidewalk.apply)
+  implicit val StopFormat = jsonFormat4(Stop.apply)
+  implicit val PublicTransportPathFormat = jsonFormat4(PublicTransportPath)
 
   implicit val EdgeTypeUnmarshaller = Unmarshaller.strict[String, EdgeType](EdgeTypeFormat.mapping)
 }
