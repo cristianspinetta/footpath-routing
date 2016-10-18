@@ -68,6 +68,15 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
           }
         }
       }
+
+      "find point at a given distance" in {
+        val vector: GVector = GVector(Point(0, 0), Point(10, 0))
+        val distance = 2
+        val point = VectorUtils.findPointAtDistance(distance, vector)
+        point.x shouldBe 2
+        point.y shouldBe 0
+      }
+
     }
 
     "it's over the second quadrant" should {
@@ -125,6 +134,14 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
             compareRightDirection(vector, parallel)
           }
         }
+      }
+
+      "find point at a given distance" in {
+        val vector: GVector = GVector(Point(0, 0), Point(0, 10))
+        val distance = 2
+        val point = VectorUtils.findPointAtDistance(distance, vector)
+        point.x shouldBe 0
+        point.y shouldBe 2
       }
     }
 
@@ -184,6 +201,19 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
           }
         }
       }
+
+      "find point at a given distance" in {
+        val vector: GVector = GVector(Point(0, 0), Point(-10, 0))
+        val distance = 2
+        var point = VectorUtils.findPointAtDistance(distance, vector)
+        point.x shouldBe -2
+        point.y shouldBe 0
+
+        point = VectorUtils.findPointAtDistance(-distance, vector)
+        point.x shouldBe 2
+        point.y shouldBe 0
+      }
+
     }
 
     "it's over the fourth quadrant" should {
@@ -242,7 +272,17 @@ class GVectorSpec extends WordSpec with Matchers with GeneratorDrivenPropertyChe
           }
         }
       }
+
+      "find point at a given distance" in {
+        val vector: GVector = GVector(Point(0, 0), Point(0, -10))
+        val distance = 2
+        val point = VectorUtils.findPointAtDistance(distance, vector)
+        point.x shouldBe 0
+        point.y shouldBe -2
+      }
+
     }
+
   }
 
   private def compareRightDirection(vector: GVector, parallel: GVector): Unit = {

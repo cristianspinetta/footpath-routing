@@ -35,6 +35,7 @@ case class GVector(source: Point, extreme: Point) {
       case _                  ⇒ Quad4
     }
   }
+
 }
 
 object VectorUtils {
@@ -100,6 +101,18 @@ object VectorUtils {
     else
       0
   }
+
+  def findPointAtDistance(distance: Double, vector: GVector): Point = {
+    val point = Point.multiply(normalize(vector), distance)
+    Point(vector.source.x + point.x, vector.source.y + point.y)
+  }
+
+  private def normalize(gVector: GVector): Point = {
+    val point = Point(gVector.extreme.x - gVector.source.x, gVector.extreme.y - gVector.source.y)
+    val length = Point.distance(gVector.extreme, gVector.source)
+    Point(point.x / length, point.y / length)
+  }
+
 }
 
 sealed trait Quadrant
