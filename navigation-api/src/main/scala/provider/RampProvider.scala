@@ -43,12 +43,12 @@ object RampProvider extends ApiEnvConfig {
     }
 
     if (crossingEdge.vertexStartId == rampAssociation.vertexId)
-      if (crossingEdge.rampStartId.isDefined || edges.exists(e => e.id == crossingEdge.id && e.rampStartId == rampAssociation.vertexId))
+      if (crossingEdge.rampStartId.isDefined || edges.exists(e => e.id == crossingEdge.id && e.rampStartId.isDefined && e.rampStartId == rampAssociation.vertexId))
         throw new RuntimeException(s"Cannot associate ramp ${rampAssociation.rampId} because crossing edge ${rampAssociation.streetCrossingEdgeId} has another ramp start associated")
       else
         crossingEdge.rampStartId = ramp.id
     else if (crossingEdge.vertexEndId == rampAssociation.vertexId)
-      if (crossingEdge.rampEndId.isDefined || edges.exists(e => e.id == crossingEdge.id && e.rampEndId == rampAssociation.vertexId))
+      if (crossingEdge.rampEndId.isDefined || edges.exists(e => e.id == crossingEdge.id && e.rampEndId.isDefined && e.rampEndId == rampAssociation.vertexId))
         throw new RuntimeException(s"Cannot associate ramp ${rampAssociation.rampId} because crossing edge ${rampAssociation.streetCrossingEdgeId} has another ramp end associated")
       else
         crossingEdge.rampEndId = ramp.id
@@ -58,6 +58,23 @@ object RampProvider extends ApiEnvConfig {
     crossingEdge
   }
 
-  def associateRampsToSidewalks(): List[StreetCrossingEdge] = loadRampAssociations.foldLeft(List[StreetCrossingEdge]())((edges, rampAssociation) => associate(rampAssociation, edges) :: edges)
+  def associateRampsToSidewalks(): List[StreetCrossingEdge] = {
+    val rampAssociations = loadRampAssociations
+    val duplicatedVertexAndEdge = rampAssociations.groupBy(ra => (ra.vertexId, ra.streetCrossingEdgeId)).collect {
+      case (x,ys) if ys.lengthCompare(1) > 0 => (x, ys.length)
+    }
+
+    if(duplicatedVertexAndEdge.size > 0)
+      throw new RuntimeException(s"Vertex and edge with more than 1 ramp association:\n ${ duplicatedVertexAndEdge mkString "\n"}")
+
+    val duplicatedRampAndVertex = rampAssociations.map(ra => (ra.rampId, ra.vertexId)).distinct.groupBy(rv => rv._1).collect {
+      case (x,ys) if ys.lengthCompare(1) > 0 => (x, ys)
+    }
+
+    if(duplicatedRampAndVertex.size > 0)
+      throw new RuntimeException(s"Ramps associated to more than one vertex:\n ${ duplicatedRampAndVertex mkString "\n"}")
+
+    rampAssociations.foldLeft(List[StreetCrossingEdge]())((edges, rampAssociation) => associate(rampAssociation, edges) :: edges)
+  }
 
 }
