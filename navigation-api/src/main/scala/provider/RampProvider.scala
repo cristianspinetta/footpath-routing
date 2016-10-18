@@ -78,4 +78,19 @@ object RampProvider extends ApiEnvConfig {
     rampAssociations.foldLeft(List[StreetCrossingEdge]())((edges, rampAssociation) => associate(rampAssociation, edges) :: edges)
   }
 
+  def updateRampCoordinates(edges: List[StreetCrossingEdge]): List[Ramp] = {
+    /*por cada edge y por cada rampa (start y end):
+    * 1- si otro edge no tiene la misma rampa asociada:
+    *     . buscar punto a una distancia d del edge al que pertenece la rampa
+    *     . buscar punto a una distancia d del edge con el mismo vertex que el de la rampa a evaluar, pero en el otro sentido (d negativo)
+    *     . de los anteriores, sacar la latitud y longitud de la rampa
+    * 2- si otro edge tiene la misma rampa asociada:
+    *     . buscar punto a una distancia d del edge al que pertenece la rampa, pero en el otro sentido (d negativo)
+    *     . buscar punto a una distancia d del edge con el mismo vertex que el de la rampa a evaluar, pero en el otro sentido (d negativo)
+    *     . de los anteriores, sacar la latitud y longitud de la rampa
+    */
+
+    ???
+  }
+
 }
