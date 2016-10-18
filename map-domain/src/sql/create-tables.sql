@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `ramp` (
 
 CREATE TABLE IF NOT EXISTS `path` (
                	`id` bigint(20) NOT NULL AUTO_INCREMENT,
-               	`coordinates` varchar(255) DEFAULT NULL,
+               	`coordinates` varchar(10000) DEFAULT NULL,
                	PRIMARY KEY (`id`)
                ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS `stop` (
        	`nextStopId` bigint(20) DEFAULT NULL,
        	`previousStopId` bigint(20) DEFAULT NULL,
        	`sequence` bigint(20) NOT NULL,
-       	`pathId` bigint(20) NOT NULL,
+       	`pathId` bigint(20) DEFAULT NULL,
        	`travelInfoId` bigint(20) NOT NULL,
        	`isAccessible` boolean DEFAULT true,
        	PRIMARY KEY (`id`)

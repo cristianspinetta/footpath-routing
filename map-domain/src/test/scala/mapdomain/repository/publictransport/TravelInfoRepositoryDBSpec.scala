@@ -28,10 +28,10 @@ class TravelInfoRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAf
     val path: Path = PathRepository.create("some coordinates")
 
     val firstStop = StopRepository.create(
-      StopUnsaved(Coordinate(10l, 11l), sequence = 1, pathId = path.id.get,
+      StopUnsaved(Coordinate(10l, 11l), sequence = 1, pathId = path.id,
         travelInfoId = travelInfo.id, isAccessible = false))
     val lastStop = StopRepository.create(
-      StopUnsaved(Coordinate(12l, 13l), sequence = 2, pathId = path.id.get,
+      StopUnsaved(Coordinate(12l, 13l), sequence = 2, pathId = path.id,
         travelInfoId = travelInfo.id, isAccessible = true))
 
     travelInfo = travelInfo.copy(firstStopId = firstStop.id, lastStopId = lastStop.id)

@@ -9,7 +9,7 @@ case class Stop(
   nextStopId: Option[Long] = None,
   previousStopId: Option[Long] = None,
   sequence: Long,
-  pathId: Long,
+  pathId: Option[Long] = None,
   travelInfoId: Long,
   isAccessible: Boolean)
 
@@ -18,7 +18,7 @@ case class StopUnsaved(
   nextStopId: Option[Long] = None,
   previousStopId: Option[Long] = None,
   sequence: Long,
-  pathId: Long,
+  pathId: Option[Long] = None,
   travelInfoId: Long,
   isAccessible: Boolean)
 

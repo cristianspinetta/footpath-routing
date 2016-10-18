@@ -28,8 +28,8 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
   protected def searchNearestStops(coordinateFrom: Coordinate, coordinateTo: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, NearestStops] = XorT {
     logger.info(s"Searching nearest stops...")
-    val nearestStopsFromFut = Future(publicTransportProvider.findNearestStops(coordinateFrom, walkRadius))
-    val nearestStopsToFut = Future(publicTransportProvider.findNearestStops(coordinateTo, walkRadius))
+    val nearestStopsFromFut = Future(publicTransportProvider.findStopsByRadiusAndLine(coordinateFrom, Some(walkRadius)))
+    val nearestStopsToFut = Future(publicTransportProvider.findStopsByRadiusAndLine(coordinateTo, Some(walkRadius)))
     for {
       nearestStopsFrom ← nearestStopsFromFut
       nearestStopsTo ← nearestStopsToFut
@@ -48,19 +48,21 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
     val candidatePaths: List[PathBuilder] = travelInfoIds flatMap (travelInfoId ⇒ candidatePathByTravelInfo(from, to)(nearestStops)(travelInfoId) toList)
 
-    val traverseU: XorT[Future, SearchRoutingError, List[Route]] = candidatePaths.traverseU(pathBuilder ⇒ {
-      //      pathBuilder.build match {
-      //        case XorT(route) =>
-      //      }
-      //      val recover: XorT[Future, SearchRoutingError, List[Route]] = pathBuilder.build.map(route => List(route)).recover { case error: SearchRoutingError => List.empty[Route] }
-      //      recover
-      pathBuilder.build
-    })
-
-    traverseU
-    //    val map: List[XorT[Future, SearchRoutingError, Route]] = candidatePaths.map(pathBuilder => pathBuilder.build)
-    //    val tt: XorT[Future, SearchRoutingError, List[Route]] = map.traverse()
-    //    val bitravers: XorT[Future, SearchRoutingError, List[Route]] = map.bitraverse()
+    candidatePaths match {
+      case Nil ⇒ XorT.left[Future, SearchRoutingError, List[Route]](Future.successful(NoTransportPublicForTravel))
+      case _ ⇒
+        candidatePaths.traverseU(pathBuilder ⇒ {
+          //      pathBuilder.build match {
+          //        case XorT(route) =>
+          //      }
+          //      val recover: XorT[Future, SearchRoutingError, List[Route]] = pathBuilder.build.map(route => List(route)).recover { case error: SearchRoutingError => List.empty[Route] }
+          //      recover
+          pathBuilder.build
+        })
+      //    val map: List[XorT[Future, SearchRoutingError, Route]] = candidatePaths.map(pathBuilder => pathBuilder.build)
+      //    val tt: XorT[Future, SearchRoutingError, List[Route]] = map.traverse()
+      //    val bitravers: XorT[Future, SearchRoutingError, List[Route]] = map.bitraverse()
+    }
   }
 
   protected def candidatePathByTravelInfo(from: Coordinate, to: Coordinate)(nearestStops: NearestStops)(travelInfoId: Long): Option[PathBuilder] = {

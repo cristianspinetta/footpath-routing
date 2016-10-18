@@ -32,4 +32,5 @@ object SearchRoutingErrors {
   case object NoStops extends SearchRoutingError
   case object NoPath extends SearchRoutingError
   case object NoPathBetweenStops extends SearchRoutingError
+  case object NoTransportPublicForTravel extends SearchRoutingError
 }

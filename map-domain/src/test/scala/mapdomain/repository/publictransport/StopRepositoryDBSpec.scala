@@ -27,11 +27,11 @@ class StopRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll
     val path: Path = PathRepository.create(coordinates)
 
     val firstStop = StopRepository.create(StopUnsaved(Coordinate(10l, 11l), sequence = 1,
-      pathId = path.id.get, travelInfoId = travelInfo.id, isAccessible = false))
+      pathId = path.id, travelInfoId = travelInfo.id, isAccessible = false))
     val secondStop = StopRepository.create(StopUnsaved(Coordinate(12l, 13l), sequence = 2,
-      pathId = path.id.get, travelInfoId = travelInfo.id, isAccessible = true))
+      pathId = path.id, travelInfoId = travelInfo.id, isAccessible = true))
     val thirdStop = StopRepository.create(StopUnsaved(Coordinate(14l, 15l), sequence = 3,
-      pathId = path.id.get, travelInfoId = travelInfo.id, isAccessible = true))
+      pathId = path.id, travelInfoId = travelInfo.id, isAccessible = true))
 
     val updatedSecondStop = secondStop.copy(previousStopId = Some(firstStop.id), nextStopId = Some(thirdStop.id), travelInfoId = travelInfo.id)
     StopRepository.save(updatedSecondStop)
@@ -41,7 +41,7 @@ class StopRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll
     secondStopFromDB.previousStopId shouldBe Some(firstStop.id)
     coordinateAssertion(secondStopFromDB.coordinate, Coordinate(12, 13))
     secondStopFromDB.nextStopId shouldBe Some(thirdStop.id)
-    Some(secondStopFromDB.pathId) shouldBe path.id
+    secondStopFromDB.pathId shouldBe path.id
     secondStopFromDB.travelInfoId shouldBe travelInfo.id
 
     val stopsByTravelInfo = StopRepository.findByTravelInfoId(travelInfo.id)

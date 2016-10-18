@@ -72,9 +72,11 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
               val routeResult = routingService.searchRoute(
                 from = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
                 to = Coordinate(routingRequest.toLat, routingRequest.toLng)).value.map[ToResponseMarshallable] {
-                  case Xor.Right(routes) ⇒ OK -> routes
-                  case Xor.Left(NoStops) ⇒ BadRequest -> "Could not find stops."
-                  case Xor.Left(NoPath)  ⇒ BadRequest -> "Could not find a path."
+                  case Xor.Right(routes)                    ⇒ OK -> routes
+                  case Xor.Left(NoStops)                    ⇒ BadRequest -> "Could not find stops."
+                  case Xor.Left(NoPath)                     ⇒ BadRequest -> "Could not find a path."
+                  case Xor.Left(NoTransportPublicForTravel) ⇒ BadRequest -> "Could not find any public transport to get to destination."
+                  case Xor.Left(NoPathBetweenStops)         ⇒ BadRequest -> "Could not find a path between stops."
                 }
               complete(routeResult)
             }
@@ -114,10 +116,9 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                   }
                 } ~
                 path("public-transport-paths") {
-                  parameters('lat.as[Double], 'lng.as[Double], 'radius ? 1.0D).as(PublicTransportPathsRequest) { publicTransportRequestRequest: PublicTransportPathsRequest ⇒
+                  parameters('lat.as[Double], 'lng.as[Double], 'radius.as[Double] ?, 'line ?).as(PublicTransportPathsRequest) { publicTransportRequestRequest: PublicTransportPathsRequest ⇒
                     val response: Future[ToResponseMarshallable] = Future.successful {
-                      PublicTransportPathsResponse(
-                        mapService.publicTransportPaths(Coordinate(publicTransportRequestRequest.lat, publicTransportRequestRequest.lng), publicTransportRequestRequest.radius).get)
+                      mapService.publicTransportPaths(Coordinate(publicTransportRequestRequest.lat, publicTransportRequestRequest.lng), publicTransportRequestRequest.radius, publicTransportRequestRequest.line).get
                     }
                     complete(response)
                   }

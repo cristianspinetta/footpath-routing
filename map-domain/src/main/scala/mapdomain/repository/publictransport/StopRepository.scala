@@ -7,7 +7,7 @@ import sql.SpatialSQLSupport
 
 trait StopRepository extends SpatialSQLSupport {
 
-  val s = Stop.syntax("s")
+  val (s, ti) = (Stop.syntax("s"), TravelInfo.syntax("ti"))
 
   def stop(s: SyntaxProvider[Stop])(rs: WrappedResultSet): Stop = stop(s.resultName, s.tableAliasName)(rs)
 
@@ -19,7 +19,7 @@ trait StopRepository extends SpatialSQLSupport {
       nextStopId = rs.get(s.nextStopId),
       previousStopId = rs.get(s.previousStopId),
       sequence = rs.get(s.sequence),
-      pathId = rs.get(s.pathId),
+      pathId = rs.longOpt(s.pathId),
       travelInfoId = rs.get(s.travelInfoId))
   }
 
@@ -56,11 +56,16 @@ trait StopRepository extends SpatialSQLSupport {
     }.map(stop(s)).list().apply()
   }
 
-  def findNearestStops(coordinate: Coordinate, radius: Double)(implicit session: DBSession = Stop.autoSession): List[Stop] = withSQL {
+  def findByRadiusAndLine(coordinate: Coordinate, radiusOpt: Option[Double] = None, lineOpt: Option[String] = None)(implicit session: DBSession = Stop.autoSession): List[Stop] = withSQL {
     select.all(s)
       .append(selectLatitudeAndLongitude(s))
       .from(Stop as s)
-      .where.append(clauseNearestByDistance(coordinate, radius, s, "coordinate"))
+      .map { (sql: scalikejdbc.SelectSQLBuilder[Stop]) ⇒
+        lineOpt.map(line ⇒ sql.leftJoin(TravelInfo as ti).on(s.travelInfoId, ti.id)).getOrElse(sql)
+      }
+      .where(sqls.toAndConditionOpt(
+        lineOpt.map(line ⇒ sqls.like(ti.name, line)),
+        radiusOpt.map(radius ⇒ clauseNearestByDistance(coordinate, radius, s, "coordinate"))))
   }.map(stop(s)).list().apply()
 
   def save(stop: Stop)(implicit session: DBSession = Stop.autoSession): Stop = {

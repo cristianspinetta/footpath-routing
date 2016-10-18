@@ -38,8 +38,8 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
     RampRepository.findNearestRamps(coordinate, radius).toVector
   }
 
-  def publicTransportPaths(coordinate: Coordinate, radius: Double): Try[List[PublicTransportPath]] = Try {
-    publicTransportProvider.findNearestStops(coordinate, radius)
+  def publicTransportPaths(coordinate: Coordinate, radiusOpt: Option[Double], lineOpt: Option[String]): Try[List[PublicTransportPath]] = Try {
+    publicTransportProvider.findStopsByRadiusAndLine(coordinate, radiusOpt, lineOpt)
         .map(_.travelInfoId)
         .distinct
         .map(publicTransportProvider.findTravelInfo)
