@@ -1,68 +1,26 @@
 package service
 
-import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
+import base.{ Contexts, LazyLoggerSupport }
+import cats.data.XorT
 import mapdomain.graph._
-import mapdomain.sidewalk.SidewalkVertex
-import mapdomain.utils.GraphUtils
-import pathgenerator.core.AStar
-import pathgenerator.graph._
 import model._
 import provider.GraphSupport
+import searching.SearchRoutingErrors._
+import searching.RouteSearcherSupport
 
-import scala.reflect.runtime.universe._
-import scala.util.{Failure, Try}
+import scala.concurrent.{ ExecutionContext, Future }
 
-trait RoutingService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
+trait RoutingServiceSupport {
+  val routingService: RoutingService = RoutingService
+}
+
+trait RoutingService extends LazyLoggerSupport with ApiEnvConfig with RouteSearcherSupport {
   val walkRadius: Double = configuration.Routing.maximumWalkRadius
+  implicit val routingExecutionContext: ExecutionContext = Contexts.routingExecutionContext
 
-  def searchRoute(coordinateFrom: Coordinate, coordinateTo: Coordinate): Try[Route] = {
-    logger.info(s"Init Search from $coordinateFrom to $coordinateTo")
-    if (coordinateFrom.distanceTo(coordinateTo) <= walkRadius)
-      searchByWalk(coordinateFrom, coordinateTo)
-    else
-      searchByPublicTransport(coordinateFrom, coordinateTo)
-  }
-
-  protected def searchByWalk(coordinateFrom: Coordinate, coordinateTo: Coordinate): Try[Route] = {
-    searchPathOnGraph(graphs.sidewalk, coordinateFrom, coordinateTo)
-      .map(vertices => createWalkPath(vertices))
-      .map(path => Route(List(path)))
-  }
-
-  protected def searchByPublicTransport(coordinateFrom: Coordinate, coordinateTo: Coordinate): Try[Route] = {
-    searchPathOnGraph(graphs.sidewalk, coordinateFrom, coordinateTo)
-      .map(vertices => createWalkPath(vertices))
-      .map(path => Route(List(path)))
-  }
-
-  protected def createWalkPath(vertices: List[SidewalkVertex]): Path = {
-    val path: List[Coordinate] = vertices.map(_.coordinate)
-    vertices match {
-      case firstVertex :: xs =>
-        val from = "Av. Independencia 2258" // FIXME extract info from vertex
-      val to = "Av. Rivadavia 1685"
-        Path(path, PathDescription(WalkPath, from, to))
-      case Nil =>
-        Path(path, PathDescription(WalkPath, "-", "-"))
-    }
-  }
-
-  protected def searchPathOnGraph[E <: GeoEdge, V <: GeoVertex[E]](graphContainer: GeoGraphContainer[E, V], coordinateFrom: Coordinate,
-                                                                   coordinateTo: Coordinate)(implicit tag: TypeTag[V]): Try[List[V]] = {
-    (graphContainer.findNearest(coordinateFrom), graphContainer.findNearest(coordinateTo)) match {
-      case (Some(fromVertex), Some(toVertex)) ⇒
-        logger.info(s"Vertex From: ${fromVertex.id}. Vertex To: ${toVertex.id}")
-        val aStartFactory = AStar[E, V, GeoHeuristic[E, V]](GeoHeuristic(fromVertex)) _
-        aStartFactory(graphContainer, fromVertex, Seq(toVertex))
-          .search
-          .map(edges ⇒
-            GraphUtils.edgesToIds(edges) map (vertexId ⇒ graphContainer.findVertex(vertexId) match {
-              case Some(vertex) ⇒ vertex
-              case None         ⇒ throw new RuntimeException(s"Vertex not found $vertexId while trying to create the path from the edge list.")
-            }))
-      case otherResult ⇒ Failure(new RuntimeException(s"It could not get a near vertex. $otherResult"))
-    }
+  def searchRoute(from: Coordinate, to: Coordinate): XorT[Future, SearchRoutingError, List[Route]] = {
+    routeSearcher.search(from, to)
   }
 }
 

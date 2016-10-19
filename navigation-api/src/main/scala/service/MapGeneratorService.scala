@@ -7,15 +7,20 @@ import mapdomain.repository.street.{ StreetInfoRepository, StreetRepositorySuppo
 import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp }
 import mapdomain.street._
 import mapgenerator.sidewalk.SidewalkModule
+import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
-import provider.RampProvider
+import provider.GraphSupport
 import scalikejdbc.DB
 
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
-trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with StreetRepositorySupport with SidewalkRepositorySupport {
+trait MapGeneratorServiceSupport {
+  val mapGeneratorService: MapGeneratorService = MapGeneratorService
+}
+
+trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with GraphSupport with StreetRepositorySupport with SidewalkRepositorySupport {
 
   def createStreets(): Try[_] = Try {
     // FIXME Check that streets doen't exist.
@@ -56,7 +61,7 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
   def createSidewalks(failureTolerance: Boolean = true) = Try {
     logger.info(s"Starting to create the sidewalks")
     withTimeLogging({
-      val sidewalkGraph = SidewalkModule()(InMemoryStreetGraphContainer.createFromDB)
+      val sidewalkGraph = SidewalkModule()(graphs.streetDB)
         .createSideWalks(failureTolerance = failureTolerance).purgeSidewalks
       logger.debug(s"sidewalkGraph created. Vertices: ${sidewalkGraph.vertices.size}. Sidewalk Edges: ${sidewalkGraph.sidewalkEdges.size}. Street Crossing Edges: ${sidewalkGraph.streetCrossingEdges.size}")
       saveSidewalks(sidewalkGraph)
@@ -81,8 +86,17 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
   def createRamps() = Try {
     logger.info(s"Starting to create ramps")
     withTimeLogging({
-      saveRamps(RampProvider.ramps)
+      saveRamps(getRampsFromFile)
     }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
+  }
+
+  private def getRampsFromFile: Vector[Ramp] = {
+
+    lazy val rampPath2014: String = configuration.Ramp.sourceFile2014Path
+    lazy val rampPath2011: String = configuration.Ramp.sourceFile2011Path
+    lazy val rampParser: RampLoader = RampLoaderByCSV(Seq((rampPath2014, RampLoader2014), (rampPath2011, RampLoader2011)))
+
+    rampParser.loadRamps
   }
 
   private def saveRamps(ramps: Vector[Ramp]) = Try {

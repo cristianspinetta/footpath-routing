@@ -18,10 +18,10 @@ object StreetVertex extends SQLSyntaxSupport[StreetVertex[StreetEdge]] {
   override val columns = Seq("id", "coordinate")
   override val useSnakeCaseColumnName = false
 
-  def apply[E <: StreetEdge](id: Long, edges: List[E], coordinate: Coordinate): StreetVertex[E] = new StreetVertexImpl(id, edges, coordinate)
+  def apply[E <: StreetEdge](id: Long, edges: List[E], coordinate: Coordinate): StreetVertex[E] = StreetVertexImpl(id, edges, coordinate)
 }
 
-class StreetVertexImpl[E <: StreetEdge](override val id: Long, override val edges: List[E], override val coordinate: Coordinate) extends StreetVertex[E]
+case class StreetVertexImpl[E <: StreetEdge](override val id: Long, override val edges: List[E], override val coordinate: Coordinate) extends StreetVertex[E]
 
 case class UnsavedStreetVertex(override val id: Long, override val edges: List[StreetEdgeUnsaved], override val coordinate: Coordinate) extends StreetVertex[StreetEdgeUnsaved] {
   override def copy(edges: Seq[StreetEdgeUnsaved]): UnsavedStreetVertex = UnsavedStreetVertex(id, edges.toList, coordinate)

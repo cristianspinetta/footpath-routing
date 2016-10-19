@@ -6,10 +6,10 @@ import base.{ FailureReporterSupport, LazyLoggerSupport, LogicError, MeterSuppor
 import mapdomain.graph.Coordinate
 import mapdomain.math.{ GVector, VectorUtils }
 import mapdomain.sidewalk._
-import mapdomain.street.{ InMemoryStreetGraphContainer, StreetEdge, StreetVertex }
+import mapdomain.street.{ StreetEdge, StreetGraphContainer, StreetVertex }
 import mapdomain.utils.EdgeUtils
 
-case class SidewalkModule(implicit graph: InMemoryStreetGraphContainer) extends LazyLoggerSupport with MeterSupport with FailureReporterSupport {
+case class SidewalkModule(implicit graph: StreetGraphContainer) extends LazyLoggerSupport with MeterSupport with FailureReporterSupport {
 
   import mapdomain.utils.PointUtils._
   implicit protected val vertexIdGenerator = SidewalkVertexIDGenerator()
