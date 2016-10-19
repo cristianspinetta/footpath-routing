@@ -1,4 +1,4 @@
-package mapdomain.snapshot.sidewalk
+package snapshot.sidewalk
 
 import base.conf.EnvConfig
 import mapdomain.repository.sidewalk.SidewalkVertexRepository

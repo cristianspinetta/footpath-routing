@@ -10,7 +10,7 @@ import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
-import provider.RampProvider
+import provider.GraphSupport
 import scalikejdbc.DB
 
 import scala.collection.concurrent.TrieMap
@@ -20,7 +20,7 @@ trait MapGeneratorServiceSupport {
   val mapGeneratorService: MapGeneratorService = MapGeneratorService
 }
 
-trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with StreetRepositorySupport with SidewalkRepositorySupport {
+trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEnvConfig with GraphSupport with StreetRepositorySupport with SidewalkRepositorySupport {
 
   def createStreets(): Try[_] = Try {
     // FIXME Check that streets doen't exist.
@@ -61,7 +61,7 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
   def createSidewalks(failureTolerance: Boolean = true) = Try {
     logger.info(s"Starting to create the sidewalks")
     withTimeLogging({
-      val sidewalkGraph = SidewalkModule()(InMemoryStreetGraphContainer.createFromDB)
+      val sidewalkGraph = SidewalkModule()(graphs.streetDB)
         .createSideWalks(failureTolerance = failureTolerance).purgeSidewalks
       logger.debug(s"sidewalkGraph created. Vertices: ${sidewalkGraph.vertices.size}. Sidewalk Edges: ${sidewalkGraph.sidewalkEdges.size}. Street Crossing Edges: ${sidewalkGraph.streetCrossingEdges.size}")
       saveSidewalks(sidewalkGraph)

@@ -1,9 +1,8 @@
 package mapdomain.sidewalk
 
-import base.{LazyLoggerSupport, MeterSupport}
+import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph._
-import mapdomain.repository.sidewalk.{RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository}
-import mapdomain.snapshot.sidewalk.SidewalkVertexSnapshot
+import mapdomain.repository.sidewalk.{ SidewalkRepositorySupport, SidewalkVertexRepository }
 import mapdomain.utils.GraphUtils
 
 import scala.collection.Map
@@ -123,20 +122,5 @@ case class InMemorySidewalkGraphContainer(vertexById: Map[Long, SidewalkVertex])
 }
 
 object InMemorySidewalkGraphContainer extends LazyLoggerSupport with MeterSupport {
-
   def apply(vertices: List[SidewalkVertex]): InMemorySidewalkGraphContainer = new InMemorySidewalkGraphContainer(vertices.map(v => v.id -> v) toMap)
-
-  def createFromDB: InMemorySidewalkGraphContainer = withTimeLogging({
-    logger.info("Getting Sidewalk Graph from DB")
-    val graph = InMemorySidewalkGraphContainer(SidewalkVertexRepository.findAll)
-    graph.ramps = RampRepository.findAll
-    graph
-  }, (time: Long) => logger.info(s"Loading Sidewalk Graph from DB finished in $time ms."))
-
-  def createFromSnapshot: InMemorySidewalkGraphContainer = withTimeLogging({
-    logger.info("Getting Sidewalk Graph from Snapshot")
-    val graph = InMemorySidewalkGraphContainer(SidewalkVertexSnapshot.get().toMap)
-    graph.ramps = RampRepository.findAll
-    graph
-  }, (time: Long) => logger.info(s"Loading Sidewalk Graph from Snapshot finished in $time ms."))
 }

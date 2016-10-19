@@ -1,7 +1,7 @@
 package base
 
-import mapdomain.snapshot.sidewalk.SidewalkVertexSnapshot
-import mapdomain.snapshot.street.StreetVertexSnapshot
+import snapshot.sidewalk.SidewalkVertexSnapshot
+import snapshot.street.StreetVertexSnapshot
 import snapshot.Snapshots
 
 object ApiSnapshots extends Snapshots {

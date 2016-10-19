@@ -1,4 +1,4 @@
-package mapdomain.snapshot.street
+package snapshot.street
 
 import base.conf.EnvConfig
 import mapdomain.repository.street.StreetVertexRepository

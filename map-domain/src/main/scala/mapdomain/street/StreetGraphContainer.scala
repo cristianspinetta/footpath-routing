@@ -3,7 +3,6 @@ package mapdomain.street
 import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph._
 import mapdomain.repository.street.{ StreetRepositorySupport, StreetVertexRepository }
-import mapdomain.snapshot.street.StreetVertexSnapshot
 import mapdomain.utils.GraphUtils
 
 import scala.collection.Map
@@ -80,16 +79,6 @@ case class InMemoryStreetGraphContainer(override val vertexById: Map[Long, Stree
 
 object InMemoryStreetGraphContainer extends LazyLoggerSupport with MeterSupport {
   def apply(vertices: List[StreetVertex[StreetEdge]]): InMemoryStreetGraphContainer = InMemoryStreetGraphContainer(vertices.map(v ⇒ (v.id, v)) toMap)
-
-  def createFromDB: InMemoryStreetGraphContainer = withTimeLogging({
-    logger.info("Getting Street Graph from DB")
-    InMemoryStreetGraphContainer(StreetVertexRepository.findAll)
-  }, (time: Long) ⇒ logger.info(s"Loading Street Graph from DB finished in $time ms."))
-
-  def createFromSnapshot: InMemoryStreetGraphContainer = withTimeLogging({
-    logger.info("Getting Street Graph from Snapshot")
-    InMemoryStreetGraphContainer(StreetVertexSnapshot.get().toMap)
-  }, (time: Long) ⇒ logger.info(s"Loading Street Graph from Snapshot finished in $time ms."))
 }
 
 case class UnsavedStreetGraphContainer(vertices: List[UnsavedStreetVertex]) extends InMemoryGeoGraphContainer[StreetEdgeUnsaved, UnsavedStreetVertex] with LazyLoggerSupport with MeterSupport {

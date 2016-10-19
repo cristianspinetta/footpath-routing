@@ -37,7 +37,7 @@ object Projects extends Build {
     .settings(notAggregateInAssembly: _*)
 
   lazy val navigationApi = Project("navigation-api", file("navigation-api"))
-    .dependsOn(pathGenerator, mapGenerator, mapDomain, commonLibrary)
+    .dependsOn(pathGenerator, mapGenerator, mapDomain, commonLibrary, snapshots)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(assemblySettings: _*)
@@ -51,7 +51,7 @@ object Projects extends Build {
     .settings(mainClass in assembly := Some("api.WebServer"))
 
   lazy val mapDomain = Project("map-domain", file("map-domain"))
-    .dependsOn(commonLibrary, snapshots)
+    .dependsOn(commonLibrary)
     .configs(BenchmarkConfig, DBTestsConfig)
     .settings(testsSettings: _*)
     .settings(benchmarkSettings: _*)
