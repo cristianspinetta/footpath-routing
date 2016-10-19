@@ -31,17 +31,17 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
   def getPathBetweenStops(stopFrom: Stop, stopTo: Stop): List[Coordinate] = withTimeLogging({
 
     @tailrec
-    def findNextPaths(from: Stop, destination: Stop, accumulatedPaths: List[Path]): List[Path] = {
-      if (from.id == destination.id) accumulatedPaths
+    def findNextPaths(fromStopId: Long, destinationStopId: Long, accumulatedPaths: List[Path]): List[Path] = {
+      if (fromStopId == destinationStopId) accumulatedPaths
       else {
-        val nextStop: Stop = stopRepository.find(from.nextStopId.get).get
+        val fromStop: Stop = stopRepository.find(fromStopId).get
         // FIXME: cambiar pathId por un Option
-        val newAccumulatedPaths = nextStop.pathId.flatMap(pathId ⇒ pathRepository.find(pathId)).toList ::: accumulatedPaths
-        findNextPaths(nextStop, destination, newAccumulatedPaths)
+        val newAccumulatedPaths = fromStop.pathId.flatMap(pathId ⇒ pathRepository.find(pathId)).toList ::: accumulatedPaths
+        findNextPaths(fromStop.nextStopId.get, destinationStopId, newAccumulatedPaths)
       }
     }
 
-    findNextPaths(stopFrom, stopTo, stopFrom.pathId.flatMap(pathId ⇒ pathRepository.find(pathId)).toList)
+    findNextPaths(stopFrom.id, stopTo.id, List.empty)
       .reverse
       .flatMap(path ⇒ (if (path.coordinates == "") "[]" else path.coordinates).parseJson.convertTo[List[Coordinate]])
   }, (time: Long) ⇒ logger.info(s"Execute Get Path Between Stops in $time ms."))
