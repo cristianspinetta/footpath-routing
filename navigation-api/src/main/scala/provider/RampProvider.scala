@@ -82,7 +82,7 @@ object RampProvider extends ApiEnvConfig {
 
   val rampDistanceToEdge: Double = {
     val c1 = Coordinate(-34.6124922, -58.4130873)
-    val c2 = Coordinate(-34.6125422, -58.4130873)
+    val c2 = Coordinate(-34.6125222, -58.4130873)
     c1.distanceToInDegrees(c2)
   }
 
