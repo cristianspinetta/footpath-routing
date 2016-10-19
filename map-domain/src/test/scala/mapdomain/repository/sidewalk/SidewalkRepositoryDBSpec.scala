@@ -121,7 +121,7 @@ class SidewalkRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfte
   it should "create sidewalk edges correctly" in {
     val vertex1 = StreetVertexRepository.create(StreetVertex(5, Nil, Coordinate(12, 11)))
     StreetVertexRepository.create(StreetVertex(6, Nil, Coordinate(14, 13)))
-    val sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1.id))
+    val sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(9, 9), Nil, Nil, vertex1.id))
     val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1.id))
 
     val wayId: Long = 2
@@ -131,7 +131,7 @@ class SidewalkRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfte
     val edgeId = StreetEdgeRepository.create(streetEdge)
     val savedStreetEdge: StreetEdge = StreetEdgeRepository.find(edgeId)
 
-    val sidewalkEdge1Id = SidewalkEdgeRepository.create(SidewalkEdge(4, 5, "key1", NorthSide, savedStreetEdge.id, None, isAccessible = false))
+    val sidewalkEdge1Id = SidewalkEdgeRepository.create(SidewalkEdge(sidewalk1.id, sidewalk2.id, "key1", NorthSide, savedStreetEdge.id, None, isAccessible = false))
     val sidewalkEdge1 = SidewalkEdgeRepository.find(sidewalkEdge1Id)
     sidewalkEdge1.id shouldBe 'defined
     sidewalkEdge1.keyValue shouldBe "key1"
@@ -141,9 +141,22 @@ class SidewalkRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfte
     sidewalkEdge1.streetEdgeBelongToId.get shouldBe edgeId
     sidewalkEdge1.isAccessible shouldBe false
 
-    val sidewalkEdges = SidewalkEdgeRepository.findSidewalkEdgesBySidewalkVertex(sidewalk1.id)
+    var sidewalkEdges = SidewalkEdgeRepository.findSidewalkEdgesBySidewalkVertex(sidewalk1.id)
     sidewalkEdges.size shouldBe 1
     sidewalkEdges.head.id.get shouldBe sidewalkEdge1Id
     sidewalkEdges.head.keyValue shouldBe "key1"
+
+    // find edge in rectangle
+    sidewalkEdges = SidewalkEdgeRepository.findSidewalksInRectangle(Coordinate(50, 50), Coordinate(1, 1))
+    sidewalkEdges.size shouldBe 1
+    sidewalkEdges.head.id.get shouldBe sidewalkEdge1Id
+
+    // vertex start outside rectangle
+    sidewalkEdges = SidewalkEdgeRepository.findSidewalksInRectangle(Coordinate(50, 50), Coordinate(10, 1))
+    sidewalkEdges.size shouldBe 0
+
+    // vertex end outside rectangle
+    sidewalkEdges = SidewalkEdgeRepository.findSidewalksInRectangle(Coordinate(10, 50), Coordinate(1, 1))
+    sidewalkEdges.size shouldBe 0
   }
 }

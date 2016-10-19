@@ -21,12 +21,14 @@ trait ModelFormatter extends DefaultJsonProtocol with CaseObjectSerializationSup
   }
   implicit val EdgeTypeFormat = caseObjectJsonFormat[EdgeType](StreetEdgeType, SidewalkEdgeType, StreetCrossingEdgeType)
   implicit val VertexTypeFormat = caseObjectJsonFormat[VertexType](StreetVertexType, SidewalkVertexType)
+  implicit val ReportableElementTypeFormat = caseObjectJsonFormat[ReportableElementType](RAMP, SIDEWALK)
   implicit val RampFormat = jsonFormat4(Ramp.apply)
   implicit val EdgeFormat = jsonFormat4(Edge.apply)
   implicit val VertexFormat = jsonFormat3(Vertex.apply)
   implicit val MapContainerFormat = jsonFormat2(MapContainer.apply)
   implicit val StreetFormat = jsonFormat3(Street.apply)
   implicit val SidewalkFormat = jsonFormat2(Sidewalk.apply)
+  implicit val ReportableElementFormat = jsonFormat6(ReportableElement.apply)
   implicit val StopFormat = jsonFormat4(Stop.apply)
   implicit val PublicTransportPathFormat = jsonFormat4(PublicTransportPath)
 

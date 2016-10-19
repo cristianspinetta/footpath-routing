@@ -2,18 +2,18 @@ package searching
 
 import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
-import cats.data.{Xor, XorT}
+import cats.data.{ Xor, XorT }
 import mapdomain.graph._
 import mapdomain.sidewalk.SidewalkVertex
 import mapdomain.utils.GraphUtils
-import model.{Path, PathDescription, WalkPath}
+import model.{ Path, PathDescription, WalkPath }
 import pathgenerator.core.AStar
 import pathgenerator.graph.GeoHeuristic
 import provider.{ GraphSupport, StreetEdgeSupport, StreetInfoSupport }
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.reflect.runtime.universe._
-import scala.util.{Failure, Try}
+import scala.util.{ Failure, Try }
 import SearchRoutingErrors._
 
 trait WalkRouteSearcherSupport {
@@ -61,7 +61,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
         val beforeLast :: last :: _ = vertices.takeRight(2)
         val to = getAddress(beforeLast, last)
         Path(path, PathDescription(WalkPath, from, to))
-      case Nil =>
+      case _ =>
         Path(path, PathDescription(WalkPath, "-", "-"))
     }
   }

@@ -124,6 +124,19 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                   }
                 }
             } ~
+            path("reportableElements") {
+              parameters('northeast.as[String], 'southwest.as[String]).as(ReportableElementsRequest) { reportablElementsRequest ⇒
+                val response: Future[ToResponseMarshallable] = Future.successful {
+                  val northeastCoordinates = reportablElementsRequest.northeast.split(",")
+                  val southwestCoordinates = reportablElementsRequest.southwest.split(",")
+                  val list = mapService.reportableElements(
+                    Coordinate(northeastCoordinates.head.toDouble, northeastCoordinates.last.toDouble),
+                    Coordinate(southwestCoordinates.head.toDouble, southwestCoordinates.last.toDouble)).get
+                  ReportableElementsResponse(list)
+                }
+                complete(response)
+              }
+            } ~
             pathPrefix("private") {
               pathPrefix("create") {
                 path("street") {
