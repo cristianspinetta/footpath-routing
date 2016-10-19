@@ -52,7 +52,7 @@ trait SidewalkVertexRepository extends SpatialSQLSupport with MeterSupport with 
       .where.eq(s.id, id)
   }.map(sidewalkVertex(s)).single().apply()
 
-  // FIXME adaptar a streaming @see https://github.com/tkawachi/scalikejdbc-stream
+  // FIXME adapt for streaming @see https://github.com/tkawachi/scalikejdbc-stream
   def findAll(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = withTimeLogging(
     withSQL {
       select

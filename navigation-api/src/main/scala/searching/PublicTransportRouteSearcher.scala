@@ -66,11 +66,13 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
   }
 
   protected def candidatePathByTravelInfo(from: Coordinate, to: Coordinate)(nearestStops: NearestStops)(travelInfoId: Long): Option[PathBuilder] = {
-    if (PathBuilder.canReachDestination(nearestStops.stopsFrom, nearestStops.stopsTo))
+    val stopsFrom: List[Stop] = nearestStops.stopsFrom.filter(_.travelInfoId == travelInfoId)
+    val stopsTo: List[Stop] = nearestStops.stopsTo.filter(_.travelInfoId == travelInfoId)
+    if (PathBuilder.canReachDestination(stopsFrom, stopsTo))
       Some(PathBuilder(from, to)(
         travelInfoId = travelInfoId,
-        stopsFrom = nearestStops.stopsFrom.filter(_.travelInfoId == travelInfoId),
-        stopsTo = nearestStops.stopsTo.filter(_.travelInfoId == travelInfoId)))
+        stopsFrom = stopsFrom,
+        stopsTo = stopsTo))
     else
       None
   }
