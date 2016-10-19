@@ -97,12 +97,20 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     withTimeLogging({
       val edges = RampProvider.associateRampsToSidewalks
       updateStreetCrossingEdges(edges)
+      val ramps = RampProvider.updateRampCoordinates(edges)
+      updateRamps(ramps)
     }, (time: Long) ⇒ logger.info(s"Associated ramps to sidewalks in $time ms."))
   }
 
   private def updateStreetCrossingEdges(edges: List[StreetCrossingEdge]) = Try {
     DB localTx { implicit session ⇒
       edges foreach StreetCrossingEdgeRepository.save
+    }
+  }
+
+  private def updateRamps(ramps: List[Ramp]) = Try {
+    DB localTx { implicit session ⇒
+      ramps foreach RampRepository.save
     }
   }
 

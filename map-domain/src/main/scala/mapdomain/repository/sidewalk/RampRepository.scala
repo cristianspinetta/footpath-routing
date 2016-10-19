@@ -46,7 +46,9 @@ trait RampRepository extends SpatialSQLSupport {
     withSQL {
       update(Ramp).set(
         Ramp.column.address -> ramp.address,
-        Ramp.column.isAccessible -> ramp.isAccessible).where.eq(Ramp.column.id, ramp.id)
+        Ramp.column.isAccessible -> ramp.isAccessible,
+        Ramp.column.coordinate -> positionToSQL(ramp.coordinate)
+      ).where.eq(Ramp.column.id, ramp.id)
     }.update().apply()
 
     ramp

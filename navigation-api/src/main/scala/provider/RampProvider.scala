@@ -2,8 +2,9 @@ package provider
 
 import base.conf.ApiEnvConfig
 import mapdomain.graph.Coordinate
+import mapdomain.math.{GVector, Point, VectorUtils}
 import mapdomain.repository.sidewalk.{RampRepository, SidewalkVertexRepository, StreetCrossingEdgeRepository}
-import mapdomain.sidewalk.{Ramp, StreetCrossingEdge}
+import mapdomain.sidewalk.{Ramp, SidewalkVertex, StreetCrossingEdge}
 import mapdomain.utils.EdgeUtils
 import mapgenerator.source.features.{RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV}
 
@@ -29,12 +30,13 @@ object RampProvider extends ApiEnvConfig {
   }
 
   private def associate(rampAssociation: RampAssociation, edges: List[StreetCrossingEdge]): StreetCrossingEdge = {
-    var crossingEdge: StreetCrossingEdge = null
-    try {
-      crossingEdge =StreetCrossingEdgeRepository.find(rampAssociation.streetCrossingEdgeId)
-    } catch {
-      case e: Exception => throw new RuntimeException(s"Unable to find edge ${rampAssociation.streetCrossingEdgeId}")
-    }
+    val crossingEdge: StreetCrossingEdge = edges.find(e => e.id.get == rampAssociation.streetCrossingEdgeId).getOrElse(
+      try {
+        StreetCrossingEdgeRepository.find(rampAssociation.streetCrossingEdgeId)
+      } catch {
+        case e: Exception => throw new RuntimeException(s"Unable to find edge ${rampAssociation.streetCrossingEdgeId}")
+      }
+    )
 
     var ramp: Ramp= null
     try {
@@ -78,6 +80,22 @@ object RampProvider extends ApiEnvConfig {
     rampAssociations.foldLeft(List[StreetCrossingEdge]())((edges, rampAssociation) => associate(rampAssociation, edges) :: edges)
   }
 
+  val rampDistanceToEdge: Double = {
+    val c1 = Coordinate(-34.6124922, -58.4130873)
+    val c2 = Coordinate(-34.6125422, -58.4130873)
+    c1.distanceToInDegrees(c2)
+  }
+
+  private def processRamps(edges: List[StreetCrossingEdge], retrieveRampId: StreetCrossingEdge => Option[Long], retrieveVertexId: StreetCrossingEdge => Long): List[Ramp] = {
+    edges.filter(e => retrieveRampId(e).isDefined).map(edge => {
+      val edgesForRamp = StreetCrossingEdgeRepository.findCrossingEdgesByRamp(retrieveRampId(edge).get)
+      edgesForRamp match {
+        case h::Nil => moveRampCoordinate(retrieveRampId(edge).get, edge, retrieveVertexId(edge), rampDistanceToEdge, -rampDistanceToEdge)
+        case h::t => moveRampCoordinate(retrieveRampId(edge).get, edge, retrieveVertexId(edge), -rampDistanceToEdge, -rampDistanceToEdge)
+      }
+    })
+  }
+
   def updateRampCoordinates(edges: List[StreetCrossingEdge]): List[Ramp] = {
     /*por cada edge y por cada rampa (start y end):
     * 1- si otro edge no tiene la misma rampa asociada:
@@ -89,8 +107,39 @@ object RampProvider extends ApiEnvConfig {
     *     . buscar punto a una distancia d del edge con el mismo vertex que el de la rampa a evaluar, pero en el otro sentido (d negativo)
     *     . de los anteriores, sacar la latitud y longitud de la rampa
     */
+    val startRamps = processRamps(edges, e => e.rampStartId, e => e.vertexStartId)
+    val endRamps = processRamps(edges, e => e.rampEndId, e => e.vertexEndId)
 
-    ???
+    startRamps ++ endRamps
+  }
+
+  private def moveRampCoordinate(rampId: Long, edge: StreetCrossingEdge, vertexId: Long, moveFromFirstEdge: Double, moveFromSecondEdge: Double): Ramp = {
+    val ramp = RampRepository.find(rampId).get
+    val vertexStart = SidewalkVertexRepository.find(vertexId).get
+    val vertexEnd = findOppositeVertex(edge, vertexId)
+
+    val otherEdgeAssociated = StreetCrossingEdgeRepository.findCrossingEdgesBySidewalkVertex(vertexId).find(e => e.id != edge.id).get
+    val otherVertexEnd = findOppositeVertex(otherEdgeAssociated, vertexId)
+
+    val pointStart = Point(vertexStart.coordinate.longitude, vertexStart.coordinate.latitude)
+    var pointEnd = Point(vertexEnd.coordinate.longitude, vertexEnd.coordinate.latitude)
+    val startVector: GVector = GVector(pointStart, pointEnd)
+
+    pointEnd = Point(otherVertexEnd.coordinate.longitude, otherVertexEnd.coordinate.latitude)
+    val endVector: GVector = GVector(pointStart, pointEnd)
+
+    val longitude = VectorUtils.findPointAtDistance(moveFromFirstEdge, startVector).x
+    val latitude = VectorUtils.findPointAtDistance(moveFromSecondEdge, endVector).y
+
+    ramp.coordinate = Coordinate(latitude, longitude)
+    ramp
+  }
+
+  private def findOppositeVertex(edge: StreetCrossingEdge, vertexId: Long): SidewalkVertex = {
+    if(vertexId == edge.vertexStartId)
+      SidewalkVertexRepository.find(edge.vertexEndId).get
+    else
+      SidewalkVertexRepository.find(edge.vertexStartId).get
   }
 
 }
