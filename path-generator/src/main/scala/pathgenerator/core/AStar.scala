@@ -112,7 +112,7 @@ case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(
         // This path is the best until now. Record it!
         _cameFrom += (neighbour -> current)
         gScore += (neighbour.id -> tentativeGScore)
-        fScore += (neighbour.id -> (tentativeGScore + heuristic(neighbour)))
+        fScore += (neighbour.id -> (tentativeGScore + heuristic(current, neighbour)))
         _opensQueue enqueue neighbour // must enqueue after the neighbour is added to fScore
       } else if (tentativeGScore >= gScore(neighbour.id)) {
         // This is not a better path.

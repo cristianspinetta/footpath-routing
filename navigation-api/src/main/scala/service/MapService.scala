@@ -59,6 +59,14 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
       })
   }
 
+  def publicTransportCombinations(coordinate: Coordinate, radiusOpt: Option[Double], lineOpt: Option[String]): Try[List[PTCombination]] = Try {
+    val combinations = publicTransportProvider.getStopCombinations
+    combinations
+      .map(combination => (combination, publicTransportProvider.findStop(combination.fromStopId), publicTransportProvider.findStop(combination.toStopId)))
+      .map { case (combination, stopFrom, stopTo) =>
+        PTCombination(stopFrom.id, stopFrom.coordinate, stopFrom.travelInfoId.toString, stopTo.id, stopTo.coordinate, stopTo.travelInfoId.toString) }
+  }
+
   protected def getEdgesAndVertices[E <: GeoEdge with BaseEntity, G <: GraphContainer[E, V] forSome { type V <: GeoVertex[E]}](edges: List[E], graph: G) = {
 
     val (edgesC, vertices) = edges.foldLeft((List.empty[Edge], Set.newBuilder[Vertex])) { case ((partialEdges, partialVertices), street) =>

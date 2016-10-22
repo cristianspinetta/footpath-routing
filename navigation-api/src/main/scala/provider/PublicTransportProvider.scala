@@ -2,7 +2,7 @@ package provider
 
 import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph.{ Coordinate, GeoSearch }
-import mapdomain.publictransport.{ Path, Stop, TravelInfo }
+import mapdomain.publictransport._
 import mapdomain.repository.publictransport.{ PathRepository, PublicTransportRepositorySupport, StopRepository }
 import scalikejdbc.DBSession
 import spray.json._
@@ -45,6 +45,9 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
       .reverse
       .flatMap(path ⇒ (if (path.coordinates == "") "[]" else path.coordinates).parseJson.convertTo[List[Coordinate]])
   }, (time: Long) ⇒ logger.info(s"Execute Get Path Between Stops in $time ms."))
+
+  def getStopCombinations: List[PublicTransportCombination] = stopRepository.findAllCombinations()
+
 }
 
 object PublicTransportProvider extends PublicTransportProvider

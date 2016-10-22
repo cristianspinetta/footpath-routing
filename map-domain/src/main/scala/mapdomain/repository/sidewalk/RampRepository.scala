@@ -5,6 +5,10 @@ import mapdomain.sidewalk.Ramp
 import scalikejdbc.{ DBSession, WrappedResultSet, _ }
 import sql.SpatialSQLSupport
 
+trait RampRepositorySupport {
+  val rampRepository: RampRepository = RampRepository
+}
+
 trait RampRepository extends SpatialSQLSupport {
 
   val r = Ramp.syntax("r")

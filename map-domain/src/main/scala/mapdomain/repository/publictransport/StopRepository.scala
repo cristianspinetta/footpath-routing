@@ -1,13 +1,13 @@
 package mapdomain.repository.publictransport
 
 import mapdomain.graph.Coordinate
-import mapdomain.publictransport.{ Path, Stop, StopUnsaved, TravelInfo }
+import mapdomain.publictransport._
 import scalikejdbc.{ DBSession, WrappedResultSet, _ }
 import sql.SpatialSQLSupport
 
 trait StopRepository extends SpatialSQLSupport {
 
-  val (s, ti) = (Stop.syntax("s"), TravelInfo.syntax("ti"))
+  val (s, ti, ptc) = (Stop.syntax("s"), TravelInfo.syntax("ti"), PublicTransportCombination.syntax("sc"))
 
   def stop(s: SyntaxProvider[Stop])(rs: WrappedResultSet): Stop = stop(s.resultName, s.tableAliasName)(rs)
 
@@ -21,6 +21,20 @@ trait StopRepository extends SpatialSQLSupport {
       sequence = rs.get(s.sequence),
       pathId = rs.longOpt(s.pathId),
       travelInfoId = rs.get(s.travelInfoId))
+  }
+
+  def publicTransportCombination(s: SyntaxProvider[PublicTransportCombination])(rs: WrappedResultSet): PublicTransportCombination = publicTransportCombination(s.resultName, s.tableAliasName)(rs)
+
+  private def publicTransportCombination(ptc: ResultName[PublicTransportCombination], tableAlias: String)(implicit rs: WrappedResultSet): PublicTransportCombination = {
+    PublicTransportCombination(
+      fromStopId = rs.long(ptc.fromStopId),
+      toStopId = rs.long(ptc.toStopId),
+      fromTravelInfoId = rs.long(ptc.fromTravelInfoId),
+      toTravelInfoId = rs.long(ptc.fromTravelInfoId),
+      distance = rs.double(ptc.distance),
+      walkPath = rs.stringOpt(ptc.walkPath),
+      enabled = rs.boolean(ptc.enabled),
+      cost = rs.double(ptc.cost))
   }
 
   def create(stopUnsaved: StopUnsaved)(implicit session: DBSession = Stop.autoSession): Stop = {
@@ -67,6 +81,11 @@ trait StopRepository extends SpatialSQLSupport {
         lineOpt.map(line ⇒ sqls.like(ti.name, line)),
         radiusOpt.map(radius ⇒ clauseNearestByDistance(coordinate, radius, s, "coordinate"))))
   }.map(stop(s)).list().apply()
+
+  def findAllCombinations()(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = withSQL {
+    select.all(ptc)
+      .from(PublicTransportCombination as ptc)
+  }.map(publicTransportCombination(ptc)).list().apply()
 
   def save(stop: Stop)(implicit session: DBSession = Stop.autoSession): Stop = {
     withSQL {
