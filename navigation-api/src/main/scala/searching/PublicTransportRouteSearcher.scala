@@ -99,7 +99,12 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
         transportPublicPath ← transportPublicPathFut
         walkTo ← walkToFut
       } yield {
-        Route(List(walkFrom, transportPublicPath, walkTo))
+
+        val walkFromUntilStop = walkFrom.copy(path = walkFrom.path :+ stopFrom.coordinate)
+        val walkToUntilStop = walkTo.copy(path = stopTo.coordinate +: walkTo.path)
+        val transportPublicPathUntilFinalStop = transportPublicPath.copy(path = transportPublicPath.path :+ stopTo.coordinate)
+
+        Route(List(walkFromUntilStop, transportPublicPathUntilFinalStop, walkToUntilStop))
       } // TODO Agregar path en colectivo
     }
   }
