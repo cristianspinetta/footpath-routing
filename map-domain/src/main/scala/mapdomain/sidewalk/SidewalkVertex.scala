@@ -13,7 +13,11 @@ trait SidewalkVertex extends GeoVertex[PedestrianEdge] {
 
   val edges: List[PedestrianEdge] = sidewalkEdges ++ streetCrossingEdges
 
-  override def getEdgesFor(vertexId: Long): Option[PedestrianEdge] = edges.find(edge ⇒ edge.vertexEndId == vertexId || edge.vertexStartId == vertexId)
+  override def getEdgesFor(vertexId: Long): Option[PedestrianEdge] = getEdgesFor(vertexId, edges)
+  def getSidewalkEdgeFor(vertexId: Long): Option[SidewalkEdge] = getEdgesFor(vertexId, sidewalkEdges)
+  def getCrossingEdgeFor(vertexId: Long): Option[StreetCrossingEdge] = getEdgesFor(vertexId, streetCrossingEdges)
+
+  private def getEdgesFor[E <: PedestrianEdge](vertexId: Long, edges: List[E]): Option[E] = edges.find(edge ⇒ edge.vertexEndId == vertexId || edge.vertexStartId == vertexId)
 
   def copy(id: Long = id, coordinate: Coordinate = coordinate, sidewalkEdges: List[SidewalkEdge] = sidewalkEdges,
     streetCrossingEdges: List[StreetCrossingEdge] = streetCrossingEdges, streetVertexBelongToId: Long = streetVertexBelongToId): SidewalkVertex = {
@@ -27,9 +31,9 @@ object SidewalkVertex extends SQLSyntaxSupport[SidewalkVertex] {
 
   def apply(id: Long, coordinate: Coordinate, sidewalkEdges: List[SidewalkEdge],
     streetCrossingEdges: List[StreetCrossingEdge], streetVertexBelongToId: Long): SidewalkVertex = {
-    new SidewalkVertexImpl(id, coordinate, sidewalkEdges, streetCrossingEdges, streetVertexBelongToId)
+    SidewalkVertexImpl(id, coordinate, sidewalkEdges, streetCrossingEdges, streetVertexBelongToId)
   }
 }
 
-class SidewalkVertexImpl(val id: Long, val coordinate: Coordinate, val sidewalkEdges: List[SidewalkEdge],
-  val streetCrossingEdges: List[StreetCrossingEdge], val streetVertexBelongToId: Long) extends SidewalkVertex
+case class SidewalkVertexImpl(id: Long, coordinate: Coordinate, sidewalkEdges: List[SidewalkEdge],
+  streetCrossingEdges: List[StreetCrossingEdge], streetVertexBelongToId: Long) extends SidewalkVertex

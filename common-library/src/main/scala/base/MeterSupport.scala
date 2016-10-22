@@ -1,5 +1,6 @@
 package base
 
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
 trait MeterSupport {
@@ -10,6 +11,15 @@ trait MeterSupport {
     val total = System.currentTimeMillis() - start
     processTime(total)
     tryF.get
+  }
+
+  def withTimeLoggingAsync[T](f: ⇒ Future[T], processTime: Long ⇒ _)(implicit ec: ExecutionContext): Future[T] = {
+    val start = System.currentTimeMillis()
+    f.map(x ⇒ {
+      val total = System.currentTimeMillis() - start
+      processTime(total)
+      x
+    })
   }
 
   def withTimeLoggingInNano[T](f: ⇒ T, processTime: Long ⇒ _): T = {

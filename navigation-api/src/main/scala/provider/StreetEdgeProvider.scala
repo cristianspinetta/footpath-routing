@@ -10,7 +10,7 @@ trait StreetEdgeSupport {
 
 object StreetEdgeProvider extends GraphSupport {
 
-  val cache = new TrieMap[Long, StreetEdge]
+  private val cache = new TrieMap[Long, StreetEdge]
 
   def findById(id: Long): StreetEdge = {
     val edge = graphs.street.vertices.find(v ⇒ v.edges.exists(e ⇒ e.id.contains(id))).get.edges.find(e ⇒ e.id.contains(id)).get

@@ -37,13 +37,13 @@ object Projects extends Build {
     .settings(notAggregateInAssembly: _*)
 
   lazy val navigationApi = Project("navigation-api", file("navigation-api"))
-    .dependsOn(pathGenerator, mapGenerator, mapDomain, commonLibrary)
+    .dependsOn(pathGenerator, mapGenerator, mapDomain, commonLibrary, snapshots)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(assemblySettings: _*)
     .settings(libraryDependencies ++=
-      compile(typesafeConfig, slf4jApi, logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental,
-        akkaHttpSprayJsonExperimental, akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp) ++
+      compile(typesafeConfig, slf4jApi, logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental, akkaHttpSprayJsonExperimental,
+        akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, cats) ++
         test(scalatest, mockito, akkaHttpTestKit))
     .settings(noPublishing: _*)
     .settings(playgroundSettings: _*)
@@ -64,6 +64,16 @@ object Projects extends Build {
     .settings(notAggregateInAssembly: _*)
 
   lazy val commonLibrary = Project("common-library", file("common-library"))
+    .settings(basicSettings: _*)
+    .settings(formatSettings: _*)
+    .settings(libraryDependencies ++=
+      compile(typesafeConfig, logbackCore, logbackClassic) ++
+        test(scalatest, mockito))
+    .settings(noPublishing: _*)
+    .settings(notAggregateInAssembly: _*)
+
+  lazy val snapshots = Project("snapshots", file("snapshots"))
+    .dependsOn(commonLibrary)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=

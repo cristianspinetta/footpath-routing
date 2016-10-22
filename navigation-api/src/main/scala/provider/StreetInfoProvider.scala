@@ -12,7 +12,7 @@ trait StreetInfoSupport {
 
 object StreetInfoProvider extends StreetEdgeSupport with GraphSupport with StreetRepositorySupport {
 
-  val cache = new TrieMap[Long, StreetInfo]
+  private val cache = new TrieMap[Long, StreetInfo]
 
   def findById(id: Long): StreetInfo = cache.getOrElseUpdate(id, streetInfoRepository.find(id))
 

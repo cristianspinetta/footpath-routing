@@ -7,12 +7,16 @@ import mapdomain.repository.sidewalk.{RampRepository, SidewalkEdgeRepository}
 import mapdomain.sidewalk._
 import mapdomain.street.StreetEdge
 import model._
-import provider.GraphSupport
+import provider.{GraphSupport, PublicTransportProviderSupport}
 
 import scala.language.existentials
 import scala.util.Try
 
-trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
+trait MapServiceSupport {
+  val mapService: MapService = MapService
+}
+
+trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with PublicTransportProviderSupport {
 
   def edges(edgeType: EdgeType, startPosition: Coordinate, radius: Double): Try[MapContainer] = Try {
     logger.info(s"Getting edges. Type: $edgeType")
@@ -38,6 +42,21 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig {
     val ramps = RampRepository.findRampsInRectangle(northEast, southWest)
     val sidewalks = SidewalkEdgeRepository.findSidewalksInRectangle(northEast, southWest)
     ramps.map(r => ReportableElement(r)).toVector ++ sidewalks.map(s => ReportableElement(s)).toVector
+  }
+
+  def publicTransportPaths(coordinate: Coordinate, radiusOpt: Option[Double], lineOpt: Option[String]): Try[List[PublicTransportPath]] = Try {
+    publicTransportProvider.findStopsByRadiusAndLine(coordinate, radiusOpt, lineOpt)
+        .map(_.travelInfoId)
+        .distinct
+        .map(publicTransportProvider.findTravelInfo)
+      .map(travelInfo => {
+        val coordinates: List[Coordinate] = publicTransportProvider
+          .getPathBetweenStops(
+            publicTransportProvider.findStop(travelInfo.firstStopId),
+            publicTransportProvider.findStop(travelInfo.lastStopId))
+        val stops: List[Stop] = publicTransportProvider.findStopfindByTravelInfoId(travelInfo.id) map Stop.createByDomainStop
+        PublicTransportPath(travelInfo.id, travelInfo.title, coordinates, stops)
+      })
   }
 
   protected def getEdgesAndVertices[E <: GeoEdge with BaseEntity, G <: GraphContainer[E, V] forSome { type V <: GeoVertex[E]}](edges: List[E], graph: G) = {

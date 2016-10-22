@@ -18,4 +18,6 @@
         <appender-ref ref="asyncConsole" />
     </root>
 
+    <!--<logger name="scalikejdbc" level="debug" />-->
+
 </included>

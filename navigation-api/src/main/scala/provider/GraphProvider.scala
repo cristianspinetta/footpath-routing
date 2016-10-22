@@ -1,10 +1,13 @@
 package provider
 
-import base.LazyLoggerSupport
 import base.conf.{ ApiEnvConfig, SidewalkGraphConf, StreetGraphConf }
+import base.{ LazyLoggerSupport, MeterSupport }
+import mapdomain.repository.sidewalk.RampRepository
 import mapdomain.sidewalk._
+import mapdomain.street.InMemoryStreetGraphContainer.{ apply ⇒ _, unapply ⇒ _, withTimeLogging ⇒ _ }
 import mapdomain.street._
-import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
+import snapshot.sidewalk.SidewalkVertexSnapshot
+import snapshot.street.StreetVertexSnapshot
 
 import scala.util.{ Failure, Success, Try }
 
@@ -80,14 +83,23 @@ sealed trait SidewalkGraphProvider {
 private object StreetGraphProviderDB extends StreetGraphProvider with LazyLoggerSupport {
   override val streetGraph: StreetGraphContainer = LazyStreetGraphContainer()
 }
-private object StreetGraphProviderInMemory extends StreetGraphProvider with LazyLoggerSupport {
-  override val streetGraph: StreetGraphContainer = InMemoryStreetGraphContainer.createFromDB
+
+private object StreetGraphProviderInMemory extends StreetGraphProvider with LazyLoggerSupport with MeterSupport {
+  override val streetGraph: StreetGraphContainer = withTimeLogging({
+    logger.info("Getting Street Graph from Snapshot")
+    InMemoryStreetGraphContainer(StreetVertexSnapshot.get().toMap)
+  }, (time: Long) ⇒ logger.info(s"Loading Street Graph from Snapshot finished in $time ms."))
 }
 
 private object SidewalkGraphProviderDB extends SidewalkGraphProvider with LazyLoggerSupport {
   override val sidewalkGraph: SidewalkGraphContainer = LazySidewalkGraphContainer()
 }
-private object SidewalkGraphProviderInMemory extends SidewalkGraphProvider with LazyLoggerSupport {
-  override val sidewalkGraph: SidewalkGraphContainer = InMemorySidewalkGraphContainer.createFromDB
-}
 
+private object SidewalkGraphProviderInMemory extends SidewalkGraphProvider with LazyLoggerSupport with MeterSupport {
+  override val sidewalkGraph: SidewalkGraphContainer = withTimeLogging({
+    logger.info("Getting Sidewalk Graph from Snapshot")
+    val graph = InMemorySidewalkGraphContainer(SidewalkVertexSnapshot.get().toMap)
+    graph.ramps = RampRepository.findAll
+    graph
+  }, (time: Long) ⇒ logger.info(s"Loading Sidewalk Graph from Snapshot finished in $time ms."))
+}

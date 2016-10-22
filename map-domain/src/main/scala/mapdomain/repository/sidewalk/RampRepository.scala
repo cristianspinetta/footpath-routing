@@ -1,13 +1,14 @@
 package mapdomain.repository.sidewalk
 
 import mapdomain.graph.Coordinate
-import mapdomain.sidewalk.Ramp
-import scalikejdbc.{ DBSession, WrappedResultSet, _ }
+import mapdomain.sidewalk.{Ramp, StreetCrossingEdge}
+import scalikejdbc.{DBSession, WrappedResultSet, _}
 import sql.SpatialSQLSupport
 
 trait RampRepository extends SpatialSQLSupport {
 
   val r = Ramp.syntax("r")
+  val sce = StreetCrossingEdge.syntax("sce")
 
   private def ramp(c: SyntaxProvider[Ramp])(rs: WrappedResultSet): Ramp = ramp(c.resultName)(rs)
 
@@ -75,6 +76,7 @@ trait RampRepository extends SpatialSQLSupport {
     select(r.resultAll)
       .append(selectLatitudeAndLongitude(r))
       .from(Ramp as r)
+        .join(StreetCrossingEdge as sce).on(sqls"${sce.rampStartId} = ${r.id} or ${sce.rampEndId} = ${r.id}")
       .where.append(clauseNearestByDistance(coordinate, radius, r, "coordinate"))
   }.map(ramp(r)(_)).list().apply()
 

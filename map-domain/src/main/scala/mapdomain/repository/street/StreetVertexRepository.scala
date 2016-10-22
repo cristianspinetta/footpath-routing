@@ -1,12 +1,13 @@
 package mapdomain.repository.street
 
+import base.{LazyLoggerSupport, MeterSupport}
 import mapdomain.graph.Coordinate
 import mapdomain.street.{StreetEdge, StreetVertex}
 import scalikejdbc._
 import sql.SpatialSQLSupport
 import sqls.count
 
-trait StreetVertexRepository extends SpatialSQLSupport {
+trait StreetVertexRepository extends SpatialSQLSupport with MeterSupport with LazyLoggerSupport {
 
   val v = StreetVertex.syntax("v")
   val edge1 = StreetEdge.syntax("edge1")
@@ -45,12 +46,14 @@ trait StreetVertexRepository extends SpatialSQLSupport {
   }.map(streetVertex(v)).single().apply()
 
   // FIXME adaptar a streaming @see https://github.com/tkawachi/scalikejdbc-stream
-  def findAll(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex[StreetEdge]] = withSQL {
-    select
-      .all(v)
-      .append(selectLatitudeAndLongitude(v))
-      .from(StreetVertex as v)
-  }.map(streetVertex(v)).list().apply()
+  def findAll(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex[StreetEdge]] = withTimeLogging(
+    withSQL {
+      select
+        .all(v)
+        .append(selectLatitudeAndLongitude(v))
+        .from(StreetVertex as v)
+    }.map(streetVertex(v)).list().apply(),
+    (time: Long) => logger.info(s"Getting of all Street Vertex finished in $time ms."))
 
   def findAllWithoutOf(ids: List[Long])(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex[StreetEdge]] = withSQL {
     select
