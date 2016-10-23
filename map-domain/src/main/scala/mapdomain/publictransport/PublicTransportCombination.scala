@@ -14,6 +14,6 @@ case class PublicTransportCombination(
 
 object PublicTransportCombination extends SQLSyntaxSupport[PublicTransportCombination] {
 
-  override val tableName = "transport_public_combination"
+  override val tableName = "public_transport_combination"
   override val useSnakeCaseColumnName = false
 }

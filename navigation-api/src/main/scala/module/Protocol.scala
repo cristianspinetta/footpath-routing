@@ -17,7 +17,7 @@ final case class PublicTransportCombinationsRequest(lat: Double, lng: Double, ra
 final case class StreetResponse(streets: Iterable[Street])
 final case class SidewalkResponse(sidewalks: Iterable[Sidewalk])
 final case class EdgeResponse(edges: Iterable[Edge], vertices: List[Vertex])
-final case class RampResponse(ramps: Vector[Ramp])
+final case class RampResponse(ramps: List[Ramp])
 final case class ReportableElementsResponse(elements: Vector[ReportableElement])
 
 trait Protocol extends DefaultJsonProtocol with CaseObjectSerializationSupport with ModelFormatter with RouteFormatter {

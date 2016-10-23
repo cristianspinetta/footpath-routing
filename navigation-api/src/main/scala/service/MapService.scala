@@ -8,7 +8,7 @@ import mapdomain.repository.sidewalk.{RampRepository, SidewalkEdgeRepository}
 import mapdomain.sidewalk._
 import mapdomain.street.StreetEdge
 import model._
-import provider.{GraphSupport, PublicTransportProviderSupport}
+import provider.{ GraphSupport, PublicTransportProviderSupport, RampProviderSupport }
 
 import scala.language.existentials
 import scala.util.Try
@@ -17,7 +17,8 @@ trait MapServiceSupport {
   val mapService: MapService = MapService
 }
 
-trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with PublicTransportProviderSupport {
+trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with PublicTransportProviderSupport
+  with RampProviderSupport {
 
   def edges(edgeType: EdgeType, startPosition: Coordinate, radius: Double): Try[MapContainer] = Try {
     logger.info(s"Getting edges. Type: $edgeType")
@@ -35,11 +36,8 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
     }
   }
 
-  def ramps(coordinate: Coordinate, radius: Double, associated: Boolean): Try[Vector[Ramp]] = Try {
-    if(associated)
-      RampRepository.findNearestRampsAssociated(coordinate, radius).toVector
-    else
-      RampRepository.findNearestRampsNotAssociated(coordinate, radius).toVector
+  def ramps(coordinate: Coordinate, radius: Double, associated: Boolean): Try[List[Ramp]] = Try {
+    rampProvider.findNearestRamps(coordinate, radius, associated)
   }
 
   def reportableElements(northEast: Coordinate, southWest: Coordinate): Try[Vector[ReportableElement]] = Try {
