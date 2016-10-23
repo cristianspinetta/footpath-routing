@@ -102,6 +102,18 @@ CREATE TABLE IF NOT EXISTS `sidewalk_edge` (
   FOREIGN KEY (`streetEdgeBelongToId`) REFERENCES `street_edge` (`id`)
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `transport_public_combination` (
+  `fromStopId` bigint(20) NOT NULL,
+  `toStopId` bigint(20) NOT NULL,
+  `fromTravelInfoId` bigint(20) NOT NULL,
+  `toTravelInfoId` bigint(20) NOT NULL,
+  `distance` float NOT NULL,
+  `walkPath` varchar(10000) DEFAULT NULL,
+  `enabled` boolean NOT NULL DEFAULT true,
+  `cost` bigint(20) NOT NULL DEFAULT 999999999999999999,
+  PRIMARY KEY (`fromStopId`, `toTravelInfoId`)
+) ENGINE=Aria DEFAULT CHARSET=utf8;
+
 ALTER TABLE `stop` ADD CONSTRAINT `fk_stop_travel_info` FOREIGN KEY (`travelInfoId`) REFERENCES `travel_info`(`id`);
 ALTER TABLE `stop` ADD CONSTRAINT `fk_stop_next_stop` FOREIGN KEY (`nextStopId`) REFERENCES `stop`(`id`);
 ALTER TABLE `stop` ADD CONSTRAINT `fk_stop_previous_stop` FOREIGN KEY (`previousStopId`) REFERENCES `stop`(`id`);
