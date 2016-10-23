@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS `sidewalk_edge` (
   FOREIGN KEY (`streetEdgeBelongToId`) REFERENCES `street_edge` (`id`)
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `transport_public_combination` (
+CREATE TABLE IF NOT EXISTS `public_transport_combination` (
   `fromStopId` bigint(20) NOT NULL,
   `toStopId` bigint(20) NOT NULL,
   `fromTravelInfoId` bigint(20) NOT NULL,
