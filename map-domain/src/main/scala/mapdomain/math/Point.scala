@@ -8,6 +8,8 @@ object Point {
 
   def distance(p1: Point, p2: Point): Double = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))
 
+  def multiply(p: Point, value: Double): Point = Point(p.x * value, p.y * value)
+
   /**
    * The angle between segment 1-2 and 1-3, applying The Law of Cosines.
    */

@@ -1,7 +1,7 @@
 package mapdomain.repository.sidewalk
 
 import mapdomain.graph.Coordinate
-import mapdomain.sidewalk.Ramp
+import mapdomain.sidewalk.{ Ramp, StreetCrossingEdge }
 import scalikejdbc.{ DBSession, WrappedResultSet, _ }
 import sql.SpatialSQLSupport
 
@@ -12,6 +12,7 @@ trait RampRepositorySupport {
 trait RampRepository extends SpatialSQLSupport {
 
   val r = Ramp.syntax("r")
+  val sce = StreetCrossingEdge.syntax("sce")
 
   private def ramp(c: SyntaxProvider[Ramp])(rs: WrappedResultSet): Ramp = ramp(c.resultName)(rs)
 
@@ -50,7 +51,8 @@ trait RampRepository extends SpatialSQLSupport {
     withSQL {
       update(Ramp).set(
         Ramp.column.address -> ramp.address,
-        Ramp.column.isAccessible -> ramp.isAccessible).where.eq(Ramp.column.id, ramp.id)
+        Ramp.column.isAccessible -> ramp.isAccessible,
+        Ramp.column.coordinate -> positionToSQL(ramp.coordinate)).where.eq(Ramp.column.id, ramp.id)
     }.update().apply()
 
     ramp
@@ -73,11 +75,22 @@ trait RampRepository extends SpatialSQLSupport {
       .from(Ramp as r)
   }.map(ramp(r)(_)).list().apply()
 
-  def findNearestRamps(coordinate: Coordinate, radius: Double)(implicit session: DBSession = Ramp.autoSession): List[Ramp] = withSQL {
+  def findNearestRampsAssociated(coordinate: Coordinate, radius: Double)(implicit session: DBSession = Ramp.autoSession): List[Ramp] = withSQL {
     select(r.resultAll)
       .append(selectLatitudeAndLongitude(r))
       .from(Ramp as r)
+      .join(StreetCrossingEdge as sce).on(sqls"${sce.rampStartId} = ${r.id} or ${sce.rampEndId} = ${r.id}")
       .where.append(clauseNearestByDistance(coordinate, radius, r, "coordinate"))
+  }.map(ramp(r)(_)).list().apply()
+
+  def findNearestRampsNotAssociated(coordinate: Coordinate, radius: Double)(implicit session: DBSession = Ramp.autoSession): List[Ramp] = withSQL {
+    select(r.resultAll)
+      .append(selectLatitudeAndLongitude(r))
+      .from(Ramp as r)
+      .leftJoin(StreetCrossingEdge as sce).on(sqls"${sce.rampStartId} = ${r.id} or ${sce.rampEndId} = ${r.id}")
+      .where
+      .append(clauseNearestByDistance(coordinate, radius, r, "coordinate"))
+      .and.isNull(sce.id)
   }.map(ramp(r)(_)).list().apply()
 
   def findRampsInRectangle(northEast: Coordinate, southWest: Coordinate)(implicit session: DBSession = Ramp.autoSession): List[Ramp] = withSQL {

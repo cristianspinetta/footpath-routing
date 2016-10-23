@@ -105,17 +105,31 @@ class SidewalkRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfte
     val sidewalk1 = SidewalkVertexRepository.create(SidewalkVertex(4, Coordinate(10, 9), Nil, Nil, vertex1.id))
     val sidewalk2 = SidewalkVertexRepository.create(SidewalkVertex(5, Coordinate(11, 19), Nil, Nil, vertex1.id))
 
-    val streetCrossingEdge1Id = StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk1.id, sidewalk2.id, "key1"))
+    val ramp1 = RampRepository.create(10, 9, "Callao 1234", isAccessible = true)
+    val ramp2 = RampRepository.create(10, 9, "Callao 1234", isAccessible = true)
+
+    val streetCrossingEdge1Id = StreetCrossingEdgeRepository.create(StreetCrossingEdge(sidewalk1.id, sidewalk2.id, "key1", None, ramp1.id, ramp2.id))
     val streetCrossingEdge1 = StreetCrossingEdgeRepository.find(streetCrossingEdge1Id)
     streetCrossingEdge1.id should not be None
     streetCrossingEdge1.keyValue shouldBe "key1"
     streetCrossingEdge1.vertexStartId shouldBe sidewalk1.id
     streetCrossingEdge1.vertexEndId shouldBe sidewalk2.id
+    streetCrossingEdge1.rampStartId shouldBe ramp1.id
+    streetCrossingEdge1.rampEndId shouldBe ramp2.id
 
-    val crossingEdges = StreetCrossingEdgeRepository.findCrossingEdgesBySidewalkVertex(sidewalk1.id)
+    var crossingEdges = StreetCrossingEdgeRepository.findCrossingEdgesBySidewalkVertex(sidewalk1.id)
     crossingEdges.size shouldBe 1
     crossingEdges.head.id.get shouldBe streetCrossingEdge1Id
     crossingEdges.head.keyValue shouldBe "key1"
+
+    crossingEdges = StreetCrossingEdgeRepository.findCrossingEdgesByRamp(ramp1.id.get)
+    crossingEdges.size shouldBe 1
+
+    crossingEdges = StreetCrossingEdgeRepository.findCrossingEdgesByRamp(ramp2.id.get)
+    crossingEdges.size shouldBe 1
+
+    crossingEdges = StreetCrossingEdgeRepository.findCrossingEdgesByRamp(-1)
+    crossingEdges.size shouldBe 0
   }
 
   it should "create sidewalk edges correctly" in {
@@ -153,10 +167,10 @@ class SidewalkRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfte
 
     // vertex start outside rectangle
     sidewalkEdges = SidewalkEdgeRepository.findSidewalksInRectangle(Coordinate(50, 50), Coordinate(10, 1))
-    sidewalkEdges.size shouldBe 0
+    sidewalkEdges.size shouldBe 1
 
     // vertex end outside rectangle
     sidewalkEdges = SidewalkEdgeRepository.findSidewalksInRectangle(Coordinate(10, 50), Coordinate(1, 1))
-    sidewalkEdges.size shouldBe 0
+    sidewalkEdges.size shouldBe 1
   }
 }

@@ -4,7 +4,7 @@ import mapdomain.graph.Coordinate
 import scalikejdbc._
 
 case class Ramp(
-    coordinate: Coordinate,
+    var coordinate: Coordinate,
     id: Option[Long] = None,
     address: String,
     var isAccessible: Boolean = true) {
