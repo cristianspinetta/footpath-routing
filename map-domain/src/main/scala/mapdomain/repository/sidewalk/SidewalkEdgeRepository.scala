@@ -88,7 +88,7 @@ trait SidewalkEdgeRepository extends SpatialSQLSupport {
       .leftJoin(SidewalkVertex as svs).on(se.vertexStartId, svs.id)
       .leftJoin(SidewalkVertex as sve).on(se.vertexEndId, sve.id)
       .where.append(clauseGetElementsInRectangle(northEast, southWest, svs, "coordinate"))
-      .and.append(clauseGetElementsInRectangle(northEast, southWest, sve, "coordinate"))
+      .or.append(clauseGetElementsInRectangle(northEast, southWest, sve, "coordinate"))
   }.map(sidewalkEdge(se)).list().apply()
 
 }

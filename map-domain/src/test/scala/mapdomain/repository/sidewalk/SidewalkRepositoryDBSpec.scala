@@ -167,10 +167,10 @@ class SidewalkRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfte
 
     // vertex start outside rectangle
     sidewalkEdges = SidewalkEdgeRepository.findSidewalksInRectangle(Coordinate(50, 50), Coordinate(10, 1))
-    sidewalkEdges.size shouldBe 0
+    sidewalkEdges.size shouldBe 1
 
     // vertex end outside rectangle
     sidewalkEdges = SidewalkEdgeRepository.findSidewalksInRectangle(Coordinate(10, 50), Coordinate(1, 1))
-    sidewalkEdges.size shouldBe 0
+    sidewalkEdges.size shouldBe 1
   }
 }
