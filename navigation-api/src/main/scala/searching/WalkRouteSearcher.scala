@@ -8,6 +8,7 @@ import mapdomain.sidewalk._
 import mapdomain.utils.GraphUtils
 import model.{ Path, PathDescription, WalkPath }
 import pathgenerator.core.AStar
+import pathgenerator.graph.GeoHeuristic
 import provider.{ GraphSupport, StreetEdgeSupport, StreetInfoSupport }
 import searching.SearchRoutingErrors._
 
@@ -39,7 +40,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
     (graphContainer.findNearest(coordinateFrom), graphContainer.findNearest(coordinateTo)) match {
       case (Some(fromVertex), Some(toVertex)) ⇒
         logger.info(s"Vertex From: ${fromVertex.id}. Vertex To: ${toVertex.id}")
-        val aStartFactory = AStar[PedestrianEdge, SidewalkVertex, WalkHeuristic](WalkHeuristic(fromVertex)) _
+        val aStartFactory = AStar[PedestrianEdge, SidewalkVertex, GeoHeuristic[PedestrianEdge, SidewalkVertex], WalkGCost.type](GeoHeuristic[PedestrianEdge, SidewalkVertex](fromVertex), WalkGCost) _
         aStartFactory(graphContainer, fromVertex, Seq(toVertex))
           .search
       case otherResult ⇒ Failure(new RuntimeException(s"It could not get a near vertex. $otherResult"))

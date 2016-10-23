@@ -12,7 +12,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
   "The A* Algorithm with the trivial F Heuristic { Y = 0, ∀ X ∈ ℝ }" when {
 
-    val aStarWithTrivialHeuristic = AStar[GraphEdge, GraphVertex[GraphEdge], TrivialHeuristic[GraphEdge, GraphVertex[GraphEdge]]](TrivialHeuristic()) _
+    val aStarWithTrivialHeuristic = AStar[GraphEdge, GraphVertex[GraphEdge], TrivialHeuristic[GraphEdge, GraphVertex[GraphEdge]], GeoGCost[GraphEdge, GraphVertex[GraphEdge]]](TrivialHeuristic(), GeoGCost()) _
 
     "it runs on the Graph A" should {
 
@@ -260,7 +260,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GeoVertex[GeoEdge] = graph.vertices.find(_.id == 1L).get
         val target: GeoVertex[GeoEdge] = graph.vertices.find(_.id == 4L).get
 
-        val aStar = AStar[GeoEdge, GeoVertex[GeoEdge], GeoHeuristic[GeoEdge, GeoVertex[GeoEdge]]](GeoHeuristic(source))(graph, source, target)
+        val aStar = AStar[GeoEdge, GeoVertex[GeoEdge], GeoHeuristic[GeoEdge, GeoVertex[GeoEdge]], GeoGCost[GeoEdge, GeoVertex[GeoEdge]]](GeoHeuristic(source), GeoGCost())(graph, source, target)
 
         val result = aStar.search
 
@@ -283,7 +283,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GeoVertex[GeoEdge] = graph.vertices.find(_.id == 1L).get
         val target: GeoVertex[GeoEdge] = graph.vertices.find(_.id == 13L).get
 
-        val aStar = AStar[GeoEdge, GeoVertex[GeoEdge], GeoHeuristic[GeoEdge, GeoVertex[GeoEdge]]](GeoHeuristic(source))(graph, source, target)
+        val aStar = AStar[GeoEdge, GeoVertex[GeoEdge], GeoHeuristic[GeoEdge, GeoVertex[GeoEdge]], GeoGCost[GeoEdge, GeoVertex[GeoEdge]]](GeoHeuristic(source), GeoGCost())(graph, source, target)
 
         val result: Try[List[Edge]] = aStar.search
 
@@ -306,7 +306,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
         val source: GeoVertex[GeoEdge] = graph.vertices.find(_.id == 1L).get
         val target: GeoVertex[GeoEdge] = graph.vertices.find(_.id == 12L).get
 
-        val aStar = AStar[GeoEdge, GeoVertex[GeoEdge], GeoHeuristic[GeoEdge, GeoVertex[GeoEdge]]](GeoHeuristic(source))(graph, source, target)
+        val aStar = AStar[GeoEdge, GeoVertex[GeoEdge], GeoHeuristic[GeoEdge, GeoVertex[GeoEdge]], GeoGCost[GeoEdge, GeoVertex[GeoEdge]]](GeoHeuristic(source), GeoGCost())(graph, source, target)
 
         val result: Try[List[Edge]] = aStar.search
 

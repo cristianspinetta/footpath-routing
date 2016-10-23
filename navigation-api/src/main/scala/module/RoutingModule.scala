@@ -124,9 +124,9 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                   }
                 } ~
                 path("public-transport-combinations") {
-                  parameters('lat.as[Double], 'lng.as[Double], 'radius.as[Double] ?, 'line ?).as(PublicTransportCombinationsRequest) { ptCombinationsRequest: PublicTransportCombinationsRequest ⇒
+                  parameters('lat.as[Double], 'lng.as[Double], 'radius.as[Double]).as(PublicTransportCombinationsRequest) { ptCombinationsRequest: PublicTransportCombinationsRequest ⇒
                     val response: Future[ToResponseMarshallable] = Future.successful {
-                      mapService.publicTransportCombinations(Coordinate(ptCombinationsRequest.lat, ptCombinationsRequest.lng), ptCombinationsRequest.radius, ptCombinationsRequest.line).get
+                      mapService.publicTransportCombinationsByRadius(Coordinate(ptCombinationsRequest.lat, ptCombinationsRequest.lng), ptCombinationsRequest.radius).get
                     }
                     complete(response)
                   }

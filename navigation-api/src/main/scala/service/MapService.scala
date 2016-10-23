@@ -3,6 +3,7 @@ package service
 import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
 import mapdomain.graph.{Edge => _, Vertex => _, _}
+import mapdomain.publictransport.PublicTransportCombination
 import mapdomain.repository.sidewalk.{RampRepository, SidewalkEdgeRepository}
 import mapdomain.sidewalk._
 import mapdomain.street.StreetEdge
@@ -59,8 +60,8 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
       })
   }
 
-  def publicTransportCombinations(coordinate: Coordinate, radiusOpt: Option[Double], lineOpt: Option[String]): Try[List[PTCombination]] = Try {
-    val combinations = publicTransportProvider.getStopCombinations
+  def publicTransportCombinationsByRadius(coordinate: Coordinate, radius: Double): Try[List[PTCombination]] = Try {
+    val combinations: List[PublicTransportCombination] = publicTransportProvider.getStopCombinationsByRadius(coordinate, radius)
     combinations
       .map(combination => (combination, publicTransportProvider.findStop(combination.fromStopId), publicTransportProvider.findStop(combination.toStopId)))
       .map { case (combination, stopFrom, stopTo) =>

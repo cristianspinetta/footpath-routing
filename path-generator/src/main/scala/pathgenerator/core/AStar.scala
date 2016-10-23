@@ -19,7 +19,7 @@ import scala.reflect.runtime.universe._
  * @param tag: implicit TypeTag supplied by Scala Compiler
  * @tparam N: Vertex Type with which it works
  */
-case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(gMap: GraphContainer[E, N], startVertex: N, targetVertices: N*)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
+case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N], GC <: GCost[E, N]](heuristic: M, gCostF: GC)(gMap: GraphContainer[E, N], startVertex: N, targetVertices: N*)(implicit tag: TypeTag[N]) extends LazyLoggerSupport with MeterSupport {
 
   /**
    * The vertices already evaluated.
@@ -104,7 +104,7 @@ case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N]](heuristic: M)(
       // Ignore the neighbor which is already evaluated.
     } else {
 
-      val fromCurrentToNeighbour = current.distanceToNeighbour(neighbour.id)
+      val fromCurrentToNeighbour = gCostF.calculate(current, neighbour)
       // The distance from start to a neighbor
       val tentativeGScore = gScore(current.id) + fromCurrentToNeighbour
 

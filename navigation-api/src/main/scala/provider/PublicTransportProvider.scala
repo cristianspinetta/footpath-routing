@@ -46,7 +46,8 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
       .flatMap(path ⇒ (if (path.coordinates == "") "[]" else path.coordinates).parseJson.convertTo[List[Coordinate]])
   }, (time: Long) ⇒ logger.info(s"Execute Get Path Between Stops in $time ms."))
 
-  def getStopCombinations: List[PublicTransportCombination] = stopRepository.findAllCombinations()
+  def getStopCombinationsByRadius(startPosition: Coordinate, radius: Double): List[PublicTransportCombination] =
+    publicTransportCombinationRepository.findByRadius(startPosition, radius)
 
 }
 
@@ -95,11 +96,11 @@ trait FakePublicTransportProvider extends PublicTransportProvider {
 
   override def findTravelInfo(id: Long): TravelInfo = if (travelInfo.id == id) travelInfo else throw new RuntimeException(s"Unknown Travel Info. ID = $id")
 
-  override def pathRepository: PathRepository = new PathRepository {
+  override val pathRepository: PathRepository = new PathRepository {
     override def find(id: Long)(implicit session: DBSession = Path.autoSession): Option[Path] = paths.find(_.id.get == id)
   }
 
-  override def stopRepository: StopRepository = new StopRepository {
+  override val stopRepository: StopRepository = new StopRepository {
     override def find(id: Long)(implicit session: DBSession = Stop.autoSession): Option[Stop] = stops.find(_.id == id)
   }
 }
