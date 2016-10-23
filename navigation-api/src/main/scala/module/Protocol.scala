@@ -10,7 +10,7 @@ object RoutingRequest {
   def applyWithDefault(fromLng: Double, fromLat: Double, toLng: Double, toLat: Double): RoutingRequest = new RoutingRequest(fromLng, fromLat, toLng, toLat)
 }
 final case class EdgeRequest(edgeType: EdgeType, radius: Double, lat: Double, lng: Double)
-final case class RampRequest(lat: Double, lng: Double, radius: Double)
+final case class RampRequest(lat: Double, lng: Double, radius: Double, associated: Boolean)
 final case class ReportableElementsRequest(northeast: String, southwest: String)
 final case class PublicTransportPathsRequest(lat: Double, lng: Double, radius: Option[Double], line: Option[String])
 final case class StreetResponse(streets: Iterable[Street])
@@ -23,7 +23,7 @@ trait Protocol extends DefaultJsonProtocol with CaseObjectSerializationSupport w
 
   implicit val EdgeRequestFormat = jsonFormat4(EdgeRequest.apply)
   implicit val RoutingRequestFormat = jsonFormat5(RoutingRequest.apply)
-  implicit val RampRequestFormat = jsonFormat3(RampRequest.apply)
+  implicit val RampRequestFormat = jsonFormat4(RampRequest.apply)
   implicit val ReportableElementsRequestFormat = jsonFormat2(ReportableElementsRequest.apply)
   implicit val PublicTransportPathsRequestFormat = jsonFormat4(PublicTransportPathsRequest.apply)
   implicit val StreetResponseFormat = jsonFormat1(StreetResponse.apply)

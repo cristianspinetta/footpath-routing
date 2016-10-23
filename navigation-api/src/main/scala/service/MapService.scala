@@ -34,8 +34,11 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
     }
   }
 
-  def ramps(coordinate: Coordinate, radius: Double): Try[Vector[Ramp]] = Try {
-    RampRepository.findNearestRamps(coordinate, radius).toVector
+  def ramps(coordinate: Coordinate, radius: Double, associated: Boolean): Try[Vector[Ramp]] = Try {
+    if(associated)
+      RampRepository.findNearestRampsAssociated(coordinate, radius).toVector
+    else
+      RampRepository.findNearestRampsNotAssociated(coordinate, radius).toVector
   }
 
   def reportableElements(northEast: Coordinate, southWest: Coordinate): Try[Vector[ReportableElement]] = Try {

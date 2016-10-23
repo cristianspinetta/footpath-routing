@@ -80,8 +80,7 @@ trait StreetCrossingEdgeRepository extends SpatialSQLSupport {
         StreetCrossingEdge.column.vertexEndId -> edge.vertexEndId,
         StreetCrossingEdge.column.keyValue -> edge.keyValue,
         StreetCrossingEdge.column.rampStartId -> edge.rampStartId,
-        StreetCrossingEdge.column.rampEndId -> edge.rampEndId
-      ).where.eq(StreetCrossingEdge.column.id, edge.id)
+        StreetCrossingEdge.column.rampEndId -> edge.rampEndId).where.eq(StreetCrossingEdge.column.id, edge.id)
     }.update.apply()
     edge
   }

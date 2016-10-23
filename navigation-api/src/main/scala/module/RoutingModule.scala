@@ -107,9 +107,9 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                 }
               } ~
                 path("ramps") {
-                  parameters('lat.as[Double], 'lng.as[Double], 'radius ? 1.0D).as(RampRequest) { rampRequest: RampRequest ⇒
+                  parameters('lat.as[Double], 'lng.as[Double], 'radius ? 1.0D, 'associated ? true).as(RampRequest) { rampRequest: RampRequest ⇒
                     val response: Future[ToResponseMarshallable] = Future.successful {
-                      val list = mapService.ramps(Coordinate(rampRequest.lat, rampRequest.lng), rampRequest.radius).get
+                      val list = mapService.ramps(Coordinate(rampRequest.lat, rampRequest.lng), rampRequest.radius, rampRequest.associated).get
                       RampResponse(list)
                     }
                     complete(response)

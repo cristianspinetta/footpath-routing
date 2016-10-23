@@ -1,16 +1,16 @@
 package service
 
-import base.{LazyLoggerSupport, MeterSupport}
+import base.{ LazyLoggerSupport, MeterSupport }
 import base.conf.ApiEnvConfig
 import mapdomain.graph.Coordinate
-import mapdomain.math.{GVector, Point, VectorUtils}
-import mapdomain.repository.sidewalk.{RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository, StreetCrossingEdgeRepository}
-import mapdomain.repository.street.{StreetInfoRepository, StreetRepositorySupport}
-import mapdomain.sidewalk.{InMemorySidewalkGraphContainer, Ramp, SidewalkVertex, StreetCrossingEdge}
+import mapdomain.math.{ GVector, Point, VectorUtils }
+import mapdomain.repository.sidewalk.{ RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository, StreetCrossingEdgeRepository }
+import mapdomain.repository.street.{ StreetInfoRepository, StreetRepositorySupport }
+import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp, SidewalkVertex, StreetCrossingEdge }
 import mapdomain.street._
 import mapgenerator.sidewalk.SidewalkModule
-import mapgenerator.source.features.{RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV}
-import mapgenerator.source.osm.{OSMModule, OSMReaderByXml}
+import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
+import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
 import provider.GraphSupport
 import scalikejdbc.DB
@@ -112,7 +112,7 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
 
   private def loadRampAssociations(): List[RampAssociation] = {
     lazy val rampAssociation: String = configuration.Ramp.sourceFileRampAssociationPath
-    Source.fromFile(rampAssociation).getLines().map(line => {
+    Source.fromFile(rampAssociation).getLines().map(line ⇒ {
       val chucks = line.split(",")
       RampAssociation(chucks(0).toLong, chucks(1).toLong, chucks(2).toLong)
     }).toList
@@ -129,31 +129,30 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
   }
 
   private def associate(rampAssociation: RampAssociation, edges: List[StreetCrossingEdge]): StreetCrossingEdge = {
-    val crossingEdge: StreetCrossingEdge = edges.find(e => e.id.get == rampAssociation.streetCrossingEdgeId).getOrElse(
+    val crossingEdge: StreetCrossingEdge = edges.find(e ⇒ e.id.get == rampAssociation.streetCrossingEdgeId).getOrElse(
       try {
         StreetCrossingEdgeRepository.find(rampAssociation.streetCrossingEdgeId)
       } catch {
-        case e: Exception => throw new RuntimeException(s"Unable to find edge ${rampAssociation.streetCrossingEdgeId}")
-      }
-    )
+        case e: Exception ⇒ throw new RuntimeException(s"Unable to find edge ${rampAssociation.streetCrossingEdgeId}")
+      })
 
-    var ramp: Ramp= null
+    var ramp: Ramp = null
     try {
       ramp = RampRepository.find(rampAssociation.rampId).get
     } catch {
-      case e: Exception => throw new RuntimeException(s"Unable to find ramp ${rampAssociation.rampId}")
+      case e: Exception ⇒ throw new RuntimeException(s"Unable to find ramp ${rampAssociation.rampId}")
     }
 
     if (crossingEdge.vertexStartId == rampAssociation.vertexId)
-        /*if (crossingEdge.rampStartId.isDefined || edges.exists(e => e.id == crossingEdge.id && e.rampStartId.isDefined && e.rampStartId == rampAssociation.vertexId))
+      /*if (crossingEdge.rampStartId.isDefined || edges.exists(e => e.id == crossingEdge.id && e.rampStartId.isDefined && e.rampStartId == rampAssociation.vertexId))
           throw new RuntimeException(s"Cannot associate ramp ${rampAssociation.rampId} because crossing edge ${rampAssociation.streetCrossingEdgeId} has another ramp start associated")
         else*/
-          crossingEdge.rampStartId = ramp.id
+      crossingEdge.rampStartId = ramp.id
     else if (crossingEdge.vertexEndId == rampAssociation.vertexId)
       /*if (crossingEdge.rampEndId.isDefined || edges.exists(e => e.id == crossingEdge.id && e.rampEndId.isDefined && e.rampEndId == rampAssociation.vertexId))
         throw new RuntimeException(s"Cannot associate ramp ${rampAssociation.rampId} because crossing edge ${rampAssociation.streetCrossingEdgeId} has another ramp end associated")
       else*/
-        crossingEdge.rampEndId = ramp.id
+      crossingEdge.rampEndId = ramp.id
     else
       throw new RuntimeException(s"Invalid vertex id ${rampAssociation.vertexId}")
 
@@ -172,14 +171,14 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
       throw new RuntimeException(s"Vertex and edge with more than 1 ramp association:\n ${ duplicatedVertexAndEdge mkString "\n"}")
     */
 
-    val duplicatedRampAndVertex = rampAssociations.map(ra => (ra.rampId, ra.vertexId)).distinct.groupBy(rv => rv._1).collect {
-      case (x,ys) if ys.lengthCompare(1) > 0 => (x, ys)
+    val duplicatedRampAndVertex = rampAssociations.map(ra ⇒ (ra.rampId, ra.vertexId)).distinct.groupBy(rv ⇒ rv._1).collect {
+      case (x, ys) if ys.lengthCompare(1) > 0 ⇒ (x, ys)
     }
 
-    if(duplicatedRampAndVertex.size > 0)
-      throw new RuntimeException(s"Ramps associated to more than one vertex:\n ${ duplicatedRampAndVertex mkString "\n"}")
+    if (duplicatedRampAndVertex.size > 0)
+      throw new RuntimeException(s"Ramps associated to more than one vertex:\n ${duplicatedRampAndVertex mkString "\n"}")
 
-    rampAssociations.foldLeft(List[StreetCrossingEdge]())((edges, rampAssociation) => associate(rampAssociation, edges) :: edges)
+    rampAssociations.foldLeft(List[StreetCrossingEdge]())((edges, rampAssociation) ⇒ associate(rampAssociation, edges) :: edges)
   }
 
   val rampDistanceToEdge: Double = {
@@ -188,12 +187,12 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     c1.distanceToInDegrees(c2)
   }
 
-  private def processRamps(edges: List[StreetCrossingEdge], retrieveRampId: StreetCrossingEdge => Option[Long], retrieveVertexId: StreetCrossingEdge => Long): List[Ramp] = {
-    edges.filter(e => retrieveRampId(e).isDefined).map(edge => {
+  private def processRamps(edges: List[StreetCrossingEdge], retrieveRampId: StreetCrossingEdge ⇒ Option[Long], retrieveVertexId: StreetCrossingEdge ⇒ Long): List[Ramp] = {
+    edges.filter(e ⇒ retrieveRampId(e).isDefined).map(edge ⇒ {
       val edgesForRamp = StreetCrossingEdgeRepository.findCrossingEdgesByRamp(retrieveRampId(edge).get)
       edgesForRamp match {
-        case h::Nil => moveRampCoordinate(retrieveRampId(edge).get, edge, retrieveVertexId(edge), rampDistanceToEdge, -rampDistanceToEdge)
-        case h::t => moveRampCoordinate(retrieveRampId(edge).get, edge, retrieveVertexId(edge), -rampDistanceToEdge, -rampDistanceToEdge)
+        case h :: Nil ⇒ moveRampCoordinate(retrieveRampId(edge).get, edge, retrieveVertexId(edge), rampDistanceToEdge, -rampDistanceToEdge)
+        case h :: t   ⇒ moveRampCoordinate(retrieveRampId(edge).get, edge, retrieveVertexId(edge), -rampDistanceToEdge, -rampDistanceToEdge)
       }
     })
   }
@@ -209,8 +208,8 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     *     . buscar punto a una distancia d del edge con el mismo vertex que el de la rampa a evaluar, pero en el otro sentido (d negativo)
     *     . de los anteriores, sacar la latitud y longitud de la rampa
     */
-    val startRamps = processRamps(edges, e => e.rampStartId, e => e.vertexStartId)
-    val endRamps = processRamps(edges, e => e.rampEndId, e => e.vertexEndId)
+    val startRamps = processRamps(edges, e ⇒ e.rampStartId, e ⇒ e.vertexStartId)
+    val endRamps = processRamps(edges, e ⇒ e.rampEndId, e ⇒ e.vertexEndId)
 
     startRamps ++ endRamps
   }
@@ -220,7 +219,7 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     val vertexStart = SidewalkVertexRepository.find(vertexId).get
     val vertexEnd = findOppositeVertex(edge, vertexId)
 
-    val otherEdgeAssociated = StreetCrossingEdgeRepository.findCrossingEdgesBySidewalkVertex(vertexId).find(e => e.id != edge.id).get
+    val otherEdgeAssociated = StreetCrossingEdgeRepository.findCrossingEdgesBySidewalkVertex(vertexId).find(e ⇒ e.id != edge.id).get
     val otherVertexEnd = findOppositeVertex(otherEdgeAssociated, vertexId)
 
     val pointStart = Point(vertexStart.coordinate.longitude, vertexStart.coordinate.latitude)
@@ -238,7 +237,7 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
   }
 
   private def findOppositeVertex(edge: StreetCrossingEdge, vertexId: Long): SidewalkVertex = {
-    if(vertexId == edge.vertexStartId)
+    if (vertexId == edge.vertexStartId)
       SidewalkVertexRepository.find(edge.vertexEndId).get
     else
       SidewalkVertexRepository.find(edge.vertexStartId).get
