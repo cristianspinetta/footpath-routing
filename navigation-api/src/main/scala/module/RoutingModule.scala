@@ -68,10 +68,11 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
       logRequest("routing-request", akka.event.Logging.InfoLevel) {
         get {
           path("route") {
-            parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double]).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
+            parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double], 'heuristicType.as[HeuristicType] ? AccessibilityHeuristicType.asInstanceOf[HeuristicType]).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
               val routeResult = routingService.searchRoute(
                 from = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
-                to = Coordinate(routingRequest.toLat, routingRequest.toLng)).value.map[ToResponseMarshallable] {
+                to = Coordinate(routingRequest.toLat, routingRequest.toLng),
+                routingRequest.heuristicType).value.map[ToResponseMarshallable] {
                   case Xor.Right(routes)                    ⇒ OK -> routes
                   case Xor.Left(NoStops)                    ⇒ BadRequest -> "Could not find stops."
                   case Xor.Left(NoPath)                     ⇒ BadRequest -> "Could not find a path."

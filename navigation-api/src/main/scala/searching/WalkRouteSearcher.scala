@@ -2,18 +2,18 @@ package searching
 
 import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
-import cats.data.{ Xor, XorT }
+import cats.data.{Xor, XorT}
 import mapdomain.graph._
 import mapdomain.sidewalk._
 import mapdomain.utils.GraphUtils
-import model.{ Path, PathDescription, WalkPath }
+import model._
 import pathgenerator.core.AStar
-import pathgenerator.graph.GeoHeuristic
-import provider.{ GraphSupport, StreetEdgeSupport, StreetInfoSupport }
+import pathgenerator.graph.{GeoGCost, GeoHeuristic}
+import provider.{GraphSupport, StreetEdgeSupport, StreetInfoSupport}
 import searching.SearchRoutingErrors._
 
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Try }
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Try}
 
 trait WalkRouteSearcherSupport {
   protected val walkRouteSearcher = WalkRouteSearcher
@@ -26,8 +26,8 @@ object WalkRouteSearcher extends WalkRouteSearcher {
 
 sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with StreetEdgeSupport with StreetInfoSupport {
 
-  def search(coordinateFrom: Coordinate, coordinateTo: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
-    Future(searchPathOnGraph(graphs.sidewalk, coordinateFrom, coordinateTo).get)
+  def search(coordinateFrom: Coordinate, coordinateTo: Coordinate, heuristicType: HeuristicType = AccessibilityHeuristicType)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
+    Future(searchPathOnGraph(graphs.sidewalk, coordinateFrom, coordinateTo, heuristicType).get)
       .map(edges ⇒ Xor.Right(createWalkPath(edges))) recover {
         case exc: Throwable ⇒
           logger.error(s"Failed trying to find a path between $coordinateFrom and $coordinateTo walking.", exc)
@@ -36,11 +36,16 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
   }
 
   protected def searchPathOnGraph(graphContainer: SidewalkGraphContainer, coordinateFrom: Coordinate,
-    coordinateTo: Coordinate): Try[List[PedestrianEdge]] = {
+    coordinateTo: Coordinate, heuristicType: HeuristicType): Try[List[PedestrianEdge]] = {
     (graphContainer.findNearest(coordinateFrom), graphContainer.findNearest(coordinateTo)) match {
       case (Some(fromVertex), Some(toVertex)) ⇒
         logger.info(s"Vertex From: ${fromVertex.id}. Vertex To: ${toVertex.id}")
-        val aStartFactory = AStar[PedestrianEdge, SidewalkVertex, GeoHeuristic[PedestrianEdge, SidewalkVertex], WalkGCost.type](GeoHeuristic[PedestrianEdge, SidewalkVertex](fromVertex), WalkGCost) _
+        val aStartFactory = heuristicType match {
+          case AccessibilityHeuristicType =>
+          AStar[PedestrianEdge, SidewalkVertex, GeoHeuristic[PedestrianEdge, SidewalkVertex], WalkGCost.type](GeoHeuristic[PedestrianEdge, SidewalkVertex](fromVertex), WalkGCost) _
+          case GeoHeuristicType =>
+          AStar[PedestrianEdge, SidewalkVertex, GeoHeuristic[PedestrianEdge, SidewalkVertex], GeoGCost[PedestrianEdge, SidewalkVertex]](GeoHeuristic[PedestrianEdge, SidewalkVertex](fromVertex), GeoGCost()) _
+        }
         aStartFactory(graphContainer, fromVertex, Seq(toVertex))
           .search
       case otherResult ⇒ Failure(new RuntimeException(s"It could not get a near vertex. $otherResult"))

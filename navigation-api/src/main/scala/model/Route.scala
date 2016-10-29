@@ -26,6 +26,10 @@ sealed trait TypeRouting
 case object StreetRouting extends TypeRouting
 case object SidewalkRouting extends TypeRouting
 
+sealed trait HeuristicType
+case object GeoHeuristicType extends HeuristicType
+case object AccessibilityHeuristicType extends HeuristicType
+
 object TypeRouting {
   val keyMap: Map[String, TypeRouting] = Map(
     "street" -> StreetRouting,
@@ -38,6 +42,8 @@ trait RouteFormatter extends DefaultJsonProtocol with CaseObjectSerializationSup
   implicit val TypeRoutingFormat = caseObjectJsonFormat[TypeRouting](StreetRouting, SidewalkRouting)
   implicit val TypeRoutingUnmarshaller = Unmarshaller.strict[String, TypeRouting](TypeRouting.keyMap)
   implicit val IncidentTypeFormat = caseObjectJsonFormat[IncidentType](SidewalkIncidentType, RampIncidentType)
+  implicit val HeuristicTypeFormat = caseObjectJsonFormat[HeuristicType](GeoHeuristicType, AccessibilityHeuristicType)
+  implicit val HeuristicTypeUnmarshaller = Unmarshaller.strict[String, HeuristicType](HeuristicTypeFormat.mapping)
   //  implicit val SidewalkRoutingUnmarshaller = Unmarshaller.strict[String, SidewalkRouting.type](Map(TypeRouting.keyMap.find(_._2 == SidewalkRouting).get._1 -> SidewalkRouting))
 
   implicit val PedestrianIncidentFormat = jsonFormat4(PedestrianIncident)
