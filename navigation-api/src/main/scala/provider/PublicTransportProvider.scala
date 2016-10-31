@@ -15,7 +15,6 @@ trait PublicTransportProviderSupport {
 }
 
 trait PublicTransportProvider extends PublicTransportRepositorySupport with MeterSupport with LazyLoggerSupport {
-
   import module.Protocol._
 
   def findStopsByRadiusAndLine(startPosition: Coordinate, radiusOpt: Option[Double] = None, lineOpt: Option[String] = None): List[Stop] = {
@@ -46,8 +45,13 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
       .flatMap(path ⇒ (if (path.coordinates == "") "[]" else path.coordinates).parseJson.convertTo[List[Coordinate]])
   }, (time: Long) ⇒ logger.info(s"Execute Get Path Between Stops in $time ms."))
 
-  def getStopCombinationsByRadius(startPosition: Coordinate, radius: Double): List[PublicTransportCombination] =
+  def getTPCombinationsByRadius(startPosition: Coordinate, radius: Double): List[PublicTransportCombination] = {
     publicTransportCombinationRepository.findByRadius(startPosition, radius)
+  }
+
+  def getTPCombinationsByMultipleTravelInfoIds(travelInfoIds: List[Long], limit: Int = 10000): List[PublicTransportCombination] = withTimeLogging({
+    publicTransportCombinationRepository.findByMultipleTravelInfoIds(travelInfoIds, limit)
+  }, (timing: Long) ⇒ logger.info(s"Search PT combinations with ${travelInfoIds.size} Travel Info as filter and retrieving a maximum of the $limit rows take $timing ms."))
 
 }
 

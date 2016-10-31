@@ -126,4 +126,7 @@ ALTER TABLE `travel_info` ADD CONSTRAINT `fk_travel_info_last_stop` FOREIGN KEY 
 CREATE SPATIAL INDEX `street_vertex_coordinate_index` ON `street_vertex` (`coordinate`);
 CREATE SPATIAL INDEX `sidewalk_vertex_coordinate_index` ON `sidewalk_vertex` (`coordinate`);
 
+CREATE INDEX `public_transport_combination_from_ti_index` ON `public_transport_combination` (`fromTravelInfoId`);
+CREATE INDEX `public_transport_combination_to_ti_index` ON `public_transport_combination` (`toTravelInfoId`);
+
 COMMIT;

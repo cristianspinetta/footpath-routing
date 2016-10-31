@@ -62,7 +62,7 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
   }
 
   def publicTransportCombinationsByRadius(coordinate: Coordinate, radius: Double): Try[List[PTCombination]] = Try {
-    val combinations: List[PublicTransportCombination] = publicTransportProvider.getStopCombinationsByRadius(coordinate, radius)
+    val combinations: List[PublicTransportCombination] = publicTransportProvider.getTPCombinationsByRadius(coordinate, radius)
     combinations
       .map(combination => (combination, publicTransportProvider.findStop(combination.fromStopId), publicTransportProvider.findStop(combination.toStopId)))
       .map { case (combination, stopFrom, stopTo) =>

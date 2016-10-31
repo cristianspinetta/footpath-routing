@@ -23,16 +23,25 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
       cost = rs.double(ptc.cost))
   }
 
-  def findByTravelInfoId(travelInfoId: Long)(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = {
-    withSQL {
-      select.all(ptc)
-        .from(PublicTransportCombination as ptc)
-        .where
-        .eq(ptc.fromTravelInfoId, travelInfoId)
-        .or
-        .eq(ptc.toTravelInfoId, travelInfoId)
-    }.map(publicTransportCombination(ptc)).list().apply()
-  }
+  def findByTravelInfoId(travelInfoId: Long)(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = withSQL {
+    select.all(ptc)
+      .from(PublicTransportCombination as ptc)
+      .where
+      .eq(ptc.fromTravelInfoId, travelInfoId)
+      .or
+      .eq(ptc.toTravelInfoId, travelInfoId)
+  }.map(publicTransportCombination(ptc)).list().apply()
+
+  def findByMultipleTravelInfoIds(travelInfoIds: List[Long], limit: Int)(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = withSQL {
+    select.all(ptc)
+      .from(PublicTransportCombination as ptc)
+      .where
+      .in(ptc.fromTravelInfoId, travelInfoIds)
+      .or
+      .in(ptc.toTravelInfoId, travelInfoIds)
+      .orderBy(ptc.distance).asc
+      .limit(limit)
+  }.map(publicTransportCombination(ptc)).list().apply()
 
   def findByRadius(coordinate: Coordinate, radius: Double)(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = withSQL {
     select.all(ptc)

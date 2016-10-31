@@ -15,11 +15,11 @@ trait MeterSupport {
 
   def withTimeLoggingAsync[T](f: ⇒ Future[T], processTime: Long ⇒ _)(implicit ec: ExecutionContext): Future[T] = {
     val start = System.currentTimeMillis()
-    f.map(x ⇒ {
+    f.onComplete(_ ⇒ {
       val total = System.currentTimeMillis() - start
       processTime(total)
-      x
     })
+    f
   }
 
   def withTimeLoggingInNano[T](f: ⇒ T, processTime: Long ⇒ _): T = {
