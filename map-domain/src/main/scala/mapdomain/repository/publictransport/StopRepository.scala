@@ -32,7 +32,7 @@ trait StopRepository extends SpatialSQLSupport {
       fromTravelInfoId = rs.long(ptc.fromTravelInfoId),
       toTravelInfoId = rs.long(ptc.fromTravelInfoId),
       distance = rs.double(ptc.distance),
-      walkPath = rs.stringOpt(ptc.walkPath),
+      walkPath = rs.bytesOpt(ptc.walkPath),
       enabled = rs.boolean(ptc.enabled),
       cost = rs.double(ptc.cost))
   }

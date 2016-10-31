@@ -18,7 +18,7 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
       fromTravelInfoId = rs.long(ptc.fromTravelInfoId),
       toTravelInfoId = rs.long(ptc.fromTravelInfoId),
       distance = rs.double(ptc.distance),
-      walkPath = rs.stringOpt(ptc.walkPath),
+      walkPath = rs.bytesOpt(ptc.walkPath),
       enabled = rs.boolean(ptc.enabled),
       cost = rs.double(ptc.cost))
   }
@@ -58,6 +58,22 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
     select.all(ptc)
       .from(PublicTransportCombination as ptc)
   }.map(publicTransportCombination(ptc)).list().apply()
+
+  def save(ptc: PublicTransportCombination)(implicit session: DBSession = PublicTransportCombination.autoSession): PublicTransportCombination = {
+    withSQL {
+      update(PublicTransportCombination).set(
+        PublicTransportCombination.column.fromStopId -> ptc.fromStopId,
+        PublicTransportCombination.column.toStopId -> ptc.toStopId,
+        PublicTransportCombination.column.fromTravelInfoId -> ptc.fromTravelInfoId,
+        PublicTransportCombination.column.toTravelInfoId -> ptc.toTravelInfoId,
+        PublicTransportCombination.column.distance -> ptc.distance,
+        PublicTransportCombination.column.walkPath -> ptc.walkPath,
+        PublicTransportCombination.column.enabled -> ptc.enabled,
+        PublicTransportCombination.column.cost -> ptc.cost)
+    }.update().apply()
+
+    ptc
+  }
 
 }
 
