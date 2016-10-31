@@ -1,12 +1,12 @@
 package searching
 
-import base.{LazyLoggerSupport, MeterSupport}
+import base.{ LazyLoggerSupport, MeterSupport }
 import cats.data.XorT
 import cats.implicits._
 import mapdomain.graph._
-import model.{HeuristicType, Route}
+import model.{ HeuristicType, Route }
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait RouteSearcherSupport {
   protected val routeSearcher = RouteSearcher

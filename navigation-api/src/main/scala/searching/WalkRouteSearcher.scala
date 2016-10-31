@@ -2,18 +2,18 @@ package searching
 
 import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
-import cats.data.{Xor, XorT}
+import cats.data.{ Xor, XorT }
 import mapdomain.graph._
 import mapdomain.sidewalk._
 import mapdomain.utils.GraphUtils
 import model._
 import pathgenerator.core.AStar
-import pathgenerator.graph.{GeoGCost, GeoHeuristic}
-import provider.{GraphSupport, StreetEdgeSupport, StreetInfoSupport}
+import pathgenerator.graph.{ GeoGCost, GeoHeuristic }
+import provider.{ GraphSupport, StreetEdgeSupport, StreetInfoSupport }
 import searching.SearchRoutingErrors._
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Try }
 
 trait WalkRouteSearcherSupport {
   protected val walkRouteSearcher = WalkRouteSearcher
@@ -41,10 +41,10 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
       case (Some(fromVertex), Some(toVertex)) ⇒
         logger.info(s"Vertex From: ${fromVertex.id}. Vertex To: ${toVertex.id}")
         val aStartFactory = heuristicType match {
-          case AccessibilityHeuristicType =>
-          AStar[PedestrianEdge, SidewalkVertex, GeoHeuristic[PedestrianEdge, SidewalkVertex], WalkGCost.type](GeoHeuristic[PedestrianEdge, SidewalkVertex](fromVertex), WalkGCost) _
-          case GeoHeuristicType =>
-          AStar[PedestrianEdge, SidewalkVertex, GeoHeuristic[PedestrianEdge, SidewalkVertex], GeoGCost[PedestrianEdge, SidewalkVertex]](GeoHeuristic[PedestrianEdge, SidewalkVertex](fromVertex), GeoGCost()) _
+          case AccessibilityHeuristicType ⇒
+            AStar[PedestrianEdge, SidewalkVertex, GeoHeuristic[PedestrianEdge, SidewalkVertex], WalkGCost.type](GeoHeuristic[PedestrianEdge, SidewalkVertex](fromVertex), WalkGCost) _
+          case GeoHeuristicType ⇒
+            AStar[PedestrianEdge, SidewalkVertex, GeoHeuristic[PedestrianEdge, SidewalkVertex], GeoGCost[PedestrianEdge, SidewalkVertex]](GeoHeuristic[PedestrianEdge, SidewalkVertex](fromVertex), GeoGCost()) _
         }
         aStartFactory(graphContainer, fromVertex, Seq(toVertex))
           .search

@@ -12,9 +12,9 @@ object RoutingRequest {
 final case class EdgeRequest(edgeType: EdgeType, radius: Double, lat: Double, lng: Double)
 final case class RampRequest(lat: Double, lng: Double, radius: Double, associated: Boolean)
 final case class ReportableElementsRequest(northeast: String, southwest: String)
-final case class PublicTransportPathsRequest(lat: Double, lng: Double, radius: Option[Double], line: Option[String])// extends WithValidatedRadius {
+final case class PublicTransportPathsRequest(lat: Double, lng: Double, radius: Option[Double], line: Option[String]) // extends WithValidatedRadius {
 //  protected val _radius: Double = radius.getOrElse(0)
-  //  protected val _maxRadiusAllow: Double = 1
+//  protected val _maxRadiusAllow: Double = 1
 //}
 final case class PublicTransportCombinationsRequest(lat: Double, lng: Double, radius: Double)
 final case class StreetResponse(streets: Iterable[Street])

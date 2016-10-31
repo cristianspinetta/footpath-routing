@@ -2,8 +2,11 @@ package service
 
 import base.{ LazyLoggerSupport, MeterSupport }
 import base.conf.ApiEnvConfig
+import cats.data.Xor
 import mapdomain.graph.Coordinate
 import mapdomain.math.{ GVector, Point, VectorUtils }
+import mapdomain.publictransport.PublicTransportCombination
+import mapdomain.repository.publictransport.{ PublicTransportCombinationRepository, StopRepository }
 import mapdomain.repository.sidewalk.{ RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository, StreetCrossingEdgeRepository }
 import mapdomain.repository.street.{ StreetInfoRepository, StreetRepositorySupport }
 import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp, SidewalkVertex, StreetCrossingEdge }
@@ -12,10 +15,15 @@ import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
+import model.{ AccessibilityHeuristicType, Path }
 import provider.GraphSupport
 import scalikejdbc.DB
+import searching.WalkRouteSearcher
+import snapshot.ObjectSerializer
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.{ Await, ExecutionContext }
+import scala.concurrent.duration.Duration
 import scala.io.Source
 import scala.util.Try
 
@@ -91,6 +99,19 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     withTimeLogging({
       saveRamps(getRampsFromFile)
     }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
+  }
+
+  def processCombinationsWalkPaths()(implicit ec: ExecutionContext) = Try {
+    logger.info(s"Starting to process combinations")
+    withTimeLogging({
+      saveCombinations(updateCombinationsPath)
+    }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
+  }
+
+  private def saveCombinations(ptcs: List[PublicTransportCombination]) = Try {
+    DB localTx { implicit session ⇒
+      ptcs foreach PublicTransportCombinationRepository.save
+    }
   }
 
   private def getRampsFromFile: Vector[Ramp] = {
@@ -253,6 +274,21 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     DB localTx { implicit session ⇒
       ramps foreach RampRepository.save
     }
+  }
+
+  private def updateCombinationsPath()(implicit ec: ExecutionContext): List[PublicTransportCombination] = {
+    val combinations = PublicTransportCombinationRepository.findAll
+    combinations.map(c ⇒ {
+      val from = StopRepository.find(c.fromStopId).get
+      val to = StopRepository.find(c.toStopId).get
+      val search = WalkRouteSearcher.search(from.coordinate, to.coordinate, AccessibilityHeuristicType).value.map {
+        case Xor.Right(p) ⇒ c.copy(walkPath = Some(ObjectSerializer.serialize(p)))
+        case _            ⇒ c
+      }
+
+      Await.result(search, Duration.Inf)
+    })
+
   }
 
 }

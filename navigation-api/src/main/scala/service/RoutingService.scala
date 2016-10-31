@@ -1,15 +1,15 @@
 package service
 
 import base.conf.ApiEnvConfig
-import base.{Contexts, LazyLoggerSupport}
+import base.{ Contexts, LazyLoggerSupport }
 import cats.data.XorT
 import mapdomain.graph._
-import model.{AccessibilityHeuristicType, HeuristicType, _}
+import model.{ AccessibilityHeuristicType, HeuristicType, _ }
 import provider.GraphSupport
 import searching.SearchRoutingErrors._
 import searching.RouteSearcherSupport
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait RoutingServiceSupport {
   val routingService: RoutingService = RoutingService

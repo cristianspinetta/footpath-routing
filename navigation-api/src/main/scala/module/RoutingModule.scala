@@ -165,6 +165,12 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                       mapGeneratorService.createRamps() map (_ ⇒ "") get
                     }
                     complete(response)
+                  } ~
+                  path("public-transport-combinations") {
+                    val response: Future[ToResponseMarshallable] = Future.successful {
+                      mapGeneratorService.processCombinationsWalkPaths() map (_ ⇒ "") get
+                    }
+                    complete(response)
                   }
               } ~
                 pathPrefix("associate") {
