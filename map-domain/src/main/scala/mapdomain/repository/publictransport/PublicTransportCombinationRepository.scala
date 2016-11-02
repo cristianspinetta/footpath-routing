@@ -16,7 +16,7 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
       fromStopId = rs.long(ptc.fromStopId),
       toStopId = rs.long(ptc.toStopId),
       fromTravelInfoId = rs.long(ptc.fromTravelInfoId),
-      toTravelInfoId = rs.long(ptc.fromTravelInfoId),
+      toTravelInfoId = rs.long(ptc.toTravelInfoId),
       distance = rs.double(ptc.distance),
       walkPath = rs.bytesOpt(ptc.walkPath),
       enabled = rs.boolean(ptc.enabled),
@@ -62,6 +62,24 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
   def save(ptc: PublicTransportCombination)(implicit session: DBSession = PublicTransportCombination.autoSession): PublicTransportCombination = {
     withSQL {
       update(PublicTransportCombination).set(
+        PublicTransportCombination.column.toStopId -> ptc.toStopId,
+        PublicTransportCombination.column.fromTravelInfoId -> ptc.fromTravelInfoId,
+        PublicTransportCombination.column.distance -> ptc.distance,
+        PublicTransportCombination.column.walkPath -> ptc.walkPath,
+        PublicTransportCombination.column.enabled -> ptc.enabled,
+        PublicTransportCombination.column.cost -> ptc.cost
+      ).where
+        .eq(PublicTransportCombination.column.fromStopId, ptc.fromStopId)
+        .and
+        .eq(PublicTransportCombination.column.toTravelInfoId, ptc.toTravelInfoId)
+    }.update().apply()
+
+    ptc
+  }
+
+  def create(ptc: PublicTransportCombination)(implicit session: DBSession = PublicTransportCombination.autoSession): PublicTransportCombination = {
+    withSQL {
+      insert.into(PublicTransportCombination).namedValues(
         PublicTransportCombination.column.fromStopId -> ptc.fromStopId,
         PublicTransportCombination.column.toStopId -> ptc.toStopId,
         PublicTransportCombination.column.fromTravelInfoId -> ptc.fromTravelInfoId,
@@ -74,6 +92,10 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
 
     ptc
   }
+
+  def deleteAll(implicit session: DBSession = PublicTransportCombination.autoSession): Unit = withSQL {
+    deleteFrom(PublicTransportCombination)
+  }.update.apply()
 
 }
 

@@ -51,7 +51,7 @@ object Projects extends Build {
     .settings(mainClass in assembly := Some("api.WebServer"))
 
   lazy val mapDomain = Project("map-domain", file("map-domain"))
-    .dependsOn(commonLibrary)
+    .dependsOn(commonLibrary, snapshots)
     .configs(BenchmarkConfig, DBTestsConfig)
     .settings(testsSettings: _*)
     .settings(benchmarkSettings: _*)

@@ -108,6 +108,19 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
   }
 
+  private def updateCombinationsPath()(implicit ec: ExecutionContext): List[PublicTransportCombination] = {
+    val combinations = PublicTransportCombinationRepository.findAll
+    combinations.map(c ⇒ {
+      val from = StopRepository.find(c.fromStopId).get
+      val to = StopRepository.find(c.toStopId).get
+      val searchPath = WalkRouteSearcher.synchronicSearch(from.coordinate, to.coordinate, AccessibilityHeuristicType)
+      searchPath match {
+        case Some(path) => c.copy(walkPath = Some(ObjectSerializer.serialize(path)))
+        case _ => c
+      }
+    })
+  }
+
   private def saveCombinations(ptcs: List[PublicTransportCombination]) = Try {
     DB localTx { implicit session ⇒
       ptcs foreach PublicTransportCombinationRepository.save
@@ -274,21 +287,6 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     DB localTx { implicit session ⇒
       ramps foreach RampRepository.save
     }
-  }
-
-  private def updateCombinationsPath()(implicit ec: ExecutionContext): List[PublicTransportCombination] = {
-    val combinations = PublicTransportCombinationRepository.findAll
-    combinations.map(c ⇒ {
-      val from = StopRepository.find(c.fromStopId).get
-      val to = StopRepository.find(c.toStopId).get
-      val search = WalkRouteSearcher.search(from.coordinate, to.coordinate, AccessibilityHeuristicType).value.map {
-        case Xor.Right(p) ⇒ c.copy(walkPath = Some(ObjectSerializer.serialize(p)))
-        case _            ⇒ c
-      }
-
-      Await.result(search, Duration.Inf)
-    })
-
   }
 
 }
