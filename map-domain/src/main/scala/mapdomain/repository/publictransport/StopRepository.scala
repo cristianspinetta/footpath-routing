@@ -68,6 +68,13 @@ trait StopRepository extends SpatialSQLSupport {
         radiusOpt.map(radius ⇒ clauseNearestByDistance(coordinate, radius, s, "coordinate"))))
   }.map(stop(s)).list().apply()
 
+  def findStopsInRectangle(northEast: Coordinate, southWest: Coordinate)(implicit session: DBSession = Stop.autoSession): List[Stop] = withSQL {
+    select(s.resultAll)
+      .append(selectLatitudeAndLongitude(s))
+      .from(Stop as s)
+      .where.append(clauseGetElementsInRectangle(northEast, southWest, s, "coordinate"))
+  }.map(stop(s)).list().apply()
+
   def save(stop: Stop)(implicit session: DBSession = Stop.autoSession): Stop = {
     withSQL {
       update(Stop).set(

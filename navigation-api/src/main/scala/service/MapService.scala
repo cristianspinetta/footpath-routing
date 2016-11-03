@@ -3,6 +3,7 @@ package service
 import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
 import mapdomain.graph.{Edge => _, Vertex => _, _}
+import mapdomain.repository.publictransport.StopRepository
 import mapdomain.repository.sidewalk.{RampRepository, SidewalkEdgeRepository}
 import mapdomain.sidewalk._
 import mapdomain.street.StreetEdge
@@ -44,7 +45,8 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
   def reportableElements(northEast: Coordinate, southWest: Coordinate): Try[Vector[ReportableElement]] = Try {
     val ramps = RampRepository.findRampsInRectangle(northEast, southWest)
     val sidewalks = SidewalkEdgeRepository.findSidewalksInRectangle(northEast, southWest)
-    ramps.map(r => ReportableElement(r)).toVector ++ sidewalks.map(s => ReportableElement(s)).toVector
+    val stops = StopRepository.findStopsInRectangle(northEast, southWest)
+    ramps.map(r => ReportableElement(r)).toVector ++ sidewalks.map(s => ReportableElement(s)).toVector ++ stops.map(s => ReportableElement(s)).toVector
   }
 
   def publicTransportPaths(coordinate: Coordinate, radiusOpt: Option[Double], lineOpt: Option[String]): Try[List[PublicTransportPath]] = Try {

@@ -7,6 +7,7 @@ import mapdomain.sidewalk.{ Ramp, SidewalkEdge }
 sealed trait ReportableElementType
 case object RAMP extends ReportableElementType
 case object SIDEWALK extends ReportableElementType
+case object STOP extends ReportableElementType
 
 case class ReportableElement(id: Long,
   `type`: ReportableElementType,
@@ -32,6 +33,12 @@ object ReportableElement {
     from = Some(SidewalkVertexRepository.find(edge.vertexStartId).get.coordinate),
     to = Some(SidewalkVertexRepository.find(edge.vertexEndId).get.coordinate),
     enabled = edge.isAccessible)
+
+  def apply(stop: mapdomain.publictransport.Stop): ReportableElement = new ReportableElement(
+    id = stop.id,
+    `type` = STOP,
+    position = Some(stop.coordinate),
+    enabled = stop.isAccessible)
 
 }
 
