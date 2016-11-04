@@ -1,9 +1,9 @@
 package mapdomain.repository
 
 import mapdomain.graph.Coordinate
-import mapdomain.repository.publictransport.{ PathRepository, StopRepository, TravelInfoRepository }
-import mapdomain.repository.sidewalk.{ RampRepository, SidewalkEdgeRepository, SidewalkVertexRepository, StreetCrossingEdgeRepository }
-import mapdomain.repository.street.{ StreetEdgeRepository, StreetInfoRepository, StreetVertexRepository }
+import mapdomain.repository.publictransport.{PathRepository, PublicTransportCombinationRepository, StopRepository, TravelInfoRepository}
+import mapdomain.repository.sidewalk.{RampRepository, SidewalkEdgeRepository, SidewalkVertexRepository, StreetCrossingEdgeRepository}
+import mapdomain.repository.street.{StreetEdgeRepository, StreetInfoRepository, StreetVertexRepository}
 import org.scalatest.Matchers
 
 trait BaseRepositoryDBSpec { self: Matchers ⇒
@@ -26,6 +26,7 @@ trait BaseRepositoryDBSpec { self: Matchers ⇒
     SidewalkEdgeRepository.deleteAll
     StreetCrossingEdgeRepository.deleteAll
     SidewalkVertexRepository.deleteAll
+    PublicTransportCombinationRepository.deleteAll
   }
 
 }
