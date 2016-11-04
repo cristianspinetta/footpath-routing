@@ -1,13 +1,15 @@
 package provider
 
-import base.{ LazyLoggerSupport, MeterSupport }
-import mapdomain.graph.{ Coordinate, GeoSearch }
+import base.{LazyLoggerSupport, MeterSupport}
+import mapdomain.graph.{Coordinate, GeoSearch}
 import mapdomain.publictransport._
-import mapdomain.repository.publictransport.{ PathRepository, PublicTransportRepositorySupport, StopRepository }
+import mapdomain.repository.publictransport.{PathRepository, PublicTransportRepositorySupport, StopRepository}
 import scalikejdbc.DBSession
+import snapshot.publictransport.StopSnapshot
 import spray.json._
 
 import scala.annotation.tailrec
+import scala.collection.Map
 
 trait PublicTransportProviderSupport {
   // def publicTransportProvider = FakePublicTransportProvider
@@ -17,13 +19,15 @@ trait PublicTransportProviderSupport {
 trait PublicTransportProvider extends PublicTransportRepositorySupport with MeterSupport with LazyLoggerSupport {
   import module.Protocol._
 
+  val stopsById: Map[Long, Stop] = StopSnapshot.get()
+
   def findStopsByRadiusAndLine(startPosition: Coordinate, radiusOpt: Option[Double] = None, lineOpt: Option[String] = None): List[Stop] = {
     stopRepository.findByRadiusAndLine(startPosition, radiusOpt, lineOpt)
   }
 
   def findTravelInfo(id: Long): TravelInfo = travelInfoRepository.find(id).get
 
-  def findStop(id: Long): Stop = stopRepository.find(id).get
+  def findStop(id: Long): Stop = stopsById(id)
 
   def findStopfindByTravelInfoId(id: Long): List[Stop] = stopRepository.findByTravelInfoId(id)
 
@@ -33,10 +37,13 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
     def findNextPaths(fromStopId: Long, destinationStopId: Long, accumulatedPaths: List[Path]): List[Path] = {
       if (fromStopId == destinationStopId) accumulatedPaths
       else {
-        val fromStop: Stop = stopRepository.find(fromStopId).get
+        val fromStop: Stop = stopsById(fromStopId)
         // FIXME: cambiar pathId por un Option
         val newAccumulatedPaths = fromStop.pathId.flatMap(pathId ⇒ pathRepository.find(pathId)).toList ::: accumulatedPaths
-        findNextPaths(fromStop.nextStopId.get, destinationStopId, newAccumulatedPaths)
+        if (fromStop.nextStopId.isDefined)
+          findNextPaths(fromStop.nextStopId.get, destinationStopId, newAccumulatedPaths)
+        else
+          accumulatedPaths
       }
     }
 
@@ -49,9 +56,9 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
     publicTransportCombinationRepository.findByRadius(startPosition, radius)
   }
 
-  def getTPCombinationsByMultipleTravelInfoIds(travelInfoIds: List[Long], limit: Int = 10000): List[PublicTransportCombination] = withTimeLogging({
+  def getTPCombinationsByMultipleTravelInfoIds(travelInfoIds: List[Long], limit: Int = 100000): List[PublicTransportCombination] = withTimeLogging({
     publicTransportCombinationRepository.findByMultipleTravelInfoIds(travelInfoIds, limit)
-  }, (timing: Long) ⇒ logger.info(s"Search PT combinations with ${travelInfoIds.size} Travel Info as filter and retrieving a maximum of the $limit rows take $timing ms."))
+  }, (timing: Long) ⇒ logger.info(s"Search Public Transport Combinations with ${travelInfoIds.size} Travel Info as filter and retrieving a maximum of the $limit rows take $timing ms."))
 
 }
 

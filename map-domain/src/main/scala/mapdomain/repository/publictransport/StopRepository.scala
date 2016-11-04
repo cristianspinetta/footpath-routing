@@ -1,11 +1,12 @@
 package mapdomain.repository.publictransport
 
+import base.{LazyLoggerSupport, MeterSupport}
 import mapdomain.graph.Coordinate
 import mapdomain.publictransport._
-import scalikejdbc.{ DBSession, WrappedResultSet, _ }
+import scalikejdbc.{DBSession, WrappedResultSet, _}
 import sql.SpatialSQLSupport
 
-trait StopRepository extends SpatialSQLSupport {
+trait StopRepository extends SpatialSQLSupport with LazyLoggerSupport with MeterSupport {
 
   val (s, ti, ptc) = (Stop.syntax("s"), TravelInfo.syntax("ti"), PublicTransportCombination.syntax("sc"))
 
@@ -52,14 +53,22 @@ trait StopRepository extends SpatialSQLSupport {
     Stop.createByUnsaved(id, stopUnsaved)
   }
 
-  def find(id: Long)(implicit session: DBSession = Stop.autoSession): Option[Stop] = {
+  def find(id: Long)(implicit session: DBSession = Stop.autoSession): Option[Stop] = withSQL {
+    select
+      .all(s)
+      .append(selectLatitudeAndLongitude(s))
+      .from(Stop as s)
+      .where.eq(s.id, id)
+  }.map(stop(s)).single().apply()
+
+  def findAll(implicit session: DBSession = Stop.autoSession): List[Stop] = withTimeLogging(
     withSQL {
-      select.all(s)
+      select
+        .all(s)
         .append(selectLatitudeAndLongitude(s))
         .from(Stop as s)
-        .where.eq(s.id, id)
-    }.map(stop(s)).single().apply()
-  }
+    }.map(stop(s)).list().apply(),
+    (time: Long) ⇒ logger.info(s"Getting of all Stops finished in $time ms."))
 
   def findByTravelInfoId(travelInfoId: Long)(implicit session: DBSession = Stop.autoSession): List[Stop] = {
     withSQL {

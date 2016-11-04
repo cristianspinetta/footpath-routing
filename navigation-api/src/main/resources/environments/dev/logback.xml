@@ -19,5 +19,6 @@
     </root>
 
     <!--<logger name="scalikejdbc" level="debug" />-->
+    <logger name="searching" level="debug" />
 
 </included>
