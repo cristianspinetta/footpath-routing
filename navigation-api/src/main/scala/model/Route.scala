@@ -3,7 +3,9 @@ package model
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import base.CaseObjectSerializationSupport
 import mapdomain.graph.Coordinate
-import searching.{ IncidentType, PedestrianIncident, RampIncidentType, SidewalkIncidentType }
+import org.json4s.CustomSerializer
+import org.json4s.JsonAST.JString
+import searching.{IncidentType, PedestrianIncident, RampIncidentType, SidewalkIncidentType}
 import spray.json.DefaultJsonProtocol
 
 case class Route(path: List[Path])
@@ -53,3 +55,9 @@ trait RouteFormatter extends DefaultJsonProtocol with CaseObjectSerializationSup
   implicit val RouteFormat = jsonFormat1(Route.apply)
 
 }
+
+case object PathTypeSerializer extends CustomSerializer[PathType](format => ( {
+  case JString(s) => PathType.keyMap(s)
+}, {
+  case pathType: PathType => JString(PathType.keyMap.find((s: String, p: PathType) => p == pathType).get._1)
+}))

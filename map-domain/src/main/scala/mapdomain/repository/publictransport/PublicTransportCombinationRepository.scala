@@ -18,7 +18,7 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
       fromTravelInfoId = rs.long(ptc.fromTravelInfoId),
       toTravelInfoId = rs.long(ptc.toTravelInfoId),
       distance = rs.double(ptc.distance),
-      walkPath = rs.bytesOpt(ptc.walkPath),
+      walkPath = rs.stringOpt(ptc.walkPath),
       enabled = rs.boolean(ptc.enabled),
       cost = rs.double(ptc.cost))
   }
@@ -37,8 +37,8 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
       .from(PublicTransportCombination as ptc)
       .where
       .in(ptc.fromTravelInfoId, travelInfoIds)
-//      .or
-//      .in(ptc.toTravelInfoId, travelInfoIds)
+      //      .or
+      //      .in(ptc.toTravelInfoId, travelInfoIds)
       .orderBy(ptc.distance).asc
       .limit(limit)
   }.map(publicTransportCombination(ptc)).list().apply()
@@ -59,6 +59,13 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
       .from(PublicTransportCombination as ptc)
   }.map(publicTransportCombination(ptc)).list().apply()
 
+  def findLimitted(limit: Integer, offset: Integer)(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = withSQL {
+    select.all(ptc)
+      .from(PublicTransportCombination as ptc)
+      .limit(limit)
+      .offset(offset)
+  }.map(publicTransportCombination(ptc)).list().apply()
+
   def save(ptc: PublicTransportCombination)(implicit session: DBSession = PublicTransportCombination.autoSession): PublicTransportCombination = {
     withSQL {
       update(PublicTransportCombination).set(
@@ -67,8 +74,7 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
         PublicTransportCombination.column.distance -> ptc.distance,
         PublicTransportCombination.column.walkPath -> ptc.walkPath,
         PublicTransportCombination.column.enabled -> ptc.enabled,
-        PublicTransportCombination.column.cost -> ptc.cost
-      ).where
+        PublicTransportCombination.column.cost -> ptc.cost).where
         .eq(PublicTransportCombination.column.fromStopId, ptc.fromStopId)
         .and
         .eq(PublicTransportCombination.column.toTravelInfoId, ptc.toTravelInfoId)

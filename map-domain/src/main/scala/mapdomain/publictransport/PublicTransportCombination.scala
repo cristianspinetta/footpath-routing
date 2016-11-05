@@ -8,7 +8,7 @@ case class PublicTransportCombination(
   fromTravelInfoId: Long,
   toTravelInfoId: Long,
   distance: Double,
-  walkPath: Option[Array[Byte]] = None,
+  walkPath: Option[String] = None,
   enabled: Boolean,
   cost: Double)
 

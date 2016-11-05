@@ -1,9 +1,9 @@
 package mapdomain.repository.publictransport
 
-import base.{LazyLoggerSupport, MeterSupport}
+import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph.Coordinate
 import mapdomain.publictransport._
-import scalikejdbc.{DBSession, WrappedResultSet, _}
+import scalikejdbc.{ DBSession, WrappedResultSet, _ }
 import sql.SpatialSQLSupport
 
 trait StopRepository extends SpatialSQLSupport with LazyLoggerSupport with MeterSupport {
@@ -33,7 +33,7 @@ trait StopRepository extends SpatialSQLSupport with LazyLoggerSupport with Meter
       fromTravelInfoId = rs.long(ptc.fromTravelInfoId),
       toTravelInfoId = rs.long(ptc.fromTravelInfoId),
       distance = rs.double(ptc.distance),
-      walkPath = rs.bytesOpt(ptc.walkPath),
+      walkPath = rs.stringOpt(ptc.walkPath),
       enabled = rs.boolean(ptc.enabled),
       cost = rs.double(ptc.cost))
   }

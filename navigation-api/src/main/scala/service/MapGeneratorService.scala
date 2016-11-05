@@ -101,22 +101,22 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
   }
 
-  def processCombinationsWalkPaths()(implicit ec: ExecutionContext) = Try {
+  def processCombinationsWalkPaths(limit: Integer, offset: Integer)(implicit ec: ExecutionContext) = Try {
     logger.info(s"Starting to process combinations")
     withTimeLogging({
-      saveCombinations(updateCombinationsPath)
+      saveCombinations(updateCombinationsPath(limit, offset))
     }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
   }
 
-  private def updateCombinationsPath()(implicit ec: ExecutionContext): List[PublicTransportCombination] = {
-    val combinations = PublicTransportCombinationRepository.findAll
+  private def updateCombinationsPath(limit: Integer, offset: Integer)(implicit ec: ExecutionContext): List[PublicTransportCombination] = {
+    val combinations = PublicTransportCombinationRepository.findLimitted(limit, offset)
     combinations.map(c ⇒ {
       val from = StopRepository.find(c.fromStopId).get
       val to = StopRepository.find(c.toStopId).get
       val searchPath = WalkRouteSearcher.synchronicSearch(from.coordinate, to.coordinate, AccessibilityHeuristicType)
       searchPath match {
-        case Some(path) => c.copy(walkPath = Some(ObjectSerializer.serialize(path)))
-        case _ => c
+        case Some(path) ⇒ c.copy(walkPath = Some(ObjectSerializer.serialize(path)))
+        case _          ⇒ c
       }
     })
   }

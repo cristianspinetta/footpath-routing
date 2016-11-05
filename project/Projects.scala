@@ -37,7 +37,7 @@ object Projects extends Build {
     .settings(notAggregateInAssembly: _*)
 
   lazy val navigationApi = Project("navigation-api", file("navigation-api"))
-    .dependsOn(pathGenerator, mapGenerator, mapDomain, commonLibrary, snapshots)
+    .dependsOn(pathGenerator, mapGenerator, mapDomain, commonLibrary)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(assemblySettings: _*)
@@ -67,7 +67,7 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
-      compile(typesafeConfig, logbackCore, logbackClassic) ++
+      compile(typesafeConfig, logbackCore, logbackClassic, json4sJackson, jacksonScala) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
     .settings(notAggregateInAssembly: _*)

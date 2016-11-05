@@ -23,6 +23,8 @@ final case class EdgeResponse(edges: Iterable[Edge], vertices: List[Vertex])
 final case class RampResponse(ramps: List[Ramp])
 final case class ReportableElementsResponse(elements: Vector[ReportableElement])
 
+final case class PublicTransportCreationRequest(limit: String, offset: String)
+
 trait WithValidatedRadius {
   protected def _maxRadiusAllow: Double
   protected def _radius: Double
@@ -42,6 +44,7 @@ trait Protocol extends DefaultJsonProtocol with CaseObjectSerializationSupport w
   implicit val SidewalkResponseFormat = jsonFormat1(SidewalkResponse.apply)
   implicit val EdgeResponseFormat = jsonFormat2(EdgeResponse.apply)
   implicit val ReportableElementsResponseFormat = jsonFormat1(ReportableElementsResponse.apply)
+  implicit val PublicTransportCreationRequestFormat = jsonFormat2(PublicTransportCreationRequest.apply)
 
 }
 
