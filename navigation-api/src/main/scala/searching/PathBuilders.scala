@@ -25,13 +25,16 @@ private[searching] object PathBuilders {
     def cost: Double
   }
 
-  case class TPPathBuilder(travelInfoId: Long, stopFrom: Stop, stopTo: Stop) extends PathBuilder with LazyLoggerSupport with PublicTransportProviderSupport {
+  case class TransportPathBuilder(travelInfoId: Long, stopFrom: Stop, stopTo: Stop) extends PathBuilder with LazyLoggerSupport with PublicTransportProviderSupport {
 
     def build(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
       Future[Xor[SearchRoutingError, Path]] {
         //      val travelInfo = publicTransportProvider.findTravelInfo(stopFrom.travelInfoId)
         val coordinates = publicTransportProvider.getPathBetweenStops(stopFrom, stopTo)
-        Xor.Right(Path(coordinates, PathDescription(BusPath, "stop from address", "stop to address")))
+        val travelInfo = publicTransportProvider.findTravelInfo(stopFrom.travelInfoId)
+        val transportDescription = s"${travelInfo.`type`} - Line ${travelInfo.name} - Branch ${travelInfo.branch} - ${travelInfo.sentido}"
+        // FIXME add more info on PathDescription
+        Xor.Right(Path(coordinates, PathDescription(BusPath, s"$transportDescription - From", s"$transportDescription - To")))
       } recover {
         case exc: Throwable ⇒
           logger.error(s"An error occur trying to build the path between stops. $stopFrom, $stopTo", exc)

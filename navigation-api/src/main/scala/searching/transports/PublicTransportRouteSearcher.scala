@@ -4,6 +4,7 @@ import base.{LazyLoggerSupport, MeterSupport}
 import cats.data.{Xor, XorT}
 import cats.implicits._
 import mapdomain.graph._
+import mapdomain.publictransport.Stop
 import model._
 import provider.{GraphSupport, PublicTransportProviderSupport}
 import searching.PathBuilders._
@@ -26,7 +27,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
   import CombinationModel._
 
   def search(from: Coordinate, to: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, List[Route]] = withTimeLoggingAsync({
-    searchNearestStops(from, to).flatMap(searchPathsByTPCombinations(from, to))
+    searchNearestStops(from, to).flatMap(searchPathsByCombinations(from, to))
   }, (time: Long) ⇒ logger.info(s"Execute Search route for Public Transport took $time ms."))
 
   protected def searchNearestStops(coordinateFrom: Coordinate, coordinateTo: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, NearestCandidateTransports] = XorT {
@@ -47,7 +48,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
     }
   }
 
-  protected def searchPathsByTPCombinations(from: Coordinate, to: Coordinate)(candidatePTs: NearestCandidateTransports)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, List[Route]] = {
+  protected def searchPathsByCombinations(from: Coordinate, to: Coordinate)(candidatePTs: NearestCandidateTransports)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, List[Route]] = {
     logger.info("Searching paths between stops...")
 
     def searchTransportRoute(candidatesFrom: List[CandidateTransport], candidatesTo: List[CandidateTransport], attempt: Long, requiredPaths: Int): Xor[SearchRoutingError, List[PartialRoute]] = withTimeLogging({
@@ -68,30 +69,35 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
               val directPartialRoutes = createRoutes(to, candidatePaths)
 
-              val allFromCombinations = publicTransportProvider.getTPCombinationsByMultipleTravelInfoIds(candidatesFrom.map(_.travelInfoId))
+              val allFromCombinations = publicTransportProvider.getCombinationsByMultipleTravelInfoIds(candidatesFrom.map(_.travelInfoId))
               val combinationContext = crateCombinationContext(candidatesFrom, allFromCombinations)
 
               val newCandidateFrom: List[CandidateTransport] = combinationContext.transportsTo
+
               val xorCombinationsF = searchTransportRoute(newCandidateFrom, candidatesTo, attempt + 1, requiredPaths - foundPaths)
                 .map { partialNextPaths: List[PartialRoute] ⇒
-                  val sortedPartialNextPaths = partialNextPaths.sortBy(_.cost).take(requiredPaths - foundPaths)
 
-                  for {
-                    partialNextPath ← sortedPartialNextPaths
-                  } yield {
+                  partialNextPaths
+                    .sortBy(_.cost)
+                    .take(requiredPaths - foundPaths)
+                    .map { partialNextPath =>
+                      val (selectedCombination, linkedStop) = (for {
+                        combination <- combinationContext.byTransportTo(partialNextPath.travelInfoFromId)
+                        linkedStop <- combination.linkedStops if linkedStop.transportToStopFrom.id == partialNextPath.stopFrom.id
+                      } yield (combination, linkedStop)).head
 
-                    val selectedCombinations: List[Combination] = combinationContext.byTransportTo(partialNextPath.travelInfoFromId)
+                      val transportFromId = selectedCombination.transportFromId
+                      val transportFromStopTo = linkedStop.transportFromStopTo
+                      val transportFromStopFrom = selectedCombination.stopsFrom.find(_.sequence < transportFromStopTo.sequence).get
 
-                    // FIXME select the lowest cost one
-                    val selectedCombination = selectedCombinations.find(c => c.linkedStops.exists(_.transportToStopFrom.id == partialNextPath.stopFrom.id)).get
+                      // TODO: Build walk path from combination
+                      // FIXME hacer una funcion que dado una lista de paradas desde y paradas hasta elija una buena parada de cada extremo para hacer el path
+                      val pathBuilders = List(
+                        TransportPathBuilder(transportFromId, transportFromStopFrom, transportFromStopTo),
+                        WalkPathBuilder(transportFromStopTo.coordinate, partialNextPath.stopFrom.coordinate))
 
-                    // TODO: Build walk path from combination
-                    // FIXME hacer una funcion que dado una lista de paradas desde y paradas hasta elija una buena parada de cada extremo para hacer el path
-                    val pathBuilders = List(
-                      TPPathBuilder(selectedCombination.transportFromId, selectedCombination.stopsFrom.head, selectedCombination.linkedStops.head.transportFromStopTo),
-                      WalkPathBuilder(selectedCombination.linkedStops.head.transportFromStopTo.coordinate, partialNextPath.stopFrom.coordinate))
-                    PartialRoute(selectedCombination.transportFromId, selectedCombination.stopsFrom.head, pathBuilders ::: partialNextPath.pathBuilders)
-                  }
+                      PartialRoute(transportFromId, transportFromStopFrom, pathBuilders ::: partialNextPath.pathBuilders)
+                    }
                 }
 
               xorCombinationsF
@@ -109,7 +115,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
     val partialRoutes: Xor[SearchRoutingError, List[PartialRoute]] =
       searchTransportRoute(candidatePTs.from, candidatePTs.to, attempt = 1, requiredPaths = 10)
-      .map(routes => routes.sortBy(_.cost))
+        .map(routes => routes.sortBy(_.cost))
 
     XorT(Future.successful(partialRoutes)).flatMap { partials ⇒
       partials.traverseU { partial ⇒
@@ -136,8 +142,9 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
   def createRoutes(to: Coordinate, candidatePaths: List[ReachableTransport]): List[PartialRoute] = {
     candidatePaths map { candidate ⇒
       val stopTo = candidate.stopsTo.minBy(stop ⇒ stop.coordinate.distanceTo(to))
-      val pathBuilders = List(TPPathBuilder(candidate.travelInfoId, candidate.stopsFrom.head, stopTo), WalkPathBuilder(stopTo.coordinate, to))
-      PartialRoute(candidate.travelInfoId, candidate.stopsFrom.head, pathBuilders)
+      val stopFrom: Stop = candidate.stopsFrom.head
+      val pathBuilders = List(TransportPathBuilder(candidate.travelInfoId, stopFrom, stopTo), WalkPathBuilder(stopTo.coordinate, to))
+      PartialRoute(candidate.travelInfoId, stopFrom, pathBuilders)
     }
   }
 }
