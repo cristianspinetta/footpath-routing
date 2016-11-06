@@ -35,15 +35,6 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
       }
   }
 
-  def synchronicSearch(coordinateFrom: Coordinate, coordinateTo: Coordinate, heuristicType: HeuristicType = AccessibilityHeuristicType)(implicit ec: ExecutionContext): Option[Path] = {
-    try {
-      Some(createWalkPath(searchPathOnGraph(graphs.sidewalk, coordinateFrom, coordinateTo, heuristicType).get))
-      //Some(Path(List(Coordinate(10, 9), Coordinate(52, 51)), PathDescription(WalkPath, "from descr", "to descr"), List()))
-    } catch {
-      case exc: Throwable ⇒ None
-    }
-  }
-
   protected def searchPathOnGraph(graphContainer: SidewalkGraphContainer, coordinateFrom: Coordinate,
     coordinateTo: Coordinate, heuristicType: HeuristicType): Try[List[PedestrianEdge]] = {
     (graphContainer.findNearest(coordinateFrom), graphContainer.findNearest(coordinateTo)) match {

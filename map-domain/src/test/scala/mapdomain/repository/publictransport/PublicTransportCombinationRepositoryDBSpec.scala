@@ -6,7 +6,6 @@ import mapdomain.repository.BaseRepositoryDBSpec
 import mapdomain.sidewalk.Ramp
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
 import scalikejdbc.config.DBs
-import utils.JsonUtil
 
 import scala.math._
 
@@ -24,9 +23,8 @@ class PublicTransportCombinationRepositoryDBSpec extends FlatSpec with Matchers 
   "PublicTransportCombination Repository" should "update PublicTransportCombination correctly" in {
     var ptc1 = PublicTransportCombinationRepository.create(PublicTransportCombination(1, 2, 3, 4, 5, None, true, 1))
     var ptc2 = PublicTransportCombinationRepository.create(PublicTransportCombination(10, 11, 3, 4, 5, None, true, 1))
-    Some(JsonUtil.toJson(Ramp(Coordinate(1, 2), None, "asd", false)))
-    ptc2 = ptc2.copy(walkPath = Some(JsonUtil.toJson(Ramp(Coordinate(1, 2), None, "asd", false))))
-    ptc1 = ptc1.copy(walkPath = Some(JsonUtil.toJson((Ramp(Coordinate(1.1233, -2.33909), None, "asd", false)))))
+    ptc2 = ptc2.copy(walkPath = Some("test-path-1"))
+    ptc1 = ptc1.copy(walkPath = Some("test-path-2"))
 
     PublicTransportCombinationRepository.save(ptc1)
     PublicTransportCombinationRepository.save(ptc2)

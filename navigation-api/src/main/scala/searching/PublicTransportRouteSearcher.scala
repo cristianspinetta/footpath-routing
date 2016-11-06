@@ -1,15 +1,15 @@
 package searching
 
-import base.{LazyLoggerSupport, LogicError, MeterSupport}
-import cats.data.{Xor, XorT}
+import base.{ LazyLoggerSupport, LogicError, MeterSupport }
+import cats.data.{ Xor, XorT }
 import cats.implicits._
 import mapdomain.graph._
-import mapdomain.publictransport.{PublicTransportCombination, Stop}
+import mapdomain.publictransport.{ PublicTransportCombination, Stop }
 import model._
-import provider.{GraphSupport, PublicTransportProviderSupport}
+import provider.{ GraphSupport, PublicTransportProviderSupport }
 import SearchRoutingErrors._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import searching.PathBuilders._
 
 import scala.collection.concurrent.TrieMap
@@ -22,7 +22,7 @@ trait PublicTransportRouteSearcherSupport {
 object PublicTransportRouteSearcher extends PublicTransportRouteSearcher
 
 sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
-  with GraphSupport with PublicTransportProviderSupport with LazyLoggerSupport with MeterSupport {
+    with GraphSupport with PublicTransportProviderSupport with LazyLoggerSupport with MeterSupport {
 
   import base.XorTSugars._
 
@@ -88,7 +88,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
                   val selectedCombinations: List[Combination] = combinationContext.byTransportTo(partialNextPath.travelInfoFromId)
 
                   // FIXME select the lowest cost one
-                  val selectedCombination = selectedCombinations.find(c => c.linkedStops.exists(_.transportToStopFrom.id == partialNextPath.stopFrom.id)).get
+                  val selectedCombination = selectedCombinations.find(c ⇒ c.linkedStops.exists(_.transportToStopFrom.id == partialNextPath.stopFrom.id)).get
 
                   // TODO: Build walk path from combination
                   // FIXME hacer una funcion que dado una lista de paradas desde y paradas hasta elija una buena parada de cada extremo para hacer el path
@@ -109,7 +109,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
           logger.info(s"No more stops for searching route via Transport Public. [Candidate Stops from = ${candidatesFrom.size}, Candidate Stops to = ${candidatesTo.size}]")
           Xor.Left(NoStops)
       }
-    }, (timing: Long) => logger.info(s"Searching a route with ${attempt - 1} transport combinations took $timing ms."))
+    }, (timing: Long) ⇒ logger.info(s"Searching a route with ${attempt - 1} transport combinations took $timing ms."))
 
     val partialRoutes: Xor[SearchRoutingError, List[PartialRoute]] = searchPT(candidatePTs.from, candidatePTs.to, attempt = 1)
 
@@ -133,27 +133,28 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
   sealed case class ReachableTransport(travelInfoId: Long, stopsFrom: List[Stop], stopsTo: List[Stop])
   sealed case class PartialRoute(travelInfoFromId: Long, stopFrom: Stop, pathBuilders: List[PathBuilder])
 
-//  protected def mergeStops(stops: List[Stop]): List[CandidateTransport] = {
-//    val result = new TrieMap[Long,  mutable.Builder[Stop, List[Stop]]]()
-//    stops foreach { stop => result getOrElseUpdate (stop.travelInfoId, List.newBuilder[Stop]) += stop }
-//    result map { case (travelInfoId, stopsBuilder) =>
-//      val uniqueStops: List[Stop] = removeDuplicated(stopsBuilder.result(), (s1, s2) => s1.id == s2.id)
-//      CandidateTransport(travelInfoId, uniqueStops)
-//    } toList
-//  }
-//
-//  protected def mergeTransports(candidateTransports: List[CandidateTransport]): List[CandidateTransport] = {
-//    mergeStops(candidateTransports.flatMap(_.stops))
-//  }
+  //  protected def mergeStops(stops: List[Stop]): List[CandidateTransport] = {
+  //    val result = new TrieMap[Long,  mutable.Builder[Stop, List[Stop]]]()
+  //    stops foreach { stop => result getOrElseUpdate (stop.travelInfoId, List.newBuilder[Stop]) += stop }
+  //    result map { case (travelInfoId, stopsBuilder) =>
+  //      val uniqueStops: List[Stop] = removeDuplicated(stopsBuilder.result(), (s1, s2) => s1.id == s2.id)
+  //      CandidateTransport(travelInfoId, uniqueStops)
+  //    } toList
+  //  }
+  //
+  //  protected def mergeTransports(candidateTransports: List[CandidateTransport]): List[CandidateTransport] = {
+  //    mergeStops(candidateTransports.flatMap(_.stops))
+  //  }
 
-  protected def removeDuplicated[A](elems: List[A], customEquals: (A, A) => Boolean): List[A] = {
+  protected def removeDuplicated[A](elems: List[A], customEquals: (A, A) ⇒ Boolean): List[A] = {
     elems.foldRight(List.empty[A]) {
-      (curr, unique) => {
-        if (!unique.exists(customEquals(curr, _)))
-          curr +: unique
-        else
-          unique
-      }
+      (curr, unique) ⇒
+        {
+          if (!unique.exists(customEquals(curr, _)))
+            curr +: unique
+          else
+            unique
+        }
     }
   }
 
@@ -161,17 +162,17 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
   case class Combination(transportFromId: Long, stopsFrom: List[Stop], transportToId: Long, linkedStops: List[LinkedStops])
   case class PartialCombination(transportFromId: Long, stopsFrom: List[Stop], transportToId: Long, linkedStop: LinkedStops)
   case class CombinationContext(combinations: List[Combination]) {
-    lazy val byTransportFrom: Map[Long, List[Combination]] = combinations.groupBy(_.transportFromId).map(c => c._1 -> c._2)
-    lazy val byTransportTo: Map[Long, List[Combination]] = combinations.groupBy(_.transportToId).map(c => c._1 -> c._2)
+    lazy val byTransportFrom: Map[Long, List[Combination]] = combinations.groupBy(_.transportFromId).map(c ⇒ c._1 -> c._2)
+    lazy val byTransportTo: Map[Long, List[Combination]] = combinations.groupBy(_.transportToId).map(c ⇒ c._1 -> c._2)
     lazy val transportsTo: List[CandidateTransport] = {
       val stopsWithTransportTo = for {
-        (transportToId, combinations) <- byTransportTo.toList
-        combination <- combinations
-        linkedStop <- combination.linkedStops
+        (transportToId, combinations) ← byTransportTo.toList
+        combination ← combinations
+        linkedStop ← combination.linkedStops
       } yield (transportToId, linkedStop.transportToStopFrom)
       stopsWithTransportTo
         .groupBy(_._1)
-        .map { case (transportToId, stops) => CandidateTransport(transportToId, removeDuplicated[Stop](stops.map(_._2), (s1, s2) => s1.id == s2.id)) }
+        .map { case (transportToId, stops) ⇒ CandidateTransport(transportToId, removeDuplicated[Stop](stops.map(_._2), (s1, s2) ⇒ s1.id == s2.id)) }
         .toList
     }
   }
@@ -215,19 +216,20 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
     // Flat Combinations
     val finalCombinations: List[Combination] = result
       .toList
-      .flatMap { case (transportFromId, combinationsBuilder) =>
-        val combinations = combinationsBuilder.result()
-        combinations
-          .groupBy(_.transportToId)
-          .flatMap {
-            case (transportToId, partialCombinations@x :: xs) =>
-              Combination(
-                transportFromId = transportFromId,
-                transportToId = transportToId,
-                stopsFrom = partialCombinations.head.stopsFrom,
-                linkedStops = partialCombinations.map(c => c.linkedStop)) :: Nil
-            case _ => Nil
-          }
+      .flatMap {
+        case (transportFromId, combinationsBuilder) ⇒
+          val combinations = combinationsBuilder.result()
+          combinations
+            .groupBy(_.transportToId)
+            .flatMap {
+              case (transportToId, partialCombinations @ x :: xs) ⇒
+                Combination(
+                  transportFromId = transportFromId,
+                  transportToId = transportToId,
+                  stopsFrom = partialCombinations.head.stopsFrom,
+                  linkedStops = partialCombinations.map(c ⇒ c.linkedStop)) :: Nil
+              case _ ⇒ Nil
+            }
 
       }
     CombinationContext(finalCombinations)

@@ -15,15 +15,14 @@ import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
-import model.{ AccessibilityHeuristicType, Path }
+import model.AccessibilityHeuristicType
 import provider.GraphSupport
 import scalikejdbc.DB
 import searching.WalkRouteSearcher
-import snapshot.ObjectSerializer
+import utils.JsonUtils
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{ Await, ExecutionContext }
-import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext
 import scala.io.Source
 import scala.util.Try
 
@@ -104,27 +103,22 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
   def processCombinationsWalkPaths(limit: Integer, offset: Integer)(implicit ec: ExecutionContext) = Try {
     logger.info(s"Starting to process combinations")
     withTimeLogging({
-      saveCombinations(updateCombinationsPath(limit, offset))
+      updateAsyncCombinationsPath(limit, offset)
     }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
   }
 
-  private def updateCombinationsPath(limit: Integer, offset: Integer)(implicit ec: ExecutionContext): List[PublicTransportCombination] = {
+  private def updateAsyncCombinationsPath(limit: Integer, offset: Integer)(implicit ec: ExecutionContext) = {
     val combinations = PublicTransportCombinationRepository.findLimitted(limit, offset)
-    combinations.map(c ⇒ {
+    combinations.foreach(c ⇒ {
       val from = StopRepository.find(c.fromStopId).get
       val to = StopRepository.find(c.toStopId).get
-      val searchPath = WalkRouteSearcher.synchronicSearch(from.coordinate, to.coordinate, AccessibilityHeuristicType)
-      searchPath match {
-        case Some(path) ⇒ c.copy(walkPath = Some(ObjectSerializer.serialize(path)))
-        case _          ⇒ c
+
+      val searchPath = WalkRouteSearcher.search(from.coordinate, to.coordinate)
+      searchPath.value.foreach {
+        case Xor.Right(p) ⇒ PublicTransportCombinationRepository.save(c.copy(walkPath = Some(JsonUtils.toJson(p))))
+        case _            ⇒ logger.error(s"Could not find combination between ${c.fromStopId} and ${c.toStopId}")
       }
     })
-  }
-
-  private def saveCombinations(ptcs: List[PublicTransportCombination]) = Try {
-    DB localTx { implicit session ⇒
-      ptcs foreach PublicTransportCombinationRepository.save
-    }
   }
 
   private def getRampsFromFile: Vector[Ramp] = {

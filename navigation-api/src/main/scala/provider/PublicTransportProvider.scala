@@ -1,9 +1,9 @@
 package provider
 
-import base.{LazyLoggerSupport, MeterSupport}
-import mapdomain.graph.{Coordinate, GeoSearch}
+import base.{ LazyLoggerSupport, MeterSupport }
+import mapdomain.graph.{ Coordinate, GeoSearch }
 import mapdomain.publictransport._
-import mapdomain.repository.publictransport.{PathRepository, PublicTransportRepositorySupport, StopRepository}
+import mapdomain.repository.publictransport.{ PathRepository, PublicTransportRepositorySupport, StopRepository }
 import scalikejdbc.DBSession
 import snapshot.publictransport.StopSnapshot
 import spray.json._

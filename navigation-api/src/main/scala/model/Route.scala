@@ -5,7 +5,7 @@ import base.CaseObjectSerializationSupport
 import mapdomain.graph.Coordinate
 import org.json4s.CustomSerializer
 import org.json4s.JsonAST.JString
-import searching.{IncidentType, PedestrianIncident, RampIncidentType, SidewalkIncidentType}
+import searching.{ IncidentType, PedestrianIncident, RampIncidentType, SidewalkIncidentType }
 import spray.json.DefaultJsonProtocol
 
 case class Route(path: List[Path])
@@ -56,8 +56,8 @@ trait RouteFormatter extends DefaultJsonProtocol with CaseObjectSerializationSup
 
 }
 
-case object PathTypeSerializer extends CustomSerializer[PathType](format => ( {
-  case JString(s) => PathType.keyMap(s)
+case object PathTypeSerializer extends CustomSerializer[PathType](format ⇒ ({
+  case JString(s) ⇒ PathType.keyMap(s)
 }, {
-  case pathType: PathType => JString(PathType.keyMap.find((s: String, p: PathType) => p == pathType).get._1)
+  case pathType: PathType ⇒ JString(PathType.keyMap.find(p ⇒ pathType.equals(p._2)).get._1)
 }))

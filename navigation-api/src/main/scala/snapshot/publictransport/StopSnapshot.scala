@@ -12,8 +12,8 @@ object StopSnapshot extends GroupedSnapshot[Long, Stop] with EnvConfig {
   override def cronExpression: String = envConfiguration.config.getString("snapshots.stop.cron-expression")
 
   /**
-    * Fetches data from source to build the snapshot
-    */
+   * Fetches data from source to build the snapshot
+   */
   override def fetch: List[Stop] = StopRepository.findAll
 
 }

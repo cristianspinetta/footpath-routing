@@ -43,7 +43,7 @@ object Projects extends Build {
     .settings(assemblySettings: _*)
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi, logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental, akkaHttpSprayJsonExperimental,
-        akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, cats) ++
+        akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, cats, json4sJackson, jacksonScala) ++
         test(scalatest, mockito, akkaHttpTestKit))
     .settings(noPublishing: _*)
     .settings(playgroundSettings: _*)
