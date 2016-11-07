@@ -1,6 +1,6 @@
 package searching.transports
 
-import mapdomain.publictransport.{PublicTransportCombination, Stop}
+import mapdomain.publictransport.{ PublicTransportCombination, Stop }
 import provider.PublicTransportProviderSupport
 import searching.PathBuilders.PathBuilder
 import utils.CollectionUtils
@@ -52,19 +52,20 @@ private[transports] trait CombinationManager extends PublicTransportProviderSupp
     // Flat Combinations
     val finalCombinations: List[Combination] = result
       .toList
-      .flatMap { case (transportFromId, combinationsBuilder) =>
-        val combinations = combinationsBuilder.result()
-        combinations
-          .groupBy(_.transportToId)
-          .flatMap {
-            case (transportToId, partialCombinations@x :: xs) =>
-              Combination(
-                transportFromId = transportFromId,
-                transportToId = transportToId,
-                stopsFrom = partialCombinations.head.stopsFrom,
-                linkedStops = partialCombinations.map(c => c.linkedStop)) :: Nil
-            case _ => Nil
-          }
+      .flatMap {
+        case (transportFromId, combinationsBuilder) ⇒
+          val combinations = combinationsBuilder.result()
+          combinations
+            .groupBy(_.transportToId)
+            .flatMap {
+              case (transportToId, partialCombinations @ x :: xs) ⇒
+                Combination(
+                  transportFromId = transportFromId,
+                  transportToId = transportToId,
+                  stopsFrom = partialCombinations.head.stopsFrom,
+                  linkedStops = partialCombinations.map(c ⇒ c.linkedStop)) :: Nil
+              case _ ⇒ Nil
+            }
 
       }
     CombinationContext(finalCombinations)
@@ -102,17 +103,17 @@ private[transports] object CombinationModel {
   case class PartialCombination(transportFromId: Long, stopsFrom: List[Stop], transportToId: Long, linkedStop: LinkedStops)
 
   case class CombinationContext(combinations: List[Combination]) {
-    lazy val byTransportFrom: Map[Long, List[Combination]] = combinations.groupBy(_.transportFromId).map(c => c._1 -> c._2)
-    lazy val byTransportTo: Map[Long, List[Combination]] = combinations.groupBy(_.transportToId).map(c => c._1 -> c._2)
+    lazy val byTransportFrom: Map[Long, List[Combination]] = combinations.groupBy(_.transportFromId).map(c ⇒ c._1 -> c._2)
+    lazy val byTransportTo: Map[Long, List[Combination]] = combinations.groupBy(_.transportToId).map(c ⇒ c._1 -> c._2)
     lazy val transportsTo: List[CandidateTransport] = {
       val stopsWithTransportTo = for {
-        (transportToId, combinations) <- byTransportTo.toList
-        combination <- combinations
-        linkedStop <- combination.linkedStops
+        (transportToId, combinations) ← byTransportTo.toList
+        combination ← combinations
+        linkedStop ← combination.linkedStops
       } yield (transportToId, linkedStop.transportToStopFrom)
       stopsWithTransportTo
         .groupBy(_._1)
-        .map { case (transportToId, stops) => CandidateTransport(transportToId, CollectionUtils.removeDuplicated[Stop](stops.map(_._2), (s1, s2) => s1.id == s2.id)) }
+        .map { case (transportToId, stops) ⇒ CandidateTransport(transportToId, CollectionUtils.removeDuplicated[Stop](stops.map(_._2), (s1, s2) ⇒ s1.id == s2.id)) }
         .toList
     }
   }

@@ -7,6 +7,7 @@ import mapdomain.publictransport.Stop
 import model.{ BusPath, Path, PathDescription }
 import provider.PublicTransportProviderSupport
 import searching.SearchRoutingErrors.{ NoPathBetweenStops, SearchRoutingError }
+import utils.JsonUtils
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -51,6 +52,24 @@ private[searching] object PathBuilders {
     }
 
     lazy val cost: Double = from.distanceTo(to) * costs.distanceByKm
+  }
+
+  case class WalkPathCombinationBuilder(fromStopId: Long, toTravelInfoId: Long) extends PathBuilder with LazyLoggerSupport with PublicTransportProviderSupport {
+
+    lazy val combination = publicTransportProvider.getCombinationByStopAndTravelInfo(fromStopId, toTravelInfoId)
+
+    def build(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
+      Future[Xor[SearchRoutingError, Path]] {
+        Xor.Right(JsonUtils.fromJson(combination.walkPath.get))
+      } recover {
+        case exc: Throwable ⇒
+          logger.error(s"An error occur trying to build the path for combination. $fromStopId, $toTravelInfoId", exc)
+          Xor.Left(NoPathBetweenStops)
+      }
+    }
+
+    lazy val cost: Double = combination.cost
+
   }
 
 }

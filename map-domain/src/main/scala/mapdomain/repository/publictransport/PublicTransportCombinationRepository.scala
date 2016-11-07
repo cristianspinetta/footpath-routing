@@ -54,6 +54,15 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
       .append(clauseNearestByDistance(coordinate, radius, s2, "coordinate"))
   }.map(publicTransportCombination(ptc)).list().apply()
 
+  def findBy(fromStopId: Long, toTravelInfoId: Long)(implicit session: DBSession = PublicTransportCombination.autoSession): Option[PublicTransportCombination] = withSQL {
+    select.all(ptc)
+      .from(PublicTransportCombination as ptc)
+      .where
+      .eq(ptc.fromStopId, fromStopId)
+      .and
+      .eq(ptc.toTravelInfoId, toTravelInfoId)
+  }.map(publicTransportCombination(ptc)).single().apply()
+
   def findAll(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = withSQL {
     select.all(ptc)
       .from(PublicTransportCombination as ptc)

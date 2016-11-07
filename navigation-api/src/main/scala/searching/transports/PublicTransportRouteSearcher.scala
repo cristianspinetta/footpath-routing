@@ -1,17 +1,17 @@
 package searching.transports
 
-import base.{LazyLoggerSupport, MeterSupport}
-import cats.data.{Xor, XorT}
+import base.{ LazyLoggerSupport, MeterSupport }
+import cats.data.{ Xor, XorT }
 import cats.implicits._
 import mapdomain.graph._
 import mapdomain.publictransport.Stop
 import model._
-import provider.{GraphSupport, PublicTransportProviderSupport}
+import provider.{ GraphSupport, PublicTransportProviderSupport }
 import searching.PathBuilders._
-import searching.SearchRoutingErrors.{NoStops, SearchRoutingError}
+import searching.SearchRoutingErrors.{ NoStops, SearchRoutingError }
 import searching.WalkRouteSearcherSupport
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait PublicTransportRouteSearcherSupport {
   protected val publicTransportRouteSearcher = PublicTransportRouteSearcher
@@ -20,7 +20,7 @@ trait PublicTransportRouteSearcherSupport {
 private[transports] object PublicTransportRouteSearcher extends PublicTransportRouteSearcher
 
 sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
-  with GraphSupport with PublicTransportProviderSupport with LazyLoggerSupport with MeterSupport {
+    with GraphSupport with PublicTransportProviderSupport with LazyLoggerSupport with MeterSupport {
 
   import base.XorTSugars._
   import searching.transports.CombinationManager._
@@ -80,13 +80,14 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
                   partialNextPaths
                     .sortBy(_.cost)
                     .take(requiredPaths - foundPaths)
-                    .map { partialNextPath =>
+                    .map { partialNextPath ⇒
                       val (selectedCombination, linkedStop) = (for {
-                        combination <- combinationContext.byTransportTo(partialNextPath.travelInfoFromId)
-                        linkedStop <- combination.linkedStops if linkedStop.transportToStopFrom.id == partialNextPath.stopFrom.id
+                        combination ← combinationContext.byTransportTo(partialNextPath.travelInfoFromId)
+                        linkedStop ← combination.linkedStops if linkedStop.transportToStopFrom.id == partialNextPath.stopFrom.id
                       } yield (combination, linkedStop)).head
 
                       val transportFromId = selectedCombination.transportFromId
+                      val transportToId = selectedCombination.transportToId
                       val transportFromStopTo = linkedStop.transportFromStopTo
                       val transportFromStopFrom = selectedCombination.stopsFrom.find(_.sequence < transportFromStopTo.sequence).get
 
@@ -94,28 +95,30 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
                       // FIXME hacer una funcion que dado una lista de paradas desde y paradas hasta elija una buena parada de cada extremo para hacer el path
                       val pathBuilders = List(
                         TransportPathBuilder(transportFromId, transportFromStopFrom, transportFromStopTo),
-                        WalkPathBuilder(transportFromStopTo.coordinate, partialNextPath.stopFrom.coordinate))
+                        WalkPathBuilder(transportFromStopTo.coordinate, partialNextPath.stopFrom.coordinate),
+                        WalkPathCombinationBuilder(transportFromStopFrom.id, transportToId))
 
                       PartialRoute(transportFromId, transportFromStopFrom, pathBuilders ::: partialNextPath.pathBuilders)
                     }
                 }
 
               xorCombinationsF
-                .map(combinationRoutes => combinationRoutes ::: directPartialRoutes)
-                .recover { case _ =>
-                  logger.info(s"Return from recursively searchTransportRoute via recovery with the direct partial routes. [Size = $foundPaths]")
-                  directPartialRoutes
+                .map(combinationRoutes ⇒ combinationRoutes ::: directPartialRoutes)
+                .recover {
+                  case _ ⇒
+                    logger.info(s"Return from recursively searchTransportRoute via recovery with the direct partial routes. [Size = $foundPaths]")
+                    directPartialRoutes
                 }
           }
         case _ ⇒
           logger.info(s"No more stops for searching route via Transport Public. [Candidate Stops from = ${candidatesFrom.size}, Candidate Stops to = ${candidatesTo.size}]")
           Xor.Left(NoStops)
       }
-    }, (timing: Long) => logger.info(s"Searching a route with ${attempt - 1} transport combinations took $timing ms."))
+    }, (timing: Long) ⇒ logger.info(s"Searching a route with ${attempt - 1} transport combinations took $timing ms."))
 
     val partialRoutes: Xor[SearchRoutingError, List[PartialRoute]] =
       searchTransportRoute(candidatePTs.from, candidatePTs.to, attempt = 1, requiredPaths = 10)
-        .map(routes => routes.sortBy(_.cost))
+        .map(routes ⇒ routes.sortBy(_.cost))
 
     XorT(Future.successful(partialRoutes)).flatMap { partials ⇒
       partials.traverseU { partial ⇒

@@ -34,6 +34,9 @@ class PublicTransportCombinationRepositoryDBSpec extends FlatSpec with Matchers 
     ptcs.head.walkPath should not be None
 
     ptcs.last.walkPath should not be None
+
+    val result = PublicTransportCombinationRepository.findBy(ptc1.fromStopId, ptc1.toTravelInfoId)
+    result should not be None
   }
 
 }
