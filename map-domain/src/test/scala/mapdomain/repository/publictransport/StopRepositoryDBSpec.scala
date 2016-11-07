@@ -48,6 +48,15 @@ class StopRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll
 
     stopsByTravelInfo.size shouldBe 3
 
+    var stopsByRectangle = StopRepository.findStopsInRectangle(Coordinate(20, 20), Coordinate(10, 10))
+    stopsByRectangle.size shouldBe 3
+
+    stopsByRectangle = StopRepository.findStopsInRectangle(Coordinate(20, 14), Coordinate(10, 10))
+    stopsByRectangle.size shouldBe 2
+
+    stopsByRectangle = StopRepository.findStopsInRectangle(Coordinate(50, 50), Coordinate(40, 40))
+    stopsByRectangle.size shouldBe 0
+
   }
 
 }

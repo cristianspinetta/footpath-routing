@@ -61,6 +61,10 @@ CREATE TABLE IF NOT EXISTS `travel_info` (
        	`description` varchar(1000) DEFAULT NULL,
        	`firstStopId` bigint(20) DEFAULT NULL,
        	`lastStopId` bigint(20) DEFAULT NULL,
+        `branch` varchar(30) DEFAULT NULL,
+        `name` varchar(30) DEFAULT NULL,
+        `sentido` varchar(30) DEFAULT NULL,
+        `type` varchar(30) DEFAULT NULL,
        	PRIMARY KEY (`id`)
        ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
