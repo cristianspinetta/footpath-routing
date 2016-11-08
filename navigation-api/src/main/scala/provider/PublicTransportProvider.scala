@@ -62,11 +62,12 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
 
   def getCombinationByStopAndTravelInfo(fromStopId: Long, toTravelInfoId: Long): PublicTransportCombination = {
     val ptc = publicTransportCombinationRepository.findBy(fromStopId, toTravelInfoId)
-    if (ptc.isDefined)
+    if (ptc.isDefined) {
       ptc.get
-    else
+    } else {
       logger.error(s"Unable to find public transport combination with from stop ${fromStopId} and to travel info ${toTravelInfoId}")
-    throw new RuntimeException(s"Unable to find public transport combination with from stop ${fromStopId} and to travel info ${toTravelInfoId}")
+      throw new RuntimeException(s"Unable to find public transport combination with from stop ${fromStopId} and to travel info ${toTravelInfoId}")
+    }
   }
 
 }

@@ -87,16 +87,13 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
                       } yield (combination, linkedStop)).head
 
                       val transportFromId = selectedCombination.transportFromId
-                      val transportToId = selectedCombination.transportToId
                       val transportFromStopTo = linkedStop.transportFromStopTo
                       val transportFromStopFrom = selectedCombination.stopsFrom.find(_.sequence < transportFromStopTo.sequence).get
 
-                      // TODO: Build walk path from combination
                       // FIXME hacer una funcion que dado una lista de paradas desde y paradas hasta elija una buena parada de cada extremo para hacer el path
                       val pathBuilders = List(
                         TransportPathBuilder(transportFromId, transportFromStopFrom, transportFromStopTo),
-                        WalkPathBuilder(transportFromStopTo.coordinate, partialNextPath.stopFrom.coordinate),
-                        WalkPathCombinationBuilder(transportFromStopFrom.id, transportToId))
+                        WalkPathCombinationBuilder(linkedStop.transportFromStopTo.id, linkedStop.transportToStopFrom.travelInfoId))
 
                       PartialRoute(transportFromId, transportFromStopFrom, pathBuilders ::: partialNextPath.pathBuilders)
                     }
