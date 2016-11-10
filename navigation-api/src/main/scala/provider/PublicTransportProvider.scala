@@ -60,6 +60,16 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
     publicTransportCombinationRepository.findByMultipleTravelInfoIds(travelInfoIds, limit)
   }, (timing: Long) ⇒ logger.info(s"Search Public Transport Combinations with ${travelInfoIds.size} Travel Info as filter and retrieving a maximum of the $limit rows take $timing ms."))
 
+  def getCombinationByStopAndTravelInfo(fromStopId: Long, toTravelInfoId: Long): PublicTransportCombination = {
+    val ptc = publicTransportCombinationRepository.findBy(fromStopId, toTravelInfoId)
+    if (ptc.isDefined) {
+      ptc.get
+    } else {
+      logger.error(s"Unable to find public transport combination with from stop ${fromStopId} and to travel info ${toTravelInfoId}")
+      throw new RuntimeException(s"Unable to find public transport combination with from stop ${fromStopId} and to travel info ${toTravelInfoId}")
+    }
+  }
+
 }
 
 object PublicTransportProvider extends PublicTransportProvider

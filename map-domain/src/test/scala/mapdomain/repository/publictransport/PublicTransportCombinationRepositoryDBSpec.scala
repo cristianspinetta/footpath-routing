@@ -4,7 +4,7 @@ import mapdomain.graph.Coordinate
 import mapdomain.publictransport.PublicTransportCombination
 import mapdomain.repository.BaseRepositoryDBSpec
 import mapdomain.sidewalk.Ramp
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
 import scalikejdbc.config.DBs
 
 import scala.math._
@@ -34,6 +34,9 @@ class PublicTransportCombinationRepositoryDBSpec extends FlatSpec with Matchers 
     ptcs.head.walkPath should not be None
 
     ptcs.last.walkPath should not be None
+
+    val result = PublicTransportCombinationRepository.findBy(ptc1.fromStopId, ptc1.toTravelInfoId)
+    result should not be None
   }
 
 }

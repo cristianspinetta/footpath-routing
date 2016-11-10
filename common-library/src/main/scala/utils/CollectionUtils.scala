@@ -10,14 +10,15 @@ object CollectionUtils {
   //    }
   //  }
 
-  def removeDuplicated[A](elems: List[A], customEquals: (A, A) => Boolean): List[A] = {
+  def removeDuplicated[A](elems: List[A], customEquals: (A, A) ⇒ Boolean): List[A] = {
     elems.foldRight(List.empty[A]) {
-      (curr, unique) => {
-        if (!unique.exists(customEquals(curr, _)))
-          curr +: unique
-        else
-          unique
-      }
+      (curr, unique) ⇒
+        {
+          if (!unique.exists(customEquals(curr, _)))
+            curr +: unique
+          else
+            unique
+        }
     }
   }
 

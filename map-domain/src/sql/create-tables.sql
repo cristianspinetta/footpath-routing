@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS `public_transport_combination` (
   `fromTravelInfoId` bigint(20) NOT NULL,
   `toTravelInfoId` bigint(20) NOT NULL,
   `distance` float NOT NULL,
-  `walkPath` varchar(10000) DEFAULT NULL,
+  `walkPath` varchar(20000) DEFAULT NULL,
   `enabled` boolean NOT NULL DEFAULT true,
   `cost` bigint(20) NOT NULL DEFAULT 999999999999999999,
   PRIMARY KEY (`fromStopId`, `toTravelInfoId`)
