@@ -1,15 +1,15 @@
 package searching
 
 import base.LazyLoggerSupport
-import cats.data.{ Xor, XorT }
+import cats.data.{Xor, XorT}
 import mapdomain.graph.Coordinate
 import mapdomain.publictransport.Stop
-import model.{ BusPath, Path, PathDescription }
+import model.{BusPath, Path, PathDescription}
 import provider.PublicTransportProviderSupport
-import searching.SearchRoutingErrors.{ NoPathBetweenStops, SearchRoutingError }
+import searching.SearchRoutingErrors.{NoPathBetweenStops, SearchRoutingError}
 import utils.JsonUtils
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 private[searching] object PathBuilders {
 
@@ -19,6 +19,7 @@ private[searching] object PathBuilders {
     val eachStop: Int = 1
     val distanceByKm: Int = 10
     val combination: Int = 100
+    val notAccessibleStop: Int = 50
   }
 
   trait PathBuilder {
@@ -43,7 +44,7 @@ private[searching] object PathBuilders {
       }
     }
 
-    lazy val cost: Double = (stopTo.sequence - stopFrom.sequence) * costs.eachStop + costs.combination
+    lazy val cost: Double = (stopTo.sequence - stopFrom.sequence) * costs.eachStop + costs.combination + ((if (stopFrom.isAccessible) 1 else 0) + (if (stopTo.isAccessible) 1 else 0) * costs.notAccessibleStop)
   }
 
   case class WalkPathBuilder(from: Coordinate, to: Coordinate) extends PathBuilder with WalkRouteSearcherSupport {
@@ -54,21 +55,25 @@ private[searching] object PathBuilders {
     lazy val cost: Double = from.distanceTo(to) * costs.distanceByKm
   }
 
-  case class WalkPathCombinationBuilder(fromStopId: Long, toTravelInfoId: Long) extends PathBuilder with LazyLoggerSupport with PublicTransportProviderSupport {
+  case class WalkPathCombinationBuilder(transportFromStopTo: Stop, transportToStopFrom: Stop) extends PathBuilder with LazyLoggerSupport with PublicTransportProviderSupport {
 
-    lazy val combination = publicTransportProvider.getCombinationByStopAndTravelInfo(fromStopId, toTravelInfoId)
+    private val transportFromStopToId: Long = transportFromStopTo.id
+    private val toTravelInfoId: Long = transportToStopFrom.travelInfoId
+    lazy val combination = publicTransportProvider.getCombinationByStopAndTravelInfo(transportFromStopToId, toTravelInfoId)
 
     def build(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
       Future[Xor[SearchRoutingError, Path]] {
         Xor.Right(JsonUtils.fromJson(combination.walkPath.get))
-      } recover {
+      } recoverWith  {
         case exc: Throwable ⇒
-          logger.error(s"An error occur trying to build the path for combination. $fromStopId, $toTravelInfoId", exc)
-          Xor.Left(NoPathBetweenStops)
+          logger.error(s"An error occur trying to build the path for combination. [transportFromStopToId = $transportFromStopToId, toTravelInfoId = $toTravelInfoId]", exc)
+          WalkPathBuilder(transportFromStopTo.coordinate, transportToStopFrom.coordinate)
+            .build
+            .value
       }
     }
 
-    lazy val cost: Double = combination.cost
+    lazy val cost: Double = transportFromStopTo.coordinate.distanceTo(transportToStopFrom.coordinate) * costs.distanceByKm
 
   }
 

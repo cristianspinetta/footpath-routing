@@ -93,7 +93,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
                       // FIXME hacer una funcion que dado una lista de paradas desde y paradas hasta elija una buena parada de cada extremo para hacer el path
                       val pathBuilders = List(
                         TransportPathBuilder(transportFromId, transportFromStopFrom, transportFromStopTo),
-                        WalkPathCombinationBuilder(linkedStop.transportFromStopTo.id, linkedStop.transportToStopFrom.travelInfoId))
+                        WalkPathCombinationBuilder(linkedStop.transportFromStopTo, linkedStop.transportToStopFrom))
 
                       PartialRoute(transportFromId, transportFromStopFrom, pathBuilders ::: partialNextPath.pathBuilders)
                     }
