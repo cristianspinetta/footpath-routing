@@ -133,4 +133,18 @@ CREATE SPATIAL INDEX `sidewalk_vertex_coordinate_index` ON `sidewalk_vertex` (`c
 CREATE INDEX `public_transport_combination_from_ti_index` ON `public_transport_combination` (`fromTravelInfoId`);
 CREATE INDEX `public_transport_combination_to_ti_index` ON `public_transport_combination` (`toTravelInfoId`);
 
+CREATE TABLE IF NOT EXISTS `public_transport_combination_path` (
+  `fromStopId` bigint(20) NOT NULL,
+  `toTravelInfoId` bigint(20) NOT NULL,
+  `walkPath` varchar(20000) DEFAULT NULL,
+  PRIMARY KEY (`fromStopId`, `toTravelInfoId`)
+) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+ALTER TABLE `public_transport_combination_path` ADD CONSTRAINT `fk_ptc_path_ptc` FOREIGN KEY (`fromStopId`, `toTravelInfoId`) REFERENCES `public_transport_combination`(`fromStopId`, `toTravelInfoId`);
+
+/* Drop public_transport_combination columns, only run if public_transport_combination was created before
+ALTER TABLE `public_transport_combination_path` DROP COLUMN `cost`,
+                                                DROP COLUMN `walkPath`;
+*/
+
 COMMIT;
