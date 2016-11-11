@@ -1,7 +1,7 @@
 package model
 
 import mapdomain.graph.Coordinate
-import mapdomain.publictransport.{ Stop ⇒ DStop, PublicTransportCombination ⇒ DStopCombination }
+import mapdomain.publictransport.{ Stop ⇒ DStop }
 
 case class PublicTransportPath(id: Long, description: String, coordinates: List[Coordinate], stops: List[Stop])
 
@@ -18,9 +18,3 @@ object Stop {
 
 case class PTCombination(stopFrom: Long, coordinateFrom: Coordinate, travelInfoFromDescription: String,
   stopTo: Long, coordinateTo: Coordinate, travelInfoToDescription: String)
-
-object PTCombination {
-  def createByDomainPublicTransportCombination(stopCombination: DStopCombination, stopFrom: DStop, stopTo: DStop): PTCombination = {
-    ???
-  }
-}

@@ -4,10 +4,9 @@ import base.conf.ApiEnvConfig
 import base.{ Contexts, LazyLoggerSupport }
 import cats.data.XorT
 import mapdomain.graph._
-import model.{ AccessibilityHeuristicType, HeuristicType, _ }
-import provider.GraphSupport
-import searching.SearchRoutingErrors._
+import model.{ HeuristicType, _ }
 import searching.RouteSearcherSupport
+import searching.SearchRoutingErrors._
 
 import scala.concurrent.{ ExecutionContext, Future }
 

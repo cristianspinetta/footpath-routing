@@ -1,10 +1,11 @@
 package base.conf
 
+import java.util.concurrent.TimeUnit
+
 import base.LazyLoggerSupport
 import com.typesafe.config.Config
 
 import scala.concurrent.duration.Duration
-import java.util.concurrent.TimeUnit
 
 trait ApiEnvConfig {
   lazy val configuration = ApiEnvConfig
@@ -53,4 +54,15 @@ case class SidewalkGraphConf(private val config: Config) {
 
 case class RoutingConfiguration(private val config: Config) {
   val maximumWalkRadius = config.getDouble("maximum-walk-radius")
+  val heuristicCost = HeuristicCost(config.getConfig("heuristic-cost"))
+
+  sealed case class HeuristicCost(private val config: Config) {
+    val inaccessibleSidewalk = config.getInt("inaccessible-sidewalk")
+    val inaccessibleRamp = config.getInt("inaccessible-ramp")
+    val inaccessibleStop = config.getInt("inaccessible-stop")
+
+    val stop = config.getInt("stop")
+    val combination = config.getInt("combination")
+    val distanceByKm = config.getInt("distance-by-km")
+  }
 }

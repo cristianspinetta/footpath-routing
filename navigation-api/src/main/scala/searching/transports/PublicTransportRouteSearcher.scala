@@ -22,9 +22,9 @@ private[transports] object PublicTransportRouteSearcher extends PublicTransportR
 sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
     with GraphSupport with PublicTransportProviderSupport with LazyLoggerSupport with MeterSupport {
 
+  import CombinationModel._
   import base.XorTSugars._
   import searching.transports.CombinationManager._
-  import CombinationModel._
 
   def search(from: Coordinate, to: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, List[Route]] = withTimeLoggingAsync({
     searchNearestStops(from, to).flatMap(searchPathsByCombinations(from, to))
@@ -90,7 +90,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
                       val transportFromStopTo = linkedStop.transportFromStopTo
                       val transportFromStopFrom = selectedCombination.stopsFrom.find(_.sequence < transportFromStopTo.sequence).get
 
-                      // FIXME hacer una funcion que dado una lista de paradas desde y paradas hasta elija una buena parada de cada extremo para hacer el path
+                      // FIXME improve the selection of stop from and stop to
                       val pathBuilders = List(
                         TransportPathBuilder(transportFromId, transportFromStopFrom, transportFromStopTo),
                         WalkPathCombinationBuilder(linkedStop.transportFromStopTo, linkedStop.transportToStopFrom))
@@ -127,18 +127,6 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
     }
   }
 
-  //  protected def mergeStops(stops: List[Stop]): List[CandidateTransport] = {
-  //    val result = new TrieMap[Long,  mutable.Builder[Stop, List[Stop]]]()
-  //    stops foreach { stop => result getOrElseUpdate (stop.travelInfoId, List.newBuilder[Stop]) += stop }
-  //    result map { case (travelInfoId, stopsBuilder) =>
-  //      val uniqueStops: List[Stop] = removeDuplicated(stopsBuilder.result(), (s1, s2) => s1.id == s2.id)
-  //      CandidateTransport(travelInfoId, uniqueStops)
-  //    } toList
-  //  }
-  //
-  //  protected def mergeTransports(candidateTransports: List[CandidateTransport]): List[CandidateTransport] = {
-  //    mergeStops(candidateTransports.flatMap(_.stops))
-  //  }
   def createRoutes(to: Coordinate, candidatePaths: List[ReachableTransport]): List[PartialRoute] = {
     candidatePaths map { candidate ⇒
       val stopTo = candidate.stopsTo.minBy(stop ⇒ stop.coordinate.distanceTo(to))
