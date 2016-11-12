@@ -1,10 +1,10 @@
 package mapdomain.repository.publictransport
 
 import mapdomain.graph.Coordinate
-import mapdomain.publictransport.PublicTransportCombination
+import mapdomain.publictransport.{PublicTransportCombination, PublicTransportCombinationPath}
 import mapdomain.repository.BaseRepositoryDBSpec
 import mapdomain.sidewalk.Ramp
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
 import scalikejdbc.config.DBs
 
 import scala.math._
@@ -20,23 +20,26 @@ class PublicTransportCombinationRepositoryDBSpec extends FlatSpec with Matchers 
 
   override def afterAll(): Unit = DBs.closeAll()
 
-  "PublicTransportCombination Repository" should "update PublicTransportCombination correctly" in {
-    var ptc1 = PublicTransportCombinationRepository.create(PublicTransportCombination(1, Coordinate(-34.6, -58.99), 2, Coordinate(-34.3, -58.97), 3, 4, 5, None, true, 1))
-    var ptc2 = PublicTransportCombinationRepository.create(PublicTransportCombination(10, Coordinate(-34.54, -58.99), 11, Coordinate(-34.66, -58.79), 3, 4, 5, None, true, 1))
-    ptc2 = ptc2.copy(walkPath = Some("test-path-1"))
-    ptc1 = ptc1.copy(walkPath = Some("test-path-2"))
+  "PublicTransportCombinationPath Repository" should "create PublicTransportCombinationPaths correctly" in {
+    val ptcp1 = PublicTransportCombinationPathRepository.create(PublicTransportCombinationPath(1, 2, "test-walkPath-1"))
+    val ptcp2 = PublicTransportCombinationPathRepository.create(PublicTransportCombinationPath(3, 4, "test-walkPath-2"))
 
-    PublicTransportCombinationRepository.save(ptc1)
-    PublicTransportCombinationRepository.save(ptc2)
-
-    val ptcs = PublicTransportCombinationRepository.findAll
+    val ptcs = PublicTransportCombinationPathRepository.findAll
     ptcs.size shouldBe 2
-    ptcs.head.walkPath should not be None
 
-    ptcs.last.walkPath should not be None
+    assertWalkPath(ptcp1)
+    assertWalkPath(ptcp2)
 
-    val result = PublicTransportCombinationRepository.findBy(ptc1.fromStopId, ptc1.toTravelInfoId)
-    result should not be None
+    val ptcp = PublicTransportCombinationPathRepository.findByStopAndTravelInfo(50, 50)
+    ptcp.isDefined shouldBe false
+  }
+
+  def assertWalkPath(combinationPath: PublicTransportCombinationPath): Unit = {
+    val ptcp = PublicTransportCombinationPathRepository.findByStopAndTravelInfo(combinationPath.fromStopId, combinationPath.toTravelInfoId)
+    ptcp.isDefined shouldBe true
+    ptcp.get.fromStopId shouldBe combinationPath.fromStopId
+    ptcp.get.toTravelInfoId shouldBe combinationPath.toTravelInfoId
+    ptcp.get.walkPath shouldBe combinationPath.walkPath
   }
 
 }

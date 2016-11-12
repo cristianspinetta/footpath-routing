@@ -63,12 +63,12 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
     publicTransportCombinationRepository.findByMultipleTravelInfoIds(travelInfoIds, limit, excludedRadius)
   }, (timing: Long) ⇒ logger.info(s"Search Public Transport Combinations with ${travelInfoIds.size} Travel Info as filter and retrieving a maximum of the $limit rows take $timing ms."))
 
-  def getCombinationByStopAndTravelInfo(fromStopId: Long, toTravelInfoId: Long): PublicTransportCombination = {
-    publicTransportCombinationRepository
-      .findBy(fromStopId, toTravelInfoId)
+  def getCombinationWalkPathByStopAndTravelInfo(fromStopId: Long, toTravelInfoId: Long): PublicTransportCombinationPath = {
+    publicTransportCombinationPathRepository
+      .findByStopAndTravelInfo(fromStopId, toTravelInfoId)
       .getOrElse {
-        logger.error(s"Unable to find public transport combination with from stop $fromStopId and to travel info $toTravelInfoId")
-        throw new RuntimeException(s"Unable to find public transport combination with from stop $fromStopId and to travel info $toTravelInfoId")
+        logger.error(s"Unable to find public transport combination path with from stop $fromStopId and to travel info $toTravelInfoId")
+        throw new RuntimeException(s"Unable to find public transport combination path with from stop $fromStopId and to travel info $toTravelInfoId")
       }
   }
 

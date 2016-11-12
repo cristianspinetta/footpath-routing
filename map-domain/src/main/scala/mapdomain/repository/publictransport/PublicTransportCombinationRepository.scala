@@ -20,9 +20,7 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
       fromTravelInfoId = rs.long(ptc.fromTravelInfoId),
       toTravelInfoId = rs.long(ptc.toTravelInfoId),
       distance = rs.double(ptc.distance),
-      walkPath = rs.stringOpt(ptc.walkPath),
-      enabled = rs.boolean(ptc.enabled),
-      cost = rs.double(ptc.cost))
+      enabled = rs.boolean(ptc.enabled))
   }
 
   def findByTravelInfoId(travelInfoId: Long)(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = withSQL {
@@ -76,18 +74,6 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
       .append(clauseNearestByDistance(coordinate, radius, s2, "coordinate"))
   }.map(publicTransportCombination(ptc)).list().apply()
 
-  def findBy(fromStopId: Long, toTravelInfoId: Long)(implicit session: DBSession = PublicTransportCombination.autoSession): Option[PublicTransportCombination] = withSQL {
-    select
-      .all(ptc)
-      .append(selectLatitudeAndLongitude(ptc, "fromCoordinate"))
-      .append(selectLatitudeAndLongitude(ptc, "toCoordinate"))
-      .from(PublicTransportCombination as ptc)
-      .where
-      .eq(ptc.fromStopId, fromStopId)
-      .and
-      .eq(ptc.toTravelInfoId, toTravelInfoId)
-  }.map(publicTransportCombination(ptc)).single().apply()
-
   def findAll(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = withSQL {
     select
       .all(ptc)
@@ -115,9 +101,8 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
           PublicTransportCombination.column.toCoordinate -> positionToSQL(ptc.toCoordinate),
           PublicTransportCombination.column.fromTravelInfoId -> ptc.fromTravelInfoId,
           PublicTransportCombination.column.distance -> ptc.distance,
-          PublicTransportCombination.column.walkPath -> ptc.walkPath,
-          PublicTransportCombination.column.enabled -> ptc.enabled,
-          PublicTransportCombination.column.cost -> ptc.cost)
+          PublicTransportCombination.column.enabled -> ptc.enabled
+        )
         .where
         .eq(PublicTransportCombination.column.fromStopId, ptc.fromStopId)
         .and
@@ -137,9 +122,8 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
         PublicTransportCombination.column.fromTravelInfoId -> ptc.fromTravelInfoId,
         PublicTransportCombination.column.toTravelInfoId -> ptc.toTravelInfoId,
         PublicTransportCombination.column.distance -> ptc.distance,
-        PublicTransportCombination.column.walkPath -> ptc.walkPath,
-        PublicTransportCombination.column.enabled -> ptc.enabled,
-        PublicTransportCombination.column.cost -> ptc.cost)
+        PublicTransportCombination.column.enabled -> ptc.enabled
+      )
     }.update().apply()
 
     ptc

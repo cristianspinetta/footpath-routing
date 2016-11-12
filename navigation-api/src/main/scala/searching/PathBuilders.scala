@@ -63,11 +63,11 @@ private[searching] object PathBuilders {
 
     private val transportFromStopToId: Long = transportFromStopTo.id
     private val toTravelInfoId: Long = transportToStopFrom.travelInfoId
-    private lazy val combination = publicTransportProvider.getCombinationByStopAndTravelInfo(transportFromStopToId, toTravelInfoId)
+    private lazy val combination = publicTransportProvider.getCombinationWalkPathByStopAndTravelInfo(transportFromStopToId, toTravelInfoId)
 
     def build(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
       Future[Xor[SearchRoutingError, Path]] {
-        Xor.Right(JsonUtils.fromJson(combination.walkPath.get))
+        Xor.Right(JsonUtils.fromJson(combination.walkPath))
       } recoverWith {
         case exc: Throwable ⇒
           logger.error(s"An error occur trying to build the path for combination. [transportFromStopToId = $transportFromStopToId, toTravelInfoId = $toTravelInfoId]", exc)

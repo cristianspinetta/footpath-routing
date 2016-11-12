@@ -6,5 +6,6 @@ trait PublicTransportRepositorySupport {
   protected val travelInfoRepository: TravelInfoRepository = TravelInfoRepository
   protected val pathRepository: PathRepository = PathRepository
   protected val publicTransportCombinationRepository: PublicTransportCombinationRepository = PublicTransportCombinationRepository
+  protected val publicTransportCombinationPathRepository: PublicTransportCombinationPathRepository = PublicTransportCombinationPathRepository
 
 }
