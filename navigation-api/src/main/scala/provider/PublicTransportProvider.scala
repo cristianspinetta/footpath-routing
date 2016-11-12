@@ -47,9 +47,12 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
       }
     }
 
-    findNextPaths(stopFrom.id, stopTo.id, List.empty)
+    val pathTail = findNextPaths(stopFrom.id, stopTo.id, List.empty)
       .reverse
-      .flatMap(path ⇒ (if (path.coordinates == "") "[]" else path.coordinates).parseJson.convertTo[List[Coordinate]])
+      .flatMap(path ⇒ (if (path.coordinates.isEmpty) "[]" else path.coordinates).parseJson.convertTo[List[Coordinate]])
+
+    // The first and the last coordinate on the path of each stop is missed, so here we are recover it
+    stopFrom.coordinate :: pathTail ::: List(stopTo.coordinate) // FIXME change the data on the DB
   }, (time: Long) ⇒ logger.info(s"Execute Get Path Between Stops in $time ms."))
 
   def getTPCombinationsByRadius(startPosition: Coordinate, radius: Double): List[PublicTransportCombination] = {
