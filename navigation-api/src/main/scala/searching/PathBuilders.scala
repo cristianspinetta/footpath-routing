@@ -44,7 +44,7 @@ private[searching] object PathBuilders {
     private lazy val extractIncidents: List[PedestrianIncident] = {
       List(stopFrom, stopTo)
         .filter(!_.isAccessible)
-        .map(stop => PedestrianIncident(StopIncidentType, Some(stop.coordinate)))
+        .map(stop ⇒ PedestrianIncident(StopIncidentType, Some(stop.coordinate)))
     }
   }
 
