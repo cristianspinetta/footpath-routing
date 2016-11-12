@@ -37,13 +37,13 @@ object Projects extends Build {
     .settings(notAggregateInAssembly: _*)
 
   lazy val navigationApi = Project("navigation-api", file("navigation-api"))
-    .dependsOn(pathGenerator, mapGenerator, mapDomain, commonLibrary, snapshots)
+    .dependsOn(pathGenerator, mapGenerator, mapDomain, commonLibrary)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(assemblySettings: _*)
     .settings(libraryDependencies ++=
       compile(typesafeConfig, slf4jApi, logbackCore, logbackClassic, akkaActor, akkaStream, akkaHttpExperimental, akkaHttpSprayJsonExperimental,
-        akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, cats) ++
+        akkaHttpCors, scalikejdbc, scalikejdbcConfig, mariadbConnector, commonsPool, commonsDbcp, cats, json4sJackson, jacksonScala) ++
         test(scalatest, mockito, akkaHttpTestKit))
     .settings(noPublishing: _*)
     .settings(playgroundSettings: _*)
@@ -51,7 +51,7 @@ object Projects extends Build {
     .settings(mainClass in assembly := Some("api.WebServer"))
 
   lazy val mapDomain = Project("map-domain", file("map-domain"))
-    .dependsOn(commonLibrary)
+    .dependsOn(commonLibrary, snapshots)
     .configs(BenchmarkConfig, DBTestsConfig)
     .settings(testsSettings: _*)
     .settings(benchmarkSettings: _*)
@@ -67,7 +67,7 @@ object Projects extends Build {
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(libraryDependencies ++=
-      compile(typesafeConfig, logbackCore, logbackClassic) ++
+      compile(typesafeConfig, logbackCore, logbackClassic, json4sJackson, jacksonScala) ++
         test(scalatest, mockito))
     .settings(noPublishing: _*)
     .settings(notAggregateInAssembly: _*)

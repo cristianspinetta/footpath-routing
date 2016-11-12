@@ -15,3 +15,6 @@ object Stop {
 
   def createByDomainStop(stop: DStop): Stop = Stop(stop.id, stop.coordinate, stop.sequence, stop.isAccessible)
 }
+
+case class PTCombination(stopFrom: Long, coordinateFrom: Coordinate, travelInfoFromDescription: String,
+  stopTo: Long, coordinateTo: Coordinate, travelInfoToDescription: String)

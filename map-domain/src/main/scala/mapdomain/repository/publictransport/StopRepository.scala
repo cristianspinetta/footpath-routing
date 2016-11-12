@@ -1,13 +1,14 @@
 package mapdomain.repository.publictransport
 
+import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph.Coordinate
-import mapdomain.publictransport.{ Path, Stop, StopUnsaved, TravelInfo }
+import mapdomain.publictransport._
 import scalikejdbc.{ DBSession, WrappedResultSet, _ }
 import sql.SpatialSQLSupport
 
-trait StopRepository extends SpatialSQLSupport {
+trait StopRepository extends SpatialSQLSupport with LazyLoggerSupport with MeterSupport {
 
-  val (s, ti) = (Stop.syntax("s"), TravelInfo.syntax("ti"))
+  val (s, ti, ptc) = (Stop.syntax("s"), TravelInfo.syntax("ti"), PublicTransportCombination.syntax("sc"))
 
   def stop(s: SyntaxProvider[Stop])(rs: WrappedResultSet): Stop = stop(s.resultName, s.tableAliasName)(rs)
 
@@ -21,6 +22,20 @@ trait StopRepository extends SpatialSQLSupport {
       sequence = rs.get(s.sequence),
       pathId = rs.longOpt(s.pathId),
       travelInfoId = rs.get(s.travelInfoId))
+  }
+
+  def publicTransportCombination(s: SyntaxProvider[PublicTransportCombination])(rs: WrappedResultSet): PublicTransportCombination = publicTransportCombination(s.resultName, s.tableAliasName)(rs)
+
+  private def publicTransportCombination(ptc: ResultName[PublicTransportCombination], tableAlias: String)(implicit rs: WrappedResultSet): PublicTransportCombination = {
+    PublicTransportCombination(
+      fromStopId = rs.long(ptc.fromStopId),
+      toStopId = rs.long(ptc.toStopId),
+      fromTravelInfoId = rs.long(ptc.fromTravelInfoId),
+      toTravelInfoId = rs.long(ptc.fromTravelInfoId),
+      distance = rs.double(ptc.distance),
+      walkPath = rs.stringOpt(ptc.walkPath),
+      enabled = rs.boolean(ptc.enabled),
+      cost = rs.double(ptc.cost))
   }
 
   def create(stopUnsaved: StopUnsaved)(implicit session: DBSession = Stop.autoSession): Stop = {
@@ -38,14 +53,22 @@ trait StopRepository extends SpatialSQLSupport {
     Stop.createByUnsaved(id, stopUnsaved)
   }
 
-  def find(id: Long)(implicit session: DBSession = Stop.autoSession): Option[Stop] = {
+  def find(id: Long)(implicit session: DBSession = Stop.autoSession): Option[Stop] = withSQL {
+    select
+      .all(s)
+      .append(selectLatitudeAndLongitude(s))
+      .from(Stop as s)
+      .where.eq(s.id, id)
+  }.map(stop(s)).single().apply()
+
+  def findAll(implicit session: DBSession = Stop.autoSession): List[Stop] = withTimeLogging(
     withSQL {
-      select.all(s)
+      select
+        .all(s)
         .append(selectLatitudeAndLongitude(s))
         .from(Stop as s)
-        .where.eq(s.id, id)
-    }.map(stop(s)).single().apply()
-  }
+    }.map(stop(s)).list().apply(),
+    (time: Long) ⇒ logger.info(s"Getting of all Stops finished in $time ms."))
 
   def findByTravelInfoId(travelInfoId: Long)(implicit session: DBSession = Stop.autoSession): List[Stop] = {
     withSQL {
@@ -67,6 +90,11 @@ trait StopRepository extends SpatialSQLSupport {
         lineOpt.map(line ⇒ sqls.like(ti.name, line)),
         radiusOpt.map(radius ⇒ clauseNearestByDistance(coordinate, radius, s, "coordinate"))))
   }.map(stop(s)).list().apply()
+
+  def findAllCombinations()(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = withSQL {
+    select.all(ptc)
+      .from(PublicTransportCombination as ptc)
+  }.map(publicTransportCombination(ptc)).list().apply()
 
   def findStopsInRectangle(northEast: Coordinate, southWest: Coordinate)(implicit session: DBSession = Stop.autoSession): List[Stop] = withSQL {
     select(s.resultAll)

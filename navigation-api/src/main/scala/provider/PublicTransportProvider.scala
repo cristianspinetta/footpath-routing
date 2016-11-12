@@ -2,12 +2,14 @@ package provider
 
 import base.{ LazyLoggerSupport, MeterSupport }
 import mapdomain.graph.{ Coordinate, GeoSearch }
-import mapdomain.publictransport.{ Path, Stop, TravelInfo }
+import mapdomain.publictransport._
 import mapdomain.repository.publictransport.{ PathRepository, PublicTransportRepositorySupport, StopRepository }
 import scalikejdbc.DBSession
+import snapshot.publictransport.StopSnapshot
 import spray.json._
 
 import scala.annotation.tailrec
+import scala.collection.Map
 
 trait PublicTransportProviderSupport {
   // def publicTransportProvider = FakePublicTransportProvider
@@ -15,8 +17,9 @@ trait PublicTransportProviderSupport {
 }
 
 trait PublicTransportProvider extends PublicTransportRepositorySupport with MeterSupport with LazyLoggerSupport {
-
   import module.Protocol._
+
+  val stopsById: Map[Long, Stop] = StopSnapshot.get()
 
   def findStopsByRadiusAndLine(startPosition: Coordinate, radiusOpt: Option[Double] = None, lineOpt: Option[String] = None): List[Stop] = {
     stopRepository.findByRadiusAndLine(startPosition, radiusOpt, lineOpt)
@@ -24,7 +27,7 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
 
   def findTravelInfo(id: Long): TravelInfo = travelInfoRepository.find(id).get
 
-  def findStop(id: Long): Stop = stopRepository.find(id).get
+  def findStop(id: Long): Stop = stopsById(id)
 
   def findStopfindByTravelInfoId(id: Long): List[Stop] = stopRepository.findByTravelInfoId(id)
 
@@ -34,10 +37,13 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
     def findNextPaths(fromStopId: Long, destinationStopId: Long, accumulatedPaths: List[Path]): List[Path] = {
       if (fromStopId == destinationStopId) accumulatedPaths
       else {
-        val fromStop: Stop = stopRepository.find(fromStopId).get
+        val fromStop: Stop = stopsById(fromStopId)
         // FIXME: cambiar pathId por un Option
         val newAccumulatedPaths = fromStop.pathId.flatMap(pathId ⇒ pathRepository.find(pathId)).toList ::: accumulatedPaths
-        findNextPaths(fromStop.nextStopId.get, destinationStopId, newAccumulatedPaths)
+        if (fromStop.nextStopId.isDefined)
+          findNextPaths(fromStop.nextStopId.get, destinationStopId, newAccumulatedPaths)
+        else
+          accumulatedPaths
       }
     }
 
@@ -45,6 +51,24 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
       .reverse
       .flatMap(path ⇒ (if (path.coordinates == "") "[]" else path.coordinates).parseJson.convertTo[List[Coordinate]])
   }, (time: Long) ⇒ logger.info(s"Execute Get Path Between Stops in $time ms."))
+
+  def getTPCombinationsByRadius(startPosition: Coordinate, radius: Double): List[PublicTransportCombination] = {
+    publicTransportCombinationRepository.findByRadius(startPosition, radius)
+  }
+
+  def getCombinationsByMultipleTravelInfoIds(travelInfoIds: List[Long], limit: Int = 100000): List[PublicTransportCombination] = withTimeLogging({
+    publicTransportCombinationRepository.findByMultipleTravelInfoIds(travelInfoIds, limit)
+  }, (timing: Long) ⇒ logger.info(s"Search Public Transport Combinations with ${travelInfoIds.size} Travel Info as filter and retrieving a maximum of the $limit rows take $timing ms."))
+
+  def getCombinationByStopAndTravelInfo(fromStopId: Long, toTravelInfoId: Long): PublicTransportCombination = {
+    publicTransportCombinationRepository
+      .findBy(fromStopId, toTravelInfoId)
+      .getOrElse {
+        logger.error(s"Unable to find public transport combination with from stop $fromStopId and to travel info $toTravelInfoId")
+        throw new RuntimeException(s"Unable to find public transport combination with from stop $fromStopId and to travel info $toTravelInfoId")
+      }
+  }
+
 }
 
 object PublicTransportProvider extends PublicTransportProvider
@@ -92,11 +116,11 @@ trait FakePublicTransportProvider extends PublicTransportProvider {
 
   override def findTravelInfo(id: Long): TravelInfo = if (travelInfo.id == id) travelInfo else throw new RuntimeException(s"Unknown Travel Info. ID = $id")
 
-  override def pathRepository: PathRepository = new PathRepository {
+  override val pathRepository: PathRepository = new PathRepository {
     override def find(id: Long)(implicit session: DBSession = Path.autoSession): Option[Path] = paths.find(_.id.get == id)
   }
 
-  override def stopRepository: StopRepository = new StopRepository {
+  override val stopRepository: StopRepository = new StopRepository {
     override def find(id: Long)(implicit session: DBSession = Stop.autoSession): Option[Stop] = stops.find(_.id == id)
   }
 }

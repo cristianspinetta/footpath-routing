@@ -4,10 +4,9 @@ import base.conf.ApiEnvConfig
 import base.{ Contexts, LazyLoggerSupport }
 import cats.data.XorT
 import mapdomain.graph._
-import model._
-import provider.GraphSupport
-import searching.SearchRoutingErrors._
+import model.{ HeuristicType, _ }
 import searching.RouteSearcherSupport
+import searching.SearchRoutingErrors._
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -19,8 +18,8 @@ trait RoutingService extends LazyLoggerSupport with ApiEnvConfig with RouteSearc
   val walkRadius: Double = configuration.Routing.maximumWalkRadius
   implicit val routingExecutionContext: ExecutionContext = Contexts.routingExecutionContext
 
-  def searchRoute(from: Coordinate, to: Coordinate): XorT[Future, SearchRoutingError, List[Route]] = {
-    routeSearcher.search(from, to)
+  def searchRoute(from: Coordinate, to: Coordinate, heuristicType: HeuristicType): XorT[Future, SearchRoutingError, List[Route]] = {
+    routeSearcher.search(from, to, heuristicType)
   }
 }
 

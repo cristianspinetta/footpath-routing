@@ -3,12 +3,13 @@ package service
 import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
 import mapdomain.graph.{Edge => _, Vertex => _, _}
+import mapdomain.publictransport.PublicTransportCombination
 import mapdomain.repository.publictransport.StopRepository
 import mapdomain.repository.sidewalk.{RampRepository, SidewalkEdgeRepository}
 import mapdomain.sidewalk._
 import mapdomain.street.StreetEdge
 import model._
-import provider.{GraphSupport, PublicTransportProviderSupport}
+import provider.{ GraphSupport, PublicTransportProviderSupport, RampProviderSupport }
 
 import scala.language.existentials
 import scala.util.Try
@@ -17,7 +18,8 @@ trait MapServiceSupport {
   val mapService: MapService = MapService
 }
 
-trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with PublicTransportProviderSupport {
+trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with PublicTransportProviderSupport
+  with RampProviderSupport {
 
   def edges(edgeType: EdgeType, startPosition: Coordinate, radius: Double): Try[MapContainer] = Try {
     logger.info(s"Getting edges. Type: $edgeType")
@@ -35,11 +37,8 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
     }
   }
 
-  def ramps(coordinate: Coordinate, radius: Double, associated: Boolean): Try[Vector[Ramp]] = Try {
-    if(associated)
-      RampRepository.findNearestRampsAssociated(coordinate, radius).toVector
-    else
-      RampRepository.findNearestRampsNotAssociated(coordinate, radius).toVector
+  def ramps(coordinate: Coordinate, radius: Double, associated: Boolean): Try[List[Ramp]] = Try {
+    rampProvider.findNearestRamps(coordinate, radius, associated)
   }
 
   def reportableElements(northEast: Coordinate, southWest: Coordinate): Try[Vector[ReportableElement]] = Try {
@@ -62,6 +61,14 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
         val stops: List[Stop] = publicTransportProvider.findStopfindByTravelInfoId(travelInfo.id) map Stop.createByDomainStop
         PublicTransportPath(travelInfo.id, travelInfo.title, coordinates, stops)
       })
+  }
+
+  def publicTransportCombinationsByRadius(coordinate: Coordinate, radius: Double): Try[List[PTCombination]] = Try {
+    val combinations: List[PublicTransportCombination] = publicTransportProvider.getTPCombinationsByRadius(coordinate, radius)
+    combinations
+      .map(combination => (combination, publicTransportProvider.findStop(combination.fromStopId), publicTransportProvider.findStop(combination.toStopId)))
+      .map { case (combination, stopFrom, stopTo) =>
+        PTCombination(stopFrom.id, stopFrom.coordinate, stopFrom.travelInfoId.toString, stopTo.id, stopTo.coordinate, stopTo.travelInfoId.toString) }
   }
 
   protected def getEdgesAndVertices[E <: GeoEdge with BaseEntity, G <: GraphContainer[E, V] forSome { type V <: GeoVertex[E]}](edges: List[E], graph: G) = {

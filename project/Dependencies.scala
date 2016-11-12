@@ -32,6 +32,8 @@ object Dependencies extends Version {
   val scalaReflect                   = "org.scala-lang"            %   "scala-reflect"                      % ScalaVersion
   val scalaXml                       = "org.scala-lang.modules"    %%  "scala-xml"                          % "1.0.5"
   val json4sJackson                  = "org.json4s"                %% "json4s-jackson"                      % "3.4.1"
+  val jacksonDatabind                = "com.fasterxml.jackson.core" %% "jackson-databind"                   % "2.8.4"
+  val jacksonScala                   = "com.fasterxml.jackson.module" %% "jackson-module-scala"             % "2.8.3"
 
   val scalikejdbc                    = "org.scalikejdbc"           %% "scalikejdbc"                         % "2.4.1"
   val scalikejdbcConfig              = "org.scalikejdbc"           %% "scalikejdbc-config"                  % "2.4.1"

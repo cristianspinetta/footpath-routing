@@ -33,16 +33,6 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
 
   val logger: LoggingAdapter
 
-  def init() = Future {
-    logger.info("Application starting...")
-    val graphFut = Future {
-      ApiSnapshots.initialize()
-      GraphSupport.getGraphSet
-    } // Load graph
-    Await.result(graphFut, configuration.Graph.loadingTimeout)
-    logger.info("Application started successfully...")
-  }
-
   def requestMethodAndResponseStatusAsInfo(result: RouteResult): Unit = {
     def message(status: StatusCode, body: Option[String] = None): String = s"Result: $status${body.map(b ⇒ s" - $b").getOrElse("")}"
     def truncatedString(string: String): String = {
@@ -68,10 +58,11 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
       logRequest("routing-request", akka.event.Logging.InfoLevel) {
         get {
           path("route") {
-            parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double]).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
+            parameters('fromLng.as[Double], 'fromLat.as[Double], 'toLng.as[Double], 'toLat.as[Double], 'heuristicType.as[HeuristicType] ? AccessibilityHeuristicType.asInstanceOf[HeuristicType]).as(RoutingRequest.applyWithDefault _) { routingRequest ⇒
               val routeResult = routingService.searchRoute(
                 from = Coordinate(routingRequest.fromLat, routingRequest.fromLng),
-                to = Coordinate(routingRequest.toLat, routingRequest.toLng)).value.map[ToResponseMarshallable] {
+                to = Coordinate(routingRequest.toLat, routingRequest.toLng),
+                routingRequest.heuristicType).value.map[ToResponseMarshallable] {
                   case Xor.Right(routes)                    ⇒ OK -> routes
                   case Xor.Left(NoStops)                    ⇒ BadRequest -> "Could not find stops."
                   case Xor.Left(NoPath)                     ⇒ BadRequest -> "Could not find a path."
@@ -116,9 +107,17 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                   }
                 } ~
                 path("public-transport-paths") {
-                  parameters('lat.as[Double], 'lng.as[Double], 'radius.as[Double] ?, 'line ?).as(PublicTransportPathsRequest) { publicTransportRequestRequest: PublicTransportPathsRequest ⇒
+                  parameters('lat.as[Double], 'lng.as[Double], 'radius.as[Double] ?, 'line ?).as(PublicTransportPathsRequest) { ptPathsRequest: PublicTransportPathsRequest ⇒
                     val response: Future[ToResponseMarshallable] = Future.successful {
-                      mapService.publicTransportPaths(Coordinate(publicTransportRequestRequest.lat, publicTransportRequestRequest.lng), publicTransportRequestRequest.radius, publicTransportRequestRequest.line).get
+                      mapService.publicTransportPaths(Coordinate(ptPathsRequest.lat, ptPathsRequest.lng), ptPathsRequest.radius, ptPathsRequest.line).get
+                    }
+                    complete(response)
+                  }
+                } ~
+                path("public-transport-combinations") {
+                  parameters('lat.as[Double], 'lng.as[Double], 'radius.as[Double]).as(PublicTransportCombinationsRequest) { ptCombinationsRequest: PublicTransportCombinationsRequest ⇒
+                    val response: Future[ToResponseMarshallable] = Future.successful {
+                      mapService.publicTransportCombinationsByRadius(Coordinate(ptCombinationsRequest.lat, ptCombinationsRequest.lng), ptCombinationsRequest.radius).get
                     }
                     complete(response)
                   }
@@ -156,6 +155,14 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                       mapGeneratorService.createRamps() map (_ ⇒ "") get
                     }
                     complete(response)
+                  } ~
+                  path("public-transport-combinations") {
+                    parameters('limit.as[String], 'offset.as[String]).as(PublicTransportCreationRequest) { request: PublicTransportCreationRequest ⇒
+                      val response: Future[ToResponseMarshallable] = Future.successful {
+                        mapGeneratorService.processCombinationsWalkPaths(request.limit.toInt, request.offset.toInt) map (_ ⇒ "") get
+                      }
+                      complete(response)
+                    }
                   }
               } ~
                 pathPrefix("associate") {

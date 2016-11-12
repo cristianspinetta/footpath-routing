@@ -2,8 +2,10 @@ package service
 
 import base.{ LazyLoggerSupport, MeterSupport }
 import base.conf.ApiEnvConfig
+import cats.data.Xor
 import mapdomain.graph.Coordinate
 import mapdomain.math.{ GVector, Point, VectorUtils }
+import mapdomain.repository.publictransport.{ PublicTransportCombinationRepository, StopRepository }
 import mapdomain.repository.sidewalk.{ RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository, StreetCrossingEdgeRepository }
 import mapdomain.repository.street.{ StreetInfoRepository, StreetRepositorySupport }
 import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp, SidewalkVertex, StreetCrossingEdge }
@@ -14,8 +16,11 @@ import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
 import provider.GraphSupport
 import scalikejdbc.DB
+import searching.walk.WalkRouteSearcher
+import utils.JsonUtils
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.ExecutionContext
 import scala.io.Source
 import scala.util.Try
 
@@ -91,6 +96,27 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     withTimeLogging({
       saveRamps(getRampsFromFile)
     }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
+  }
+
+  def processCombinationsWalkPaths(limit: Integer, offset: Integer)(implicit ec: ExecutionContext) = Try {
+    logger.info(s"Starting to process combinations")
+    withTimeLogging({
+      updateAsyncCombinationsPath(limit, offset)
+    }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
+  }
+
+  private def updateAsyncCombinationsPath(limit: Integer, offset: Integer)(implicit ec: ExecutionContext) = {
+    val combinations = PublicTransportCombinationRepository.findLimitted(limit, offset)
+    combinations.foreach(c ⇒ {
+      val from = StopRepository.find(c.fromStopId).get
+      val to = StopRepository.find(c.toStopId).get
+
+      val searchPath = WalkRouteSearcher.search(from.coordinate, to.coordinate)
+      searchPath.value.foreach {
+        case Xor.Right(p) ⇒ PublicTransportCombinationRepository.save(c.copy(walkPath = Some(JsonUtils.toJson(p))))
+        case _            ⇒ logger.error(s"Could not find combination between ${c.fromStopId} and ${c.toStopId}")
+      }
+    })
   }
 
   private def getRampsFromFile: Vector[Ramp] = {

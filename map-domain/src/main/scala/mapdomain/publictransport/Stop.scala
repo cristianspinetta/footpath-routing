@@ -37,3 +37,4 @@ object Stop extends SQLSyntaxSupport[Stop] {
     travelInfoId = stopUnsaved.travelInfoId,
     isAccessible = stopUnsaved.isAccessible)
 }
+

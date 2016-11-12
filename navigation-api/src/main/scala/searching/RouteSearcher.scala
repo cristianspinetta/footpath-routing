@@ -4,7 +4,9 @@ import base.{ LazyLoggerSupport, MeterSupport }
 import cats.data.XorT
 import cats.implicits._
 import mapdomain.graph._
-import model.Route
+import model.{ HeuristicType, Route }
+import searching.transports.PublicTransportRouteSearcherSupport
+import searching.walk.WalkRouteSearcherSupport
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -18,10 +20,10 @@ sealed trait RouteSearcher extends LazyLoggerSupport with MeterSupport with Walk
   import SearchRoutingErrors._
   import base.XorTSugars._
 
-  def search(from: Coordinate, to: Coordinate)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, List[Route]] = withTimeLoggingAsync({
+  def search(from: Coordinate, to: Coordinate, heuristicType: HeuristicType)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, List[Route]] = withTimeLoggingAsync({
     logger.info(s"Init Search from $from to $to")
     if (from.distanceTo(to) <= walkRadius)
-      walkRouteSearcher.search(from, to).map(path ⇒ List(Route(List(path))))
+      walkRouteSearcher.search(from, to, heuristicType).map(path ⇒ List(Route(List(path))))
     else
       publicTransportRouteSearcher.search(from, to)
   }, (time: Long) ⇒ logger.info(s"Execute Search route in $time ms."))

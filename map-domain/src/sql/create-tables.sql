@@ -106,6 +106,18 @@ CREATE TABLE IF NOT EXISTS `sidewalk_edge` (
   FOREIGN KEY (`streetEdgeBelongToId`) REFERENCES `street_edge` (`id`)
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `public_transport_combination` (
+  `fromStopId` bigint(20) NOT NULL,
+  `toStopId` bigint(20) NOT NULL,
+  `fromTravelInfoId` bigint(20) NOT NULL,
+  `toTravelInfoId` bigint(20) NOT NULL,
+  `distance` float NOT NULL,
+  `walkPath` varchar(20000) DEFAULT NULL,
+  `enabled` boolean NOT NULL DEFAULT true,
+  `cost` bigint(20) NOT NULL DEFAULT 999999999999999999,
+  PRIMARY KEY (`fromStopId`, `toTravelInfoId`)
+) ENGINE=Aria DEFAULT CHARSET=utf8;
+
 ALTER TABLE `stop` ADD CONSTRAINT `fk_stop_travel_info` FOREIGN KEY (`travelInfoId`) REFERENCES `travel_info`(`id`);
 ALTER TABLE `stop` ADD CONSTRAINT `fk_stop_next_stop` FOREIGN KEY (`nextStopId`) REFERENCES `stop`(`id`);
 ALTER TABLE `stop` ADD CONSTRAINT `fk_stop_previous_stop` FOREIGN KEY (`previousStopId`) REFERENCES `stop`(`id`);
@@ -117,5 +129,22 @@ ALTER TABLE `travel_info` ADD CONSTRAINT `fk_travel_info_last_stop` FOREIGN KEY 
 
 CREATE SPATIAL INDEX `street_vertex_coordinate_index` ON `street_vertex` (`coordinate`);
 CREATE SPATIAL INDEX `sidewalk_vertex_coordinate_index` ON `sidewalk_vertex` (`coordinate`);
+
+CREATE INDEX `public_transport_combination_from_ti_index` ON `public_transport_combination` (`fromTravelInfoId`);
+CREATE INDEX `public_transport_combination_to_ti_index` ON `public_transport_combination` (`toTravelInfoId`);
+
+CREATE TABLE IF NOT EXISTS `public_transport_combination_path` (
+  `fromStopId` bigint(20) NOT NULL,
+  `toTravelInfoId` bigint(20) NOT NULL,
+  `walkPath` varchar(20000) DEFAULT NULL,
+  PRIMARY KEY (`fromStopId`, `toTravelInfoId`)
+) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+ALTER TABLE `public_transport_combination_path` ADD CONSTRAINT `fk_ptc_path_ptc` FOREIGN KEY (`fromStopId`, `toTravelInfoId`) REFERENCES `public_transport_combination`(`fromStopId`, `toTravelInfoId`);
+
+/* Drop public_transport_combination columns, only run if public_transport_combination was created before
+ALTER TABLE `public_transport_combination_path` DROP COLUMN `cost`,
+                                                DROP COLUMN `walkPath`;
+*/
 
 COMMIT;

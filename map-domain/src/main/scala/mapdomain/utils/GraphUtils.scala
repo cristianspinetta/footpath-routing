@@ -6,9 +6,8 @@ import scala.annotation.tailrec
 import scala.collection.Map
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
-import scala.math.Ordering
-
 import scala.language.existentials
+import scala.math.Ordering
 
 trait GraphUtils {
 
