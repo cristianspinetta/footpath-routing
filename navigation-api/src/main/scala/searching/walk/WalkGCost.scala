@@ -1,4 +1,4 @@
-package searching
+package searching.walk
 
 import base.conf.ApiEnvConfig
 import mapdomain.sidewalk._

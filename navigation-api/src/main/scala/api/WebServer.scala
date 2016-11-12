@@ -1,16 +1,16 @@
 package api
 
-import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-import base.Contexts
-import com.typesafe.config.Config
 import base.conf.ApiEnvConfig
-import scalikejdbc.config._
+import base.{ ApiSnapshots, Contexts }
+import com.typesafe.config.Config
 import module.RoutingModule
+import provider.GraphSupport
+import scalikejdbc.config._
 
-import scala.util.{ Failure, Success }
+import scala.concurrent.{ Await, Future }
 
 object WebServer extends App with RoutingModule with ApiEnvConfig {
   override implicit val system = Contexts.system
@@ -26,18 +26,19 @@ object WebServer extends App with RoutingModule with ApiEnvConfig {
   private val interface: String = configuration.HTTP.interface
   private val port: Int = configuration.HTTP.port
 
-  val bindingFuture = Http().bindAndHandle(wsRoutes, interface, port)
+  init()
+    .flatMap(_ ⇒ Http().bindAndHandle(wsRoutes, interface, port))
+    .map(_ ⇒ logger.info(s"Server online at http://$interface:$port/..."))
+    .recover { case exc: Throwable ⇒ logger.error(exc, s"WebServer failed to initialize.") }
 
-  bindingFuture foreach { binder ⇒
-
-    init().onFailure { case exc: Throwable ⇒ logger.error(exc, s"WebServer failed to initialize.") }
-
-    logger.info(s"Server online at http://$interface:$port/...")
-
-    //    StdIn.readLine() // let it run until user presses return
-    //
-    //    binder.unbind() // trigger unbinding from the port
-    //      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
+  def init() = Future {
+    logger.info("Application starting...")
+    val graphFut = Future {
+      ApiSnapshots.initialize()
+      GraphSupport.getGraphSet
+    } // Load graph
+    Await.result(graphFut, configuration.Graph.loadingTimeout)
+    logger.info("Application started successfully...")
   }
 
 }

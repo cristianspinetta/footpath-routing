@@ -33,16 +33,6 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
 
   val logger: LoggingAdapter
 
-  def init() = Future {
-    logger.info("Application starting...")
-    val graphFut = Future {
-      ApiSnapshots.initialize()
-      GraphSupport.getGraphSet
-    } // Load graph
-    Await.result(graphFut, configuration.Graph.loadingTimeout)
-    logger.info("Application started successfully...")
-  }
-
   def requestMethodAndResponseStatusAsInfo(result: RouteResult): Unit = {
     def message(status: StatusCode, body: Option[String] = None): String = s"Result: $status${body.map(b ⇒ s" - $b").getOrElse("")}"
     def truncatedString(string: String): String = {

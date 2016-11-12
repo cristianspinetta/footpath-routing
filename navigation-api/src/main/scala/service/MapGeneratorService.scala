@@ -5,7 +5,6 @@ import base.conf.ApiEnvConfig
 import cats.data.Xor
 import mapdomain.graph.Coordinate
 import mapdomain.math.{ GVector, Point, VectorUtils }
-import mapdomain.publictransport.PublicTransportCombination
 import mapdomain.repository.publictransport.{ PublicTransportCombinationRepository, StopRepository }
 import mapdomain.repository.sidewalk.{ RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository, StreetCrossingEdgeRepository }
 import mapdomain.repository.street.{ StreetInfoRepository, StreetRepositorySupport }
@@ -15,10 +14,9 @@ import mapgenerator.sidewalk.SidewalkModule
 import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
 import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
 import mapgenerator.street.StreetGraphModule
-import model.AccessibilityHeuristicType
 import provider.GraphSupport
 import scalikejdbc.DB
-import searching.WalkRouteSearcher
+import searching.walk.WalkRouteSearcher
 import utils.JsonUtils
 
 import scala.collection.concurrent.TrieMap

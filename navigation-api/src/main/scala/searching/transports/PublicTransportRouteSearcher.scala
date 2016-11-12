@@ -9,7 +9,7 @@ import model._
 import provider.{ GraphSupport, PublicTransportProviderSupport }
 import searching.PathBuilders._
 import searching.SearchRoutingErrors.{ NoStops, SearchRoutingError }
-import searching.WalkRouteSearcherSupport
+import searching.walk.WalkRouteSearcherSupport
 
 import scala.concurrent.{ ExecutionContext, Future }
 

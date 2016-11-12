@@ -8,6 +8,7 @@ import mapdomain.publictransport.Stop
 import model.{ BusPath, Path, PathDescription }
 import provider.PublicTransportProviderSupport
 import searching.SearchRoutingErrors.{ NoPathBetweenStops, SearchRoutingError }
+import searching.walk.WalkRouteSearcherSupport
 import utils.JsonUtils
 
 import scala.concurrent.{ ExecutionContext, Future }

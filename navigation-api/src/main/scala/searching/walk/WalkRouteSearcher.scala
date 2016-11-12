@@ -1,4 +1,4 @@
-package searching
+package searching.walk
 
 import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
@@ -11,6 +11,7 @@ import pathgenerator.core.AStar
 import pathgenerator.graph.{ GeoGCost, GeoHeuristic }
 import provider.{ GraphSupport, StreetEdgeSupport, StreetInfoSupport }
 import searching.SearchRoutingErrors._
+import searching.{ PedestrianIncident, RampIncidentType, SidewalkIncidentType }
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Try }

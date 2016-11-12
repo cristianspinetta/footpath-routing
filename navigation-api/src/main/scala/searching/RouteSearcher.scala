@@ -6,6 +6,7 @@ import cats.implicits._
 import mapdomain.graph._
 import model.{ HeuristicType, Route }
 import searching.transports.PublicTransportRouteSearcherSupport
+import searching.walk.WalkRouteSearcherSupport
 
 import scala.concurrent.{ ExecutionContext, Future }
 
