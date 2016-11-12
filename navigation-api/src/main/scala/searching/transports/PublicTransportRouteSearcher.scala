@@ -69,7 +69,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
               val directPartialRoutes = createRoutes(to, candidatePaths)
 
-              val allFromCombinations = publicTransportProvider.getCombinationsByMultipleTravelInfoIds(candidatesFrom.map(_.travelInfoId))
+              val allFromCombinations = publicTransportProvider.getCombinationsByMultipleTravelInfoIds(candidatesFrom.map(_.travelInfoId), excludedRadius = List((from, walkRadius), (to, walkRadius)))
               val combinationContext = crateCombinationContext(candidatesFrom, allFromCombinations)
 
               val newCandidateFrom: List[CandidateTransport] = combinationContext.transportsTo

@@ -47,17 +47,20 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
       }
     }
 
-    findNextPaths(stopFrom.id, stopTo.id, List.empty)
+    val pathTail = findNextPaths(stopFrom.id, stopTo.id, List.empty)
       .reverse
-      .flatMap(path ⇒ (if (path.coordinates == "") "[]" else path.coordinates).parseJson.convertTo[List[Coordinate]])
+      .flatMap(path ⇒ (if (path.coordinates.isEmpty) "[]" else path.coordinates).parseJson.convertTo[List[Coordinate]])
+
+    // The first and the last coordinate on the path of each stop is missed, so here we are recover it
+    stopFrom.coordinate :: pathTail ::: List(stopTo.coordinate) // FIXME change the data on the DB
   }, (time: Long) ⇒ logger.info(s"Execute Get Path Between Stops in $time ms."))
 
   def getTPCombinationsByRadius(startPosition: Coordinate, radius: Double): List[PublicTransportCombination] = {
     publicTransportCombinationRepository.findByRadius(startPosition, radius)
   }
 
-  def getCombinationsByMultipleTravelInfoIds(travelInfoIds: List[Long], limit: Int = 100000): List[PublicTransportCombination] = withTimeLogging({
-    publicTransportCombinationRepository.findByMultipleTravelInfoIds(travelInfoIds, limit)
+  def getCombinationsByMultipleTravelInfoIds(travelInfoIds: List[Long], limit: Int = 100000, excludedRadius: List[(Coordinate, Double)] = List.empty): List[PublicTransportCombination] = withTimeLogging({
+    publicTransportCombinationRepository.findByMultipleTravelInfoIds(travelInfoIds, limit, excludedRadius)
   }, (timing: Long) ⇒ logger.info(s"Search Public Transport Combinations with ${travelInfoIds.size} Travel Info as filter and retrieving a maximum of the $limit rows take $timing ms."))
 
   def getCombinationByStopAndTravelInfo(fromStopId: Long, toTravelInfoId: Long): PublicTransportCombination = {

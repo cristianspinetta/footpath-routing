@@ -30,7 +30,8 @@ private[searching] object PathBuilders {
         val travelInfo = publicTransportProvider.findTravelInfo(stopFrom.travelInfoId)
         val transportDescription = s"${travelInfo.`type`} - Line ${travelInfo.name} - Branch ${travelInfo.branch} - ${travelInfo.sentido}"
         // FIXME add more info on PathDescription
-        Xor.Right(Path(coordinates, PathDescription(BusPath, s"$transportDescription - From", s"$transportDescription - To")))
+        Xor.Right(Path(coordinates, PathDescription(BusPath, s"$transportDescription - From", s"$transportDescription - To"),
+          extractIncidents))
       } recover {
         case exc: Throwable ⇒
           logger.error(s"An error occur trying to build the path between stops. $stopFrom, $stopTo", exc)
@@ -39,6 +40,12 @@ private[searching] object PathBuilders {
     }
 
     lazy val cost: Double = (stopTo.sequence - stopFrom.sequence) * costs.stop + costs.combination + ((if (stopFrom.isAccessible) 1 else 0) + (if (stopTo.isAccessible) 1 else 0) * costs.inaccessibleStop)
+
+    private lazy val extractIncidents: List[PedestrianIncident] = {
+      List(stopFrom, stopTo)
+        .filter(!_.isAccessible)
+        .map(stop ⇒ PedestrianIncident(StopIncidentType, Some(stop.coordinate)))
+    }
   }
 
   case class WalkPathBuilder(from: Coordinate, to: Coordinate) extends PathBuilder with ApiEnvConfig with WalkRouteSearcherSupport {

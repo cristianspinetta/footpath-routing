@@ -33,7 +33,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -47,7 +47,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target))
 
-        val result: Try[List[Edge]] = aStar.search
+        val result = aStar.search
 
         val expectedPath: List[Long] = List(1, 6, 5, 11, 10, 13, 18)
 
@@ -55,7 +55,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -69,7 +69,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target))
 
-        val result: Try[List[Edge]] = aStar.search
+        val result = aStar.search
 
         val expectedPath: List[Long] = List(1, 6, 5, 11, 10, 13, 18, 19)
 
@@ -77,7 +77,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -92,7 +92,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target1, target2))
 
-        val result: Try[List[Edge]] = aStar.search
+        val result = aStar.search
 
         val expectedPath: List[Long] = List(1, 2, 3, 4, 8, 9, 14)
 
@@ -100,7 +100,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -116,7 +116,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val aStar = aStarWithTrivialHeuristic(graph, source, Seq(target1, target2, target3))
 
-        val result: Try[List[Edge]] = aStar.search
+        val result = aStar.search
 
         val expectedPath: List[Long] = List(1, 2, 3, 7)
 
@@ -124,7 +124,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -154,7 +154,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -175,7 +175,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -206,7 +206,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -227,7 +227,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -270,7 +270,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -285,7 +285,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val aStar = AStar[GeoEdge, GeoVertex[GeoEdge], GeoHeuristic[GeoEdge, GeoVertex[GeoEdge]], GeoGCost[GeoEdge, GeoVertex[GeoEdge]]](GeoHeuristic(source), GeoGCost())(graph, source, target)
 
-        val result: Try[List[Edge]] = aStar.search
+        val result = aStar.search
 
         val expectedPath: List[Long] = List(1, 2, 4, 7, 8, 9, 14, 13)
 
@@ -293,7 +293,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)
@@ -308,7 +308,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val aStar = AStar[GeoEdge, GeoVertex[GeoEdge], GeoHeuristic[GeoEdge, GeoVertex[GeoEdge]], GeoGCost[GeoEdge, GeoVertex[GeoEdge]]](GeoHeuristic(source), GeoGCost())(graph, source, target)
 
-        val result: Try[List[Edge]] = aStar.search
+        val result = aStar.search
 
         val expectedPath: List[Long] = List(1, 6, 5, 11, 12)
 
@@ -316,7 +316,7 @@ class AStarSpec extends WordSpec with BaseAStarSpec with Matchers with GraphUtil
 
         val edges = result.get
 
-        val edgesIds: List[Long] = edgesToIds(edges)
+        val edgesIds: List[Long] = edgeReferencesToIds(edges)
 
         withClue(pathFailureMessage(edgesIds, expectedPath)) {
           edgesIds should be(expectedPath)

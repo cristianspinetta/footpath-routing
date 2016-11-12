@@ -108,7 +108,9 @@ CREATE TABLE IF NOT EXISTS `sidewalk_edge` (
 
 CREATE TABLE IF NOT EXISTS `public_transport_combination` (
   `fromStopId` bigint(20) NOT NULL,
+  `fromCoordinate` Point NOT NULL,
   `toStopId` bigint(20) NOT NULL,
+  `toCoordinate` Point NOT NULL,
   `fromTravelInfoId` bigint(20) NOT NULL,
   `toTravelInfoId` bigint(20) NOT NULL,
   `distance` float NOT NULL,
@@ -117,6 +119,10 @@ CREATE TABLE IF NOT EXISTS `public_transport_combination` (
   `cost` bigint(20) NOT NULL DEFAULT 999999999999999999,
   PRIMARY KEY (`fromStopId`, `toTravelInfoId`)
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+CREATE SPATIAL INDEX `combination_from_coordinate_spatial_index` ON `public_transport_combination` (`fromCoordinate`);
+CREATE SPATIAL INDEX `combination_to_coordinate_spatial_index` ON `public_transport_combination` (`toCoordinate`);
+
 
 ALTER TABLE `stop` ADD CONSTRAINT `fk_stop_travel_info` FOREIGN KEY (`travelInfoId`) REFERENCES `travel_info`(`id`);
 ALTER TABLE `stop` ADD CONSTRAINT `fk_stop_next_stop` FOREIGN KEY (`nextStopId`) REFERENCES `stop`(`id`);
@@ -146,5 +152,25 @@ ALTER TABLE `public_transport_combination_path` ADD CONSTRAINT `fk_ptc_path_ptc`
 ALTER TABLE `public_transport_combination_path` DROP COLUMN `cost`,
                                                 DROP COLUMN `walkPath`;
 */
+
+COMMIT;
+
+/* UPDATE */
+START TRANSACTION;
+
+ALTER TABLE `public_transport_combination` Add column `fromCoordinate` Point AFTER `fromStopId`;
+UPDATE `public_transport_combination` ptc
+    INNER JOIN `stop` s ON s.id = ptc.fromStopId
+  SET `fromCoordinate` = `coordinate`;
+ALTER TABLE `public_transport_combination` CHANGE column `fromCoordinate` `fromCoordinate` Point NOT NULL;
+
+ALTER TABLE `public_transport_combination` Add column `toCoordinate` Point AFTER `toStopId`;
+UPDATE `public_transport_combination` ptc
+    INNER JOIN `stop` s ON s.id = ptc.toStopId
+  SET `toCoordinate` = `coordinate`;
+ALTER TABLE `public_transport_combination` CHANGE column `toCoordinate` `toCoordinate` Point NOT NULL;
+
+CREATE SPATIAL INDEX `combination_from_coordinate_spatial_index` ON `public_transport_combination` (`fromCoordinate`);
+CREATE SPATIAL INDEX `combination_to_coordinate_spatial_index` ON `public_transport_combination` (`toCoordinate`);
 
 COMMIT;

@@ -37,7 +37,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
   }
 
   protected def searchPathOnGraph(graphContainer: SidewalkGraphContainer, coordinateFrom: Coordinate,
-    coordinateTo: Coordinate, heuristicType: HeuristicType): Try[List[PedestrianEdge]] = {
+    coordinateTo: Coordinate, heuristicType: HeuristicType): Try[List[EdgeReference[PedestrianEdge, SidewalkVertex]]] = {
     (graphContainer.findNearest(coordinateFrom), graphContainer.findNearest(coordinateTo)) match {
       case (Some(fromVertex), Some(toVertex)) ⇒
         logger.info(s"Vertex From: ${fromVertex.id}. Vertex To: ${toVertex.id}")
@@ -53,11 +53,11 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
     }
   }
 
-  protected def createWalkPath(edges: List[PedestrianEdge]): Path = {
+  protected def createWalkPath(edges: List[EdgeReference[PedestrianEdge, SidewalkVertex]]): Path = {
 
-    val incidents: List[PedestrianIncident] = extractIncidents(edges)
+    val incidents: List[PedestrianIncident] = extractIncidents(edges.map(_.edge))
 
-    val vertices: List[SidewalkVertex] = GraphUtils.edgesToIds(edges) map (vertexId ⇒ graphs.sidewalk.findVertex(vertexId) match {
+    val vertices: List[SidewalkVertex] = GraphUtils.edgeReferencesToIds(edges) map (vertexId ⇒ graphs.sidewalk.findVertex(vertexId) match {
       case Some(vertex) ⇒ vertex
       case None         ⇒ throw new RuntimeException(s"Vertex not found $vertexId while trying to create the path from the edge list.")
     })

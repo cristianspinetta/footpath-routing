@@ -1,13 +1,22 @@
-insert into transport_public_combination (fromStopId, toStopId, fromTravelInfoId,
+insert into transport_public_combination (fromStopId, fromCoordinate, toStopId, toCoordinate, fromTravelInfoId,
 	toTravelInfoId, distance)
 	select
 		candidateCombination.stop_id_from,
+		candidateCombination.stop_coordinate_from,
 		candidateCombination.stop_id_to,
+		candidateCombination.stop_coordinate_to,
 		candidateCombination.travel_info_id_from,
 		candidateCombination.travel_info_id_to,
 		MIN(candidateCombination.distance) min_distance
 	from
-		(select tiFrom.id travel_info_id_from, tiTo.id travel_info_id_to, sFrom.id stop_id_from, sTo.id stop_id_to, ST_Distance(sFrom.coordinate, sTo.coordinate) distance
+		(select
+			 tiFrom.id travel_info_id_from,
+			 tiTo.id travel_info_id_to,
+			 sFrom.id stop_id_from,
+			 sFrom.coordinate stop_coordinate_from,
+			 sTo.id stop_id_to,
+			 sTo.coordinate stop_coordinate_to,
+			 ST_Distance(sFrom.coordinate, sTo.coordinate) distance
 			from
 				stop sFrom,
 				stop sTo,

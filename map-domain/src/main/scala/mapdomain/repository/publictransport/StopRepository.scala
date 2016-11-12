@@ -24,20 +24,6 @@ trait StopRepository extends SpatialSQLSupport with LazyLoggerSupport with Meter
       travelInfoId = rs.get(s.travelInfoId))
   }
 
-  def publicTransportCombination(s: SyntaxProvider[PublicTransportCombination])(rs: WrappedResultSet): PublicTransportCombination = publicTransportCombination(s.resultName, s.tableAliasName)(rs)
-
-  private def publicTransportCombination(ptc: ResultName[PublicTransportCombination], tableAlias: String)(implicit rs: WrappedResultSet): PublicTransportCombination = {
-    PublicTransportCombination(
-      fromStopId = rs.long(ptc.fromStopId),
-      toStopId = rs.long(ptc.toStopId),
-      fromTravelInfoId = rs.long(ptc.fromTravelInfoId),
-      toTravelInfoId = rs.long(ptc.fromTravelInfoId),
-      distance = rs.double(ptc.distance),
-      walkPath = rs.stringOpt(ptc.walkPath),
-      enabled = rs.boolean(ptc.enabled),
-      cost = rs.double(ptc.cost))
-  }
-
   def create(stopUnsaved: StopUnsaved)(implicit session: DBSession = Stop.autoSession): Stop = {
     val id = withSQL {
       insert.into(Stop).namedValues(
@@ -90,11 +76,6 @@ trait StopRepository extends SpatialSQLSupport with LazyLoggerSupport with Meter
         lineOpt.map(line ⇒ sqls.like(ti.name, line)),
         radiusOpt.map(radius ⇒ clauseNearestByDistance(coordinate, radius, s, "coordinate"))))
   }.map(stop(s)).list().apply()
-
-  def findAllCombinations()(implicit session: DBSession = PublicTransportCombination.autoSession): List[PublicTransportCombination] = withSQL {
-    select.all(ptc)
-      .from(PublicTransportCombination as ptc)
-  }.map(publicTransportCombination(ptc)).list().apply()
 
   def findStopsInRectangle(northEast: Coordinate, southWest: Coordinate)(implicit session: DBSession = Stop.autoSession): List[Stop] = withSQL {
     select(s.resultAll)

@@ -12,6 +12,7 @@ case class PedestrianIncident(`type`: IncidentType,
 sealed trait IncidentType
 case object SidewalkIncidentType extends IncidentType
 case object RampIncidentType extends IncidentType
+case object StopIncidentType extends IncidentType
 
 object IncidentType {
   val keyMap: Map[String, IncidentType] = Map(
