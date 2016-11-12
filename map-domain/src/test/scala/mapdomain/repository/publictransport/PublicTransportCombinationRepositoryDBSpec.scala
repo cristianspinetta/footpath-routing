@@ -21,8 +21,8 @@ class PublicTransportCombinationRepositoryDBSpec extends FlatSpec with Matchers 
   override def afterAll(): Unit = DBs.closeAll()
 
   "PublicTransportCombination Repository" should "update PublicTransportCombination correctly" in {
-    var ptc1 = PublicTransportCombinationRepository.create(PublicTransportCombination(1, 2, 3, 4, 5, None, true, 1))
-    var ptc2 = PublicTransportCombinationRepository.create(PublicTransportCombination(10, 11, 3, 4, 5, None, true, 1))
+    var ptc1 = PublicTransportCombinationRepository.create(PublicTransportCombination(1, Coordinate(-34.6, -58.99), 2, Coordinate(-34.3, -58.97), 3, 4, 5, None, true, 1))
+    var ptc2 = PublicTransportCombinationRepository.create(PublicTransportCombination(10, Coordinate(-34.54, -58.99), 11, Coordinate(-34.66, -58.79), 3, 4, 5, None, true, 1))
     ptc2 = ptc2.copy(walkPath = Some("test-path-1"))
     ptc1 = ptc1.copy(walkPath = Some("test-path-2"))
 

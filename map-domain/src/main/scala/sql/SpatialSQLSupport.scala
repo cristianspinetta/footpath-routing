@@ -23,8 +23,18 @@ trait SpatialSQLSupport {
     sqls", x(${s.column("coordinate")}) $lng, y(${s.column("coordinate")}) $lat"
   }
 
+  def selectLatitudeAndLongitudeCustom(s: SyntaxProvider[_], columnName: String = "coordinate"): SQLSyntax = {
+    val lng = SQLSyntax.createUnsafely(s"${s.tableAliasName}_${columnName}_lng")
+    val lat = SQLSyntax.createUnsafely(s"${s.tableAliasName}_${columnName}_lat")
+    sqls", x(${s.column(columnName)}) $lng, y(${s.column(columnName)}) $lat"
+  }
+
   def coordinateFromResultSet(rs: WrappedResultSet, tableAlias: String): Coordinate = {
     Coordinate.byRadians(rs.double(s"${tableAlias}_lat"), rs.double(s"${tableAlias}_lng"))
+  }
+
+  def coordinateFromResultSetCustom(rs: WrappedResultSet, tableAlias: String, columnName: String = "coordinate"): Coordinate = {
+    Coordinate.byRadians(rs.double(s"${tableAlias}_${columnName}_lat"), rs.double(s"${tableAlias}_${columnName}_lng"))
   }
 
   def clauseNearestByDistance(coordinate: Coordinate, radius: Double, s: SyntaxProvider[_], positionColumnName: String): SQLSyntax = {

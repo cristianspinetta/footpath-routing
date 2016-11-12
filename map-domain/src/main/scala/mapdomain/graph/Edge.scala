@@ -19,3 +19,5 @@ trait Edge {
 }
 
 case class GraphEdge(vertexStartId: Long, vertexEndId: Long, distance: Double = 10, override val directed: Boolean = true) extends Edge
+
+case class EdgeReference[E <: Edge, V <: Vertex[E]](vertexStart: V, vertexEnd: V, edge: E)

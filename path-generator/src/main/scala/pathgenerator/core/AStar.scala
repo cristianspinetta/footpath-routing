@@ -1,13 +1,13 @@
 package pathgenerator.core
 
 import pathgenerator.graph._
-import base.{ LazyLoggerSupport, MeterSupport }
-import mapdomain.graph.{ Edge, GraphContainer, Vertex }
+import base.{LazyLoggerSupport, MeterSupport}
+import mapdomain.graph.{Edge, EdgeReference, GraphContainer, Vertex}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
-import scala.util.{ Failure, Try }
+import scala.util.{Failure, Try}
 import scala.reflect.runtime.universe._
 
 /**
@@ -58,7 +58,7 @@ case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N], GC <: GCost[E,
 
   private val targetIds: List[Long] = targetVertices.map(_.id).toList
 
-  def search: Try[List[E]] = withTimeLogging({
+  def search: Try[List[EdgeReference[E, N]]] = withTimeLogging({
     Try {
       loop(1)
     } recoverWith {
@@ -72,7 +72,7 @@ case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N], GC <: GCost[E,
   })
 
   @tailrec
-  private def loop(nroLoop: Int): List[E] = {
+  private def loop(nroLoop: Int): List[EdgeReference[E, N]] = {
 
     logCurrentState(nroLoop)
 
@@ -120,7 +120,7 @@ case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N], GC <: GCost[E,
     }
   }
 
-  private def reconstructPath(_cameFrom: mutable.Map[N, N], targetVertex: N)(implicit tag: TypeTag[N]): List[E] = {
+  private def reconstructPath(_cameFrom: mutable.Map[N, N], targetVertex: N)(implicit tag: TypeTag[N]): List[EdgeReference[E, N]] = {
     var current = targetVertex
     var totalPathBuilder = List.newBuilder[N]
     totalPathBuilder += current
@@ -129,10 +129,10 @@ case class AStar[E <: Edge, N <: Vertex[E], M <: Heuristic[E, N], GC <: GCost[E,
       totalPathBuilder += current
     }
     val totalPath: List[N] = totalPathBuilder.result()
-    val (edges: List[E], _) = totalPath.tail.foldLeft((List.empty[E], totalPath.head)) {
+    val (edges: List[EdgeReference[E, N]], _) = totalPath.tail.foldLeft((List.empty[EdgeReference[E, N]], totalPath.head)) {
       case ((listEs, beforeVertex), current: N) ⇒
         current.getEdgesFor(beforeVertex.id) match {
-          case Some(edge) ⇒ (edge :: listEs, current)
+          case Some(edge) ⇒ (EdgeReference(current, beforeVertex, edge) :: listEs, current)
           case None ⇒
             logger.warn(s"Could not find the edge between the vectors ${beforeVertex.id} and ${current.id}")
             (listEs, current)

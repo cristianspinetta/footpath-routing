@@ -14,6 +14,7 @@ trait GraphUtils {
   def readableEdges(edges: List[Edge]): String = edgesToIds(edges) mkString " -> "
 
   def edgesToIds(edges: List[Edge]): List[Long] = edges.headOption.map(_.vertexStartId).toList ::: edges.map(_.vertexEndId)
+  def edgeReferencesToIds[E <: Edge, V <: Vertex[E]](edges: List[EdgeReference[E, V]]): List[Long] = edges.headOption.map(_.vertexStart.id).toList ::: edges.map(_.vertexEnd.id)
 
   def createGridGraphGraph(rows: Int, columns: Int, offset: Int = 0): InMemoryGraphContainer[GraphEdge, GraphVertex[GraphEdge]] = {
     val vertexCreator: (Int, Int, Int, Iterable[NeighbourPartialCreation]) => GraphVertex[GraphEdge] = (id: Int, row: Int, column: Int, neighbours: Iterable[NeighbourPartialCreation]) ⇒

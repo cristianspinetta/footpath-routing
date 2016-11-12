@@ -1,10 +1,13 @@
 package mapdomain.publictransport
 
+import mapdomain.graph.Coordinate
 import scalikejdbc._
 
 case class PublicTransportCombination(
   fromStopId: Long,
+  fromCoordinate: Coordinate,
   toStopId: Long,
+  toCoordinate: Coordinate,
   fromTravelInfoId: Long,
   toTravelInfoId: Long,
   distance: Double,

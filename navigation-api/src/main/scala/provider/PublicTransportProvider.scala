@@ -59,8 +59,8 @@ trait PublicTransportProvider extends PublicTransportRepositorySupport with Mete
     publicTransportCombinationRepository.findByRadius(startPosition, radius)
   }
 
-  def getCombinationsByMultipleTravelInfoIds(travelInfoIds: List[Long], limit: Int = 100000): List[PublicTransportCombination] = withTimeLogging({
-    publicTransportCombinationRepository.findByMultipleTravelInfoIds(travelInfoIds, limit)
+  def getCombinationsByMultipleTravelInfoIds(travelInfoIds: List[Long], limit: Int = 100000, excludedRadius: List[(Coordinate, Double)] = List.empty): List[PublicTransportCombination] = withTimeLogging({
+    publicTransportCombinationRepository.findByMultipleTravelInfoIds(travelInfoIds, limit, excludedRadius)
   }, (timing: Long) ⇒ logger.info(s"Search Public Transport Combinations with ${travelInfoIds.size} Travel Info as filter and retrieving a maximum of the $limit rows take $timing ms."))
 
   def getCombinationByStopAndTravelInfo(fromStopId: Long, toTravelInfoId: Long): PublicTransportCombination = {
