@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS `stop` (
        	`pathId` bigint(20) DEFAULT NULL,
        	`travelInfoId` bigint(20) NOT NULL,
        	`isAccessible` boolean DEFAULT true,
+       	`sidewalkEdgeId` bigint(20) DEFAULT NULL,
        	PRIMARY KEY (`id`)
        ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
@@ -174,3 +175,7 @@ CREATE SPATIAL INDEX `combination_from_coordinate_spatial_index` ON `public_tran
 CREATE SPATIAL INDEX `combination_to_coordinate_spatial_index` ON `public_transport_combination` (`toCoordinate`);
 
 COMMIT;
+
+/* Run only if stop was already created
+ALTER TABLE `stop` ADD COLUMN `sidewalkEdgeId` bigint(20) DEFAULT NULL;
+*/

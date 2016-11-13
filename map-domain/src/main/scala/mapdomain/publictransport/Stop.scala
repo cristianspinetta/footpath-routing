@@ -11,7 +11,8 @@ case class Stop(
   sequence: Long,
   pathId: Option[Long] = None,
   travelInfoId: Long,
-  isAccessible: Boolean)
+  isAccessible: Boolean,
+  sidewalkEdgeId: Option[Long] = None)
 
 case class StopUnsaved(
   coordinate: Coordinate,
@@ -20,7 +21,8 @@ case class StopUnsaved(
   sequence: Long,
   pathId: Option[Long] = None,
   travelInfoId: Long,
-  isAccessible: Boolean)
+  isAccessible: Boolean,
+  sidewalkEdgeId: Option[Long] = None)
 
 object Stop extends SQLSyntaxSupport[Stop] {
 

@@ -21,7 +21,8 @@ trait StopRepository extends SpatialSQLSupport with LazyLoggerSupport with Meter
       previousStopId = rs.get(s.previousStopId),
       sequence = rs.get(s.sequence),
       pathId = rs.longOpt(s.pathId),
-      travelInfoId = rs.get(s.travelInfoId))
+      travelInfoId = rs.get(s.travelInfoId),
+      sidewalkEdgeId = rs.longOpt(s.sidewalkEdgeId))
   }
 
   def create(stopUnsaved: StopUnsaved)(implicit session: DBSession = Stop.autoSession): Stop = {
@@ -33,7 +34,8 @@ trait StopRepository extends SpatialSQLSupport with LazyLoggerSupport with Meter
         Stop.column.sequence -> stopUnsaved.sequence,
         Stop.column.pathId -> stopUnsaved.pathId,
         Stop.column.travelInfoId -> stopUnsaved.travelInfoId,
-        Stop.column.isAccessible -> stopUnsaved.isAccessible)
+        Stop.column.isAccessible -> stopUnsaved.isAccessible,
+        Stop.column.sidewalkEdgeId -> stopUnsaved.sidewalkEdgeId)
     }.updateAndReturnGeneratedKey().apply()
 
     Stop.createByUnsaved(id, stopUnsaved)
@@ -92,7 +94,9 @@ trait StopRepository extends SpatialSQLSupport with LazyLoggerSupport with Meter
         Stop.column.previousStopId -> stop.previousStopId,
         Stop.column.pathId -> stop.pathId,
         Stop.column.travelInfoId -> stop.travelInfoId,
-        Stop.column.isAccessible -> stop.isAccessible).where.eq(Stop.column.id, stop.id)
+        Stop.column.isAccessible -> stop.isAccessible,
+        Stop.column.sidewalkEdgeId -> stop.sidewalkEdgeId
+      ).where.eq(Stop.column.id, stop.id)
     }.update.apply()
     stop
   }

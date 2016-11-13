@@ -27,7 +27,7 @@ class StopRepositoryDBSpec extends FlatSpec with Matchers with BeforeAndAfterAll
     val path: Path = PathRepository.create(coordinates)
 
     val firstStop = StopRepository.create(StopUnsaved(Coordinate(10l, 11l), sequence = 1,
-      pathId = path.id, travelInfoId = travelInfo.id, isAccessible = false))
+      pathId = path.id, travelInfoId = travelInfo.id, isAccessible = false, sidewalkEdgeId = Some(5)))
     val secondStop = StopRepository.create(StopUnsaved(Coordinate(12l, 13l), sequence = 2,
       pathId = path.id, travelInfoId = travelInfo.id, isAccessible = true))
     val thirdStop = StopRepository.create(StopUnsaved(Coordinate(14l, 15l), sequence = 3,
