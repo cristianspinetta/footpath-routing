@@ -62,6 +62,13 @@ java \
 
 ### Snapshots settings
 
+The name of the available snapshots:
+
+* `street-vertex`
+* `sidewalk-vertex`
+* `stop`
+* `ramp`
+
 This is the configuration available for the snapshots:
 
 ```
@@ -73,10 +80,34 @@ snapshots {
   files-path = "/tmp/snapshots"
   max.difference.percentage = 80
 
-  street-vertex.cron-expression = "0 0 0/1 1/1 * ? *"
-  sidewalk-vertex.cron-expression = "0 0 0/1 1/1 * ? *"
+  street-vertex.cron-expression = "0 0 0 1/60 * ? *"
+  sidewalk-vertex.cron-expression = "0 0 0 1/60 * ? *"
+  stop.cron-expression = "0 0 0 1/60 * ? *"
+  ramp.cron-expression = "0 0 0 1/60 * ? *"
 }
 ```
 When the app is started, it searches in the folder specified by `snapshots.files-path` key the snapshot files. 
 If exists and it is in valid time, it uses them, otherwise it creates them through fetching the data from the suitable source.
 As you can notice, it's possible specify the time and the place where the snapshots live.
+
+### Reloading data from DB
+
+##### Reload **All Cached Data** from the primary storage:
+
+```
+curl -i -X POST 'http://localhost:9000/private/map/reload''
+```
+
+##### Reload **All Snapshots** from the primary storage:
+
+```
+curl -i -X POST 'http://localhost:9000/private/snapshot/reload/all'
+```
+
+##### Reload **A Single Snapshot** from the primary storage:
+
+```
+curl -i -X POST 'http://localhost:9000/private/snapshot/reload/street-vertex'
+```
+
+The last segment in the endpoint is the snapshot name.

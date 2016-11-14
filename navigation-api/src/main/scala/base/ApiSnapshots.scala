@@ -12,10 +12,10 @@ import snapshot.ramp.RampSnapshot
 object ApiSnapshots extends Snapshots {
 
   val snapshotByName = Map(
-    "StreetVertex" -> StreetVertexSnapshot,
-    "SidewalkVertex" -> SidewalkVertexSnapshot,
-    "Stop" -> StopSnapshot,
-    "Ramp" -> RampSnapshot)
+    "street-vertex" -> StreetVertexSnapshot,
+    "sidewalk-vertex" -> SidewalkVertexSnapshot,
+    "stop" -> StopSnapshot,
+    "ramp" -> RampSnapshot)
 
   override val snapshots: Seq[BaseSnapshot[_, _]] = snapshotByName.values.toSeq
 
