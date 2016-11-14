@@ -5,8 +5,7 @@ import scalikejdbc._
 case class PublicTransportCombinationPath(
   fromStopId: Long,
   toTravelInfoId: Long,
-  walkPath: String
-)
+  walkPath: String)
 
 object PublicTransportCombinationPath extends SQLSyntaxSupport[PublicTransportCombinationPath] {
 

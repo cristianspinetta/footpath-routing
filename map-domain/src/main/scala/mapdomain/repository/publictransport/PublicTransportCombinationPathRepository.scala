@@ -1,6 +1,6 @@
 package mapdomain.repository.publictransport
 
-import mapdomain.publictransport.{PublicTransportCombination, PublicTransportCombinationPath}
+import mapdomain.publictransport.{ PublicTransportCombination, PublicTransportCombinationPath }
 import scalikejdbc._
 import sql.SpatialSQLSupport
 
