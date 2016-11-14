@@ -19,7 +19,7 @@ trait PublicTransportProviderSupport {
 trait PublicTransportProvider extends PublicTransportRepositorySupport with MeterSupport with LazyLoggerSupport {
   import module.Protocol._
 
-  val stopsById: Map[Long, Stop] = StopSnapshot.get()
+  def stopsById: Map[Long, Stop] = StopSnapshot.get()
 
   def findStopsByRadiusAndLine(startPosition: Coordinate, radiusOpt: Option[Double] = None, lineOpt: Option[String] = None): List[Stop] = {
     stopRepository.findByRadiusAndLine(startPosition, radiusOpt, lineOpt)

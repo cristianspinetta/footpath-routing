@@ -53,7 +53,7 @@ trait StreetVertexRepository extends SpatialSQLSupport with MeterSupport with La
         .append(selectLatitudeAndLongitude(v))
         .from(StreetVertex as v)
     }.map(streetVertex(v)).list().apply(),
-    (time: Long) => logger.info(s"Getting of all Street Vertex finished in $time ms."))
+    (time: Long) => logger.info(s"Populate Street Vertex from DB took $time ms."))
 
   def findAllWithoutOf(ids: List[Long])(implicit session: DBSession = StreetVertex.autoSession): List[StreetVertex[StreetEdge]] = withSQL {
     select
