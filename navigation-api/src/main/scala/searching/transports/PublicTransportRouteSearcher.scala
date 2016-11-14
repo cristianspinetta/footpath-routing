@@ -130,7 +130,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
   def createRoutes(to: Coordinate, candidatePaths: List[ReachableTransport]): List[PartialRoute] = {
     candidatePaths map { candidate ⇒
       val stopTo = candidate.stopsTo.minBy(stop ⇒ stop.coordinate.distanceTo(to))
-      val stopFrom: Stop = candidate.stopsFrom.find(_.sequence < stopTo.sequence).get
+      val stopFrom: Stop = candidate.stopsFrom.find(_.sequence < stopTo.sequence).getOrElse(candidate.stopsFrom.head)
       val pathBuilders = List(TransportPathBuilder(candidate.travelInfoId, stopFrom, stopTo), WalkPathBuilder(stopTo.coordinate, to))
       PartialRoute(candidate.travelInfoId, stopFrom, pathBuilders)
     }

@@ -1,18 +1,19 @@
 package service
 
-import base.{ LazyLoggerSupport, MeterSupport }
+import base.{LazyLoggerSupport, MeterSupport}
 import base.conf.ApiEnvConfig
 import cats.data.Xor
 import mapdomain.graph.Coordinate
-import mapdomain.math.{ GVector, Point, VectorUtils }
-import mapdomain.repository.publictransport.{ PublicTransportCombinationRepository, StopRepository }
-import mapdomain.repository.sidewalk.{ RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository, StreetCrossingEdgeRepository }
-import mapdomain.repository.street.{ StreetInfoRepository, StreetRepositorySupport }
-import mapdomain.sidewalk.{ InMemorySidewalkGraphContainer, Ramp, SidewalkVertex, StreetCrossingEdge }
+import mapdomain.math.{GVector, Point, VectorUtils}
+import mapdomain.publictransport.PublicTransportCombinationPath
+import mapdomain.repository.publictransport.{PublicTransportCombinationPathRepository, PublicTransportCombinationRepository, StopRepository}
+import mapdomain.repository.sidewalk.{RampRepository, SidewalkRepositorySupport, SidewalkVertexRepository, StreetCrossingEdgeRepository}
+import mapdomain.repository.street.{StreetInfoRepository, StreetRepositorySupport}
+import mapdomain.sidewalk.{InMemorySidewalkGraphContainer, Ramp, SidewalkVertex, StreetCrossingEdge}
 import mapdomain.street._
 import mapgenerator.sidewalk.SidewalkModule
-import mapgenerator.source.features.{ RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV }
-import mapgenerator.source.osm.{ OSMModule, OSMReaderByXml }
+import mapgenerator.source.features.{RampLoader, RampLoader2011, RampLoader2014, RampLoaderByCSV}
+import mapgenerator.source.osm.{OSMModule, OSMReaderByXml}
 import mapgenerator.street.StreetGraphModule
 import provider.GraphSupport
 import scalikejdbc.DB
@@ -102,7 +103,7 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
     logger.info(s"Starting to process combinations")
     withTimeLogging({
       updateAsyncCombinationsPath(limit, offset)
-    }, (time: Long) ⇒ logger.info(s"Created and saved ramps in $time ms."))
+    }, (time: Long) ⇒ logger.info(s"Created and saved combinations walkPath in $time ms."))
   }
 
   private def updateAsyncCombinationsPath(limit: Integer, offset: Integer)(implicit ec: ExecutionContext) = {
@@ -113,7 +114,7 @@ trait MapGeneratorService extends LazyLoggerSupport with MeterSupport with ApiEn
 
       val searchPath = WalkRouteSearcher.search(from.coordinate, to.coordinate)
       searchPath.value.foreach {
-        case Xor.Right(p) ⇒ PublicTransportCombinationRepository.save(c.copy(walkPath = Some(JsonUtils.toJson(p))))
+        case Xor.Right(p) ⇒ PublicTransportCombinationPathRepository.create(PublicTransportCombinationPath(c.fromStopId, c.toTravelInfoId, JsonUtils.toJson(p)))
         case _            ⇒ logger.error(s"Could not find combination between ${c.fromStopId} and ${c.toStopId}")
       }
     })

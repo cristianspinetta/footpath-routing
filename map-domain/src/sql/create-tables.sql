@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS `public_transport_combination_path` (
 ALTER TABLE `public_transport_combination_path` ADD CONSTRAINT `fk_ptc_path_ptc` FOREIGN KEY (`fromStopId`, `toTravelInfoId`) REFERENCES `public_transport_combination`(`fromStopId`, `toTravelInfoId`);
 
 /* Drop public_transport_combination columns, only run if public_transport_combination was created before
-ALTER TABLE `public_transport_combination_path` DROP COLUMN `cost`,
+ALTER TABLE `public_transport_combination` DROP COLUMN `cost`,
                                                 DROP COLUMN `walkPath`;
 */
 
@@ -172,5 +172,8 @@ ALTER TABLE `public_transport_combination` CHANGE column `toCoordinate` `toCoord
 
 CREATE SPATIAL INDEX `combination_from_coordinate_spatial_index` ON `public_transport_combination` (`fromCoordinate`);
 CREATE SPATIAL INDEX `combination_to_coordinate_spatial_index` ON `public_transport_combination` (`toCoordinate`);
+
+INSERT INTO `public_transport_combination_path`(fromStopId, toTravelInfoId, walkPath)
+SELECT fromStopId, toTravelInfoId, walkPath from `public_transport_combination`;
 
 COMMIT;

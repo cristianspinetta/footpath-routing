@@ -11,9 +11,7 @@ case class PublicTransportCombination(
   fromTravelInfoId: Long,
   toTravelInfoId: Long,
   distance: Double,
-  walkPath: Option[String] = None,
-  enabled: Boolean,
-  cost: Double)
+  enabled: Boolean)
 
 object PublicTransportCombination extends SQLSyntaxSupport[PublicTransportCombination] {
 
