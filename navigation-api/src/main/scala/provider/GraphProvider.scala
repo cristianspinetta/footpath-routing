@@ -101,8 +101,6 @@ object SidewalkGraphFactory extends LazyLoggerSupport with MeterSupport {
 
   def createInMemory: SidewalkGraphContainer = withTimeLogging({
     logger.info("Getting Sidewalk Graph from Snapshot")
-    val graph = InMemorySidewalkGraphContainer(SidewalkVertexSnapshot.get().toMap)
-    graph.ramps = RampRepository.findAll
-    graph
+    InMemorySidewalkGraphContainer(SidewalkVertexSnapshot.get().toMap)
   }, (time: Long) ⇒ logger.info(s"Loading Sidewalk Graph from Snapshot finished in $time ms."))
 }
