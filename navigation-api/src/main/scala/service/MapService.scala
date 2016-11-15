@@ -42,7 +42,7 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
   }
 
   def reportableElements(northEast: Coordinate, southWest: Coordinate): Try[Vector[ReportableElement]] = Try {
-    val ramps = RampRepository.findRampsInRectangle(northEast, southWest)
+    val ramps = RampRepository.findAssociatedRampsInRectangle(northEast, southWest)
     val sidewalks = SidewalkEdgeRepository.findSidewalksInRectangle(northEast, southWest)
     val stops = StopRepository.findStopsInRectangle(northEast, southWest)
     ramps.map(r => ReportableElement(r)).toVector ++ sidewalks.map(s => ReportableElement(s)).toVector ++ stops.map(s => ReportableElement(s)).toVector
