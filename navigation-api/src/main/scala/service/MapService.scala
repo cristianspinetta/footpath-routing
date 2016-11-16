@@ -50,15 +50,15 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
   }
 
   private def groupStops(stops: List[mapdomain.publictransport.Stop]): List[mapdomain.publictransport.Stop] = {
-
+    logger.info(s"Abount to group ${stops.size} stops")
     def groupStopsAcc(unprocessed: List[mapdomain.publictransport.Stop], processed: List[mapdomain.publictransport.Stop]): List[mapdomain.publictransport.Stop] = {
       unprocessed match {
         case h :: Nil => h :: processed
-        case _ => {
-          val stopReference = unprocessed.head
-          val filteredStops = unprocessed.filter(_.coordinate.distanceTo(stopReference.coordinate) > updateStopRadius)
-          groupStopsAcc(filteredStops, stopReference :: processed)
+        case h :: tail => {
+          val filteredStops = unprocessed.filter(_.coordinate.distanceTo(h.coordinate) > updateStopRadius)
+          groupStopsAcc(filteredStops, h :: processed)
         }
+        case _ => processed
       }
     }
 
