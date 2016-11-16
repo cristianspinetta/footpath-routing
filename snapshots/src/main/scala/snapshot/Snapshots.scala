@@ -2,15 +2,15 @@ package snapshot
 
 import java.io.File
 import java.util.Date
-import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.{ Executors, ScheduledExecutorService, TimeUnit }
 
 import base.LazyLoggerSupport
 import snapshot.config.SnapshotEnvConfiguration
-import snapshot.scheduler.{CronExpression, CronThreadPoolExecutor}
+import snapshot.scheduler.{ CronExpression, CronThreadPoolExecutor }
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 trait Snapshots extends SnapshotEnvConfiguration with LazyLoggerSupport {
 
@@ -32,7 +32,7 @@ trait Snapshots extends SnapshotEnvConfiguration with LazyLoggerSupport {
   def initializeAsync(): Future[List[Unit]] = synchronized {
     logger.info(s"Initializing all snapshots with $parallelLoaders parallel loaders. ")
     val parallelReloading = fixedGroup(snapshots, parallelLoaders)
-      .map(snapshotsGroup => Future(snapshotsGroup.foreach(_.initialize(version))))
+      .map(snapshotsGroup ⇒ Future(snapshotsGroup.foreach(_.initialize(version))))
       .toList
     Future.sequence(parallelReloading)
   }
@@ -42,7 +42,7 @@ trait Snapshots extends SnapshotEnvConfiguration with LazyLoggerSupport {
   def reloadParallel(): Future[List[Unit]] = synchronized {
     logger.info(s"Start to reload all snapshots with $parallelLoaders parallel loaders. ")
     val parallelReloading = fixedGroup(snapshots, parallelLoaders)
-      .map(snapshotsGroup => Future(snapshotsGroup.foreach(_.reload(version))))
+      .map(snapshotsGroup ⇒ Future(snapshotsGroup.foreach(_.reload(version))))
       .toList
     Future.sequence(parallelReloading)
   }

@@ -9,7 +9,8 @@ import mapdomain.repository.sidewalk.{RampRepository, SidewalkEdgeRepository}
 import mapdomain.sidewalk._
 import mapdomain.street.StreetEdge
 import model._
-import provider.{ GraphSupport, PublicTransportProviderSupport, RampProviderSupport }
+import provider.{GraphSupport, PublicTransportProviderSupport, RampProviderSupport}
+import scalikejdbc.DB
 
 import scala.language.existentials
 import scala.util.Try
@@ -42,7 +43,7 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
   }
 
   def reportableElements(northEast: Coordinate, southWest: Coordinate): Try[Vector[ReportableElement]] = Try {
-    val ramps = RampRepository.findRampsInRectangle(northEast, southWest)
+    val ramps = RampRepository.findAssociatedRampsInRectangle(northEast, southWest)
     val sidewalks = SidewalkEdgeRepository.findSidewalksInRectangle(northEast, southWest)
     val stops = StopRepository.findStopsInRectangle(northEast, southWest)
     ramps.map(r => ReportableElement(r)).toVector ++ sidewalks.map(s => ReportableElement(s)).toVector ++ stops.map(s => ReportableElement(s)).toVector
@@ -69,6 +70,14 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
       .map(combination => (combination, publicTransportProvider.findStop(combination.fromStopId), publicTransportProvider.findStop(combination.toStopId)))
       .map { case (combination, stopFrom, stopTo) =>
         PTCombination(stopFrom.id, stopFrom.coordinate, stopFrom.travelInfoId.toString, stopTo.id, stopTo.coordinate, stopTo.travelInfoId.toString) }
+  }
+
+  private val updateStopRadius: Double = 0.01 // 10 meters
+
+  def updateStops(stopId: Long, enabled: Boolean) = Try {
+    val stop = StopRepository.find(stopId).get
+    val stops = StopRepository.findByRadiusAndLine(stop.coordinate, Some(updateStopRadius))
+    stops.foreach(s => StopRepository.save(s.copy(isAccessible = enabled)))
   }
 
   protected def getEdgesAndVertices[E <: GeoEdge with BaseEntity, G <: GraphContainer[E, V] forSome { type V <: GeoVertex[E]}](edges: List[E], graph: G) = {

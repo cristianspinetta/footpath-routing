@@ -23,7 +23,7 @@ trait CollectionUtils {
   }
 
   def fixedGroup[A](list: Seq[A], quantity: Int): Seq[Seq[A]] = {
-    list.grouped( (list.size + quantity - 1) / quantity ).toSeq
+    list.grouped((list.size + quantity - 1) / quantity).toSeq
   }
 
 }

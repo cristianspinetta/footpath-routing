@@ -7,8 +7,8 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.{ HttpEntity, HttpResponse, StatusCode }
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.directives.LoggingMagnet
 import akka.http.scaladsl.server._
+import akka.http.scaladsl.server.directives.LoggingMagnet
 import akka.stream.Materializer
 import base.ApiSnapshots
 import base.conf.ApiEnvConfig
@@ -22,7 +22,7 @@ import searching.SearchRoutingErrors._
 import service.{ MapGeneratorServiceSupport, MapServiceSupport, RoutingServiceSupport }
 import spray.json._
 
-import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
+import scala.concurrent.{ ExecutionContextExecutor, Future }
 
 trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGeneratorServiceSupport with RoutingServiceSupport {
   implicit val system: ActorSystem
@@ -30,7 +30,6 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
   implicit val materializer: Materializer
 
   import Protocol._
-  import scala.concurrent.duration._
   val logger: LoggingAdapter
 
   val wsRoutes = CorsDirectives.cors() {
@@ -202,6 +201,14 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                 path("ramp") {
                   val response: Future[ToResponseMarshallable] = Future.successful {
                     mapGeneratorService.associateRamps() map (_ ⇒ "") get
+                  }
+                  complete(response)
+                }
+              } ~
+              path("stops") {
+                parameters('id.as[Long], 'enabled.as[Boolean]).as(UpdateStopRequest) { request: UpdateStopRequest ⇒
+                  val response: Future[ToResponseMarshallable] = Future.successful {
+                    mapService.updateStops(request.id, request.enabled) map (_ ⇒ "") get
                   }
                   complete(response)
                 }

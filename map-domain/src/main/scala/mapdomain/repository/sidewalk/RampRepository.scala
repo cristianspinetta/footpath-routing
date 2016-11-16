@@ -93,10 +93,11 @@ trait RampRepository extends SpatialSQLSupport {
       .and.isNull(sce.id)
   }.map(ramp(r)(_)).list().apply()
 
-  def findRampsInRectangle(northEast: Coordinate, southWest: Coordinate)(implicit session: DBSession = Ramp.autoSession): List[Ramp] = withSQL {
+  def findAssociatedRampsInRectangle(northEast: Coordinate, southWest: Coordinate)(implicit session: DBSession = Ramp.autoSession): List[Ramp] = withSQL {
     select(r.resultAll)
       .append(selectLatitudeAndLongitude(r))
       .from(Ramp as r)
+      .join(StreetCrossingEdge as sce).on(sqls"${sce.rampStartId} = ${r.id} or ${sce.rampEndId} = ${r.id}")
       .where.append(clauseGetElementsInRectangle(northEast, southWest, r, "coordinate"))
   }.map(ramp(r)(_)).list().apply()
 

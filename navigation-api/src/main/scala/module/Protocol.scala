@@ -22,6 +22,7 @@ final case class SidewalkResponse(sidewalks: Iterable[Sidewalk])
 final case class EdgeResponse(edges: Iterable[Edge], vertices: List[Vertex])
 final case class RampResponse(ramps: List[Ramp])
 final case class ReportableElementsResponse(elements: Vector[ReportableElement])
+final case class UpdateStopRequest(id: Long, enabled: Boolean)
 
 final case class PublicTransportCreationRequest(limit: String, offset: String)
 
@@ -45,6 +46,7 @@ trait Protocol extends DefaultJsonProtocol with CaseObjectSerializationSupport w
   implicit val EdgeResponseFormat = jsonFormat2(EdgeResponse.apply)
   implicit val ReportableElementsResponseFormat = jsonFormat1(ReportableElementsResponse.apply)
   implicit val PublicTransportCreationRequestFormat = jsonFormat2(PublicTransportCreationRequest.apply)
+  implicit val UpdateStopRequestFormat = jsonFormat2(UpdateStopRequest.apply)
 
 }
 
