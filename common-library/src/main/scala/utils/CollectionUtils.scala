@@ -1,6 +1,6 @@
 package utils
 
-object CollectionUtils {
+trait CollectionUtils {
 
   //  def turnInRing[E, T <: Traversable[E]](elems: T): T = {
   //    if (elems.size <= 1) elems
@@ -22,4 +22,10 @@ object CollectionUtils {
     }
   }
 
+  def fixedGroup[A](list: Seq[A], quantity: Int): Seq[Seq[A]] = {
+    list.grouped( (list.size + quantity - 1) / quantity ).toSeq
+  }
+
 }
+
+object CollectionUtils extends CollectionUtils

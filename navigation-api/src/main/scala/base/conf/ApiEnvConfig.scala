@@ -47,6 +47,7 @@ case class GraphConfiguration(private val config: Config) {
 
 case class SnapshotsConf(private val config: Config) {
   val loadingAllTimeout = Duration(config.getDuration("loading-all-timeout").getSeconds, TimeUnit.SECONDS)
+  val parallelLoading: Int = config.getInt("parallel-loading")
 }
 
 case class StreetGraphConf(private val config: Config) {

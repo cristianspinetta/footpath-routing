@@ -33,26 +33,6 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
   import scala.concurrent.duration._
   val logger: LoggingAdapter
 
-  def requestMethodAndResponseStatusAsInfo(result: RouteResult): Unit = {
-    def message(status: StatusCode, body: Option[String] = None): String = s"Result: $status${body.map(b ⇒ s" - $b").getOrElse("")}"
-    def truncatedString(string: String): String = {
-      val maxSize = 100
-      if (string.length > maxSize)
-        string.take(maxSize).toString + s"... and [${string.length - maxSize}] more."
-      else
-        super.toString
-    }
-    result match {
-      case RouteResult.Complete(res) ⇒
-        res.entity match {
-          case HttpEntity.Strict(contentType, data) if res.status == OK ⇒ logger.info(message(res.status, Some(truncatedString(data.utf8String))))
-          case HttpEntity.Strict(contentType, data) ⇒ logger.info(message(res.status, Some(data.utf8String)))
-          case _ ⇒ logger.info(message(res.status))
-        }
-      case _ ⇒ // no log entries for rejections
-    }
-  }
-
   val wsRoutes = CorsDirectives.cors() {
     logResult(LoggingMagnet(_ ⇒ requestMethodAndResponseStatusAsInfo)) {
       logRequest("routing-request", akka.event.Logging.InfoLevel) {
@@ -141,7 +121,7 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                 path("all") {
                   entity(as[String]) { _ ⇒
                     val result: Future[ToResponseMarshallable] =
-                      Future(ApiSnapshots.reload().get)
+                      ApiSnapshots.reloadParallel()
                         .map[ToResponseMarshallable](_ ⇒ OK -> "All snapshots reloaded")
                         .recover[ToResponseMarshallable] {
                           case exc: Throwable ⇒
@@ -178,7 +158,7 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                 (path("reload") & post & withRequestTimeout(configuration.Graph.loadingTimeout)) {
                   entity(as[String]) { _ ⇒
                     val result: Future[ToResponseMarshallable] =
-                      Future(ApiSnapshots.reload().get)
+                      ApiSnapshots.reloadParallel()
                         .map(_ ⇒ GraphSupport.reload())
                         .map[ToResponseMarshallable](_ ⇒ OK -> "Snapshots and Graphs reloaded successfully")
                         .recover[ToResponseMarshallable] {
@@ -228,6 +208,26 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
               }
           }
       }
+    }
+  }
+
+  def requestMethodAndResponseStatusAsInfo(result: RouteResult): Unit = {
+    def message(status: StatusCode, body: Option[String] = None): String = s"Result: $status${body.map(b ⇒ s" - $b").getOrElse("")}"
+    def truncatedString(string: String): String = {
+      val maxSize = 100
+      if (string.length > maxSize)
+        string.take(maxSize).toString + s"... and [${string.length - maxSize}] more."
+      else
+        super.toString
+    }
+    result match {
+      case RouteResult.Complete(res) ⇒
+        res.entity match {
+          case HttpEntity.Strict(contentType, data) if res.status == OK ⇒ logger.info(message(res.status, Some(truncatedString(data.utf8String))))
+          case HttpEntity.Strict(contentType, data) ⇒ logger.info(message(res.status, Some(data.utf8String)))
+          case _ ⇒ logger.info(message(res.status))
+        }
+      case _ ⇒ // no log entries for rejections
     }
   }
 

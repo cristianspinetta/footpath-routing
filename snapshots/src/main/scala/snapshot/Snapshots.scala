@@ -2,18 +2,24 @@ package snapshot
 
 import java.io.File
 import java.util.Date
-import java.util.concurrent.{ ScheduledExecutorService, TimeUnit }
+import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
 import base.LazyLoggerSupport
 import snapshot.config.SnapshotEnvConfiguration
-import snapshot.scheduler.{ CronExpression, CronThreadPoolExecutor }
+import snapshot.scheduler.{CronExpression, CronThreadPoolExecutor}
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
-trait Snapshots extends SnapshotEnvConfiguration {
+trait Snapshots extends SnapshotEnvConfiguration with LazyLoggerSupport {
+
+  import utils.CollectionUtils._
+
+  protected def parallelLoaders: Int
 
   implicit val scheduler = CronThreadPoolExecutor(cronThreadPoolExecutorPoolSize)
+  implicit val loader = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(parallelLoaders))
 
   /*It must be overridden by the snapshots in the app*/
   def snapshots: Seq[BaseSnapshot[_, _]] = Seq.empty
@@ -23,7 +29,23 @@ trait Snapshots extends SnapshotEnvConfiguration {
 
   def initialize(): Unit = snapshots.foreach(_.initialize(version))
 
+  def initializeAsync(): Future[List[Unit]] = synchronized {
+    logger.info(s"Initializing all snapshots with $parallelLoaders parallel loaders. ")
+    val parallelReloading = fixedGroup(snapshots, parallelLoaders)
+      .map(snapshotsGroup => Future(snapshotsGroup.foreach(_.initialize(version))))
+      .toList
+    Future.sequence(parallelReloading)
+  }
+
   def reload(): Try[Unit] = Try { snapshots.foreach(_.reload(version)) }
+
+  def reloadParallel(): Future[List[Unit]] = synchronized {
+    logger.info(s"Start to reload all snapshots with $parallelLoaders parallel loaders. ")
+    val parallelReloading = fixedGroup(snapshots, parallelLoaders)
+      .map(snapshotsGroup => Future(snapshotsGroup.foreach(_.reload(version))))
+      .toList
+    Future.sequence(parallelReloading)
+  }
 
   def shutdown(): Unit = scheduler.shutdown()
 }

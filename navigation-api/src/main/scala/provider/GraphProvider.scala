@@ -4,14 +4,11 @@ import java.util.concurrent.atomic.AtomicReference
 
 import base.conf.{ ApiEnvConfig, SidewalkGraphConf, StreetGraphConf }
 import base.{ LazyLoggerSupport, MeterSupport }
-import mapdomain.repository.sidewalk.RampRepository
 import mapdomain.sidewalk._
 import mapdomain.street.InMemoryStreetGraphContainer.{ apply ⇒ _, unapply ⇒ _, withTimeLogging ⇒ _ }
 import mapdomain.street._
 import snapshot.sidewalk.SidewalkVertexSnapshot
 import snapshot.street.StreetVertexSnapshot
-
-import scala.util.{ Failure, Success, Try }
 
 trait GraphSupport extends ApiEnvConfig {
   import GraphSupport._

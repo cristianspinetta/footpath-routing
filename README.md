@@ -84,6 +84,9 @@ snapshots {
   sidewalk-vertex.cron-expression = "0 0 0 1/60 * ? *"
   stop.cron-expression = "0 0 0 1/60 * ? *"
   ramp.cron-expression = "0 0 0 1/60 * ? *"
+  
+  loading-all-timeout = 10m // 10 minutes
+  parallel-loading = 4
 }
 ```
 When the app is started, it searches in the folder specified by `snapshots.files-path` key the snapshot files. 
@@ -95,7 +98,7 @@ As you can notice, it's possible specify the time and the place where the snapsh
 ##### Reload **All Cached Data** from the primary storage:
 
 ```
-curl -i -X POST 'http://localhost:9000/private/map/reload''
+curl -i -X POST 'http://localhost:9000/private/map/reload'
 ```
 
 ##### Reload **All Snapshots** from the primary storage:
