@@ -175,6 +175,17 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                 }
             }
         }
+
+        put {
+          path("stops") {
+            parameters('id.as[Long], 'enabled.as[Boolean]).as(UpdateStopRequest) { request: UpdateStopRequest ⇒
+              val response: Future[ToResponseMarshallable] = Future.successful {
+                mapService.updateStops(request.id, request.enabled) map (_ ⇒ "") get
+              }
+              complete(response)
+            }
+          }
+        }
       }
     }
   }
