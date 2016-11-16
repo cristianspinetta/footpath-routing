@@ -3,7 +3,7 @@ package mapdomain.repository.sidewalk
 import mapdomain.graph.Coordinate
 import mapdomain.repository.BaseRepositoryDBSpec
 import mapdomain.sidewalk._
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers }
 import scalikejdbc.config.DBs
 
 import scala.math._

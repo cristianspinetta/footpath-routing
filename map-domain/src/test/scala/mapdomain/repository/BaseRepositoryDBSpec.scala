@@ -3,8 +3,8 @@ package mapdomain.repository
 import mapdomain.graph.Coordinate
 import mapdomain.publictransport.PublicTransportCombinationPath
 import mapdomain.repository.publictransport._
-import mapdomain.repository.sidewalk.{RampRepository, SidewalkEdgeRepository, SidewalkVertexRepository, StreetCrossingEdgeRepository}
-import mapdomain.repository.street.{StreetEdgeRepository, StreetInfoRepository, StreetVertexRepository}
+import mapdomain.repository.sidewalk.{ RampRepository, SidewalkEdgeRepository, SidewalkVertexRepository, StreetCrossingEdgeRepository }
+import mapdomain.repository.street.{ StreetEdgeRepository, StreetInfoRepository, StreetVertexRepository }
 import org.scalatest.Matchers
 
 trait BaseRepositoryDBSpec { self: Matchers ⇒

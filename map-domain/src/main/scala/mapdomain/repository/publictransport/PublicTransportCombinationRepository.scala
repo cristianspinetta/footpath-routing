@@ -101,8 +101,7 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
           PublicTransportCombination.column.toCoordinate -> positionToSQL(ptc.toCoordinate),
           PublicTransportCombination.column.fromTravelInfoId -> ptc.fromTravelInfoId,
           PublicTransportCombination.column.distance -> ptc.distance,
-          PublicTransportCombination.column.enabled -> ptc.enabled
-        )
+          PublicTransportCombination.column.enabled -> ptc.enabled)
         .where
         .eq(PublicTransportCombination.column.fromStopId, ptc.fromStopId)
         .and
@@ -122,8 +121,7 @@ trait PublicTransportCombinationRepository extends SpatialSQLSupport {
         PublicTransportCombination.column.fromTravelInfoId -> ptc.fromTravelInfoId,
         PublicTransportCombination.column.toTravelInfoId -> ptc.toTravelInfoId,
         PublicTransportCombination.column.distance -> ptc.distance,
-        PublicTransportCombination.column.enabled -> ptc.enabled
-      )
+        PublicTransportCombination.column.enabled -> ptc.enabled)
     }.update().apply()
 
     ptc
