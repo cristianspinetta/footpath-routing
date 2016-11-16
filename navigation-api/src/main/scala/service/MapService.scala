@@ -45,8 +45,27 @@ trait MapService extends GraphSupport with LazyLoggerSupport with ApiEnvConfig w
   def reportableElements(northEast: Coordinate, southWest: Coordinate): Try[Vector[ReportableElement]] = Try {
     val ramps = RampRepository.findAssociatedRampsInRectangle(northEast, southWest)
     val sidewalks = SidewalkEdgeRepository.findSidewalksInRectangle(northEast, southWest)
-    val stops = StopRepository.findStopsInRectangle(northEast, southWest)
+    val stops = groupStops(StopRepository.findStopsInRectangle(northEast, southWest))
     ramps.map(r => ReportableElement(r)).toVector ++ sidewalks.map(s => ReportableElement(s)).toVector ++ stops.map(s => ReportableElement(s)).toVector
+  }
+
+  private def groupStops(stops: List[mapdomain.publictransport.Stop]): List[mapdomain.publictransport.Stop] = {
+
+    def groupStopsAcc(unprocessed: List[mapdomain.publictransport.Stop], processed: List[mapdomain.publictransport.Stop]): List[mapdomain.publictransport.Stop] = {
+      unprocessed match {
+        case h :: Nil => h :: processed
+        case _ => {
+          val stopReference = unprocessed.head
+          val filteredStops = unprocessed.filter(_.coordinate.distanceTo(stopReference.coordinate) > updateStopRadius)
+          groupStopsAcc(filteredStops, stopReference :: processed)
+        }
+      }
+    }
+
+    stops match {
+      case h :: tail => groupStopsAcc(stops, List())
+      case _ => stops
+    }
   }
 
   def publicTransportPaths(coordinate: Coordinate, radiusOpt: Option[Double], lineOpt: Option[String]): Try[List[PublicTransportPath]] = Try {
