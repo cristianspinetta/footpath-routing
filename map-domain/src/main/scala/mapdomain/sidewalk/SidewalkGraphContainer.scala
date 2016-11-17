@@ -1,11 +1,10 @@
 package mapdomain.sidewalk
 
-import base.{ LazyLoggerSupport, MeterSupport }
+import base.{LazyLoggerSupport, MeterSupport}
 import mapdomain.graph._
-import mapdomain.repository.sidewalk.{ SidewalkRepositorySupport, SidewalkVertexRepository }
+import mapdomain.repository.sidewalk.{SidewalkRepositorySupport, SidewalkVertexRepository}
 import mapdomain.utils.GraphUtils
 
-import scala.collection.Map
 import scala.collection.concurrent.TrieMap
 
 trait SidewalkGraphContainer extends GeoGraphContainer[PedestrianEdge, SidewalkVertex] {
@@ -49,9 +48,7 @@ case class LazySidewalkGraphContainer() extends SidewalkGraphContainer with Side
 
 case class InMemorySidewalkGraphContainer(vertexById: Map[Long, SidewalkVertex]) extends SidewalkGraphContainer with InMemoryGraphContainer[PedestrianEdge, SidewalkVertex] with LazyLoggerSupport with MeterSupport {
 
-  val  vertices: List[SidewalkVertex] = vertexById.values.toList
-
-  var ramps: List[Ramp] = List()
+  val vertices: List[SidewalkVertex] = vertexById.values.toList
 
   protected val totalVertices: Long = vertices.size
 
@@ -94,11 +91,6 @@ case class InMemorySidewalkGraphContainer(vertexById: Map[Long, SidewalkVertex])
     neighbourIds.flatMap(id ⇒ findVertex(id) toList)
   }
 
-  private def findRamp(id: Option[Long]): Option[Ramp] = id match {
-    case Some(i) => ramps.find(r => r.id.get == i)
-    case None => None
-  }
-
   override def findNearest(coordinate: Coordinate): Option[SidewalkVertex] = GeoGraphContainer.findNearest[PedestrianEdge, SidewalkVertex](vertices, coordinate)
 
   /**
@@ -115,9 +107,7 @@ case class InMemorySidewalkGraphContainer(vertexById: Map[Long, SidewalkVertex])
    */
   def purgeSidewalks: InMemorySidewalkGraphContainer = withTimeLogging({
     logger.info(s"Purge the sidewalk graph in order to get a connected graph")
-    val container = GraphUtils.getConnectedComponent[PedestrianEdge, SidewalkVertex, InMemorySidewalkGraphContainer](this, InMemorySidewalkGraphContainer.apply)
-    container.ramps = ramps
-    container
+    GraphUtils.getConnectedComponent[PedestrianEdge, SidewalkVertex, InMemorySidewalkGraphContainer](this, InMemorySidewalkGraphContainer.apply)
   }, (time: Long) => logger.info(s"Sidewalk graph was purged in $time ms."))
 }
 

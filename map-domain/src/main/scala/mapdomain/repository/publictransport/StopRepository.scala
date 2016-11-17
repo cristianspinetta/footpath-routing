@@ -54,7 +54,7 @@ trait StopRepository extends SpatialSQLSupport with LazyLoggerSupport with Meter
         .append(selectLatitudeAndLongitude(s))
         .from(Stop as s)
     }.map(stop(s)).list().apply(),
-    (time: Long) ⇒ logger.info(s"Getting of all Stops finished in $time ms."))
+    (time: Long) ⇒ logger.info(s"Populate Stops from DB took $time ms."))
 
   def findByTravelInfoId(travelInfoId: Long)(implicit session: DBSession = Stop.autoSession): List[Stop] = {
     withSQL {

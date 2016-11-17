@@ -18,7 +18,7 @@
         <appender-ref ref="asyncConsole" />
     </root>
 
-    <logger name="scalikejdbc" level="debug" />
+    <!--<logger name="scalikejdbc" level="debug" />-->
     <logger name="searching" level="debug" />
     <!--<logger name="pathgenerator.core" level="debug" />-->
 

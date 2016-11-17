@@ -33,10 +33,9 @@ object WebServer extends App with RoutingModule with ApiEnvConfig {
 
   def init() = Future {
     logger.info("Application starting...")
-    val graphFut = Future {
-      ApiSnapshots.initialize()
-      GraphSupport.getGraphSet
-    } // Load graph
+    val graphFut = ApiSnapshots
+      .initializeAsync()
+      .map(_ ⇒ GraphSupport.getGraphSet) // Load graph
     Await.result(graphFut, configuration.Graph.loadingTimeout)
     logger.info("Application started successfully...")
   }

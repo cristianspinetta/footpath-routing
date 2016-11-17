@@ -60,7 +60,7 @@ trait SidewalkVertexRepository extends SpatialSQLSupport with MeterSupport with 
         .append(selectLatitudeAndLongitude(s))
         .from(SidewalkVertex as s)
     }.map(sidewalkVertex(s)).list().apply(),
-    (time: Long) ⇒ logger.info(s"Getting of all Sidewalk Vertex finished in $time ms."))
+    (time: Long) ⇒ logger.info(s"Populate Sidewalk Vertex from DB took $time ms."))
 
   def findAllWithoutOf(ids: List[Long])(implicit session: DBSession = SidewalkVertex.autoSession): List[SidewalkVertex] = withSQL {
     select

@@ -18,6 +18,7 @@ object ApiEnvConfig extends EnvConfig with LazyLoggerSupport {
   val HTTP = HTTPConfiguration(envConfiguration.config.getConfig("http"))
   val Graph = GraphConfiguration(envConfiguration.config.getConfig("graph"))
   val Routing = RoutingConfiguration(envConfiguration.config.getConfig("routing"))
+  val Snapshots = SnapshotsConf(envConfiguration.config.getConfig("snapshots"))
 
   logger.info(s"Configuration for env ${envConfiguration.currentEnvironment} loads OK")
 
@@ -39,10 +40,14 @@ case class HTTPConfiguration(config: Config) {
 }
 
 case class GraphConfiguration(private val config: Config) {
-  val javaDuration = config.getDuration("loading-timeout")
-  val loadingTimeout = Duration(javaDuration.getSeconds, TimeUnit.SECONDS)
+  val loadingTimeout = Duration(config.getDuration("loading-timeout").getSeconds, TimeUnit.SECONDS)
   val street = StreetGraphConf(config.getConfig("street"))
   val sidewalk = SidewalkGraphConf(config.getConfig("sidewalk"))
+}
+
+case class SnapshotsConf(private val config: Config) {
+  val loadingAllTimeout = Duration(config.getDuration("loading-all-timeout").getSeconds, TimeUnit.SECONDS)
+  val parallelLoading: Int = config.getInt("parallel-loading")
 }
 
 case class StreetGraphConf(private val config: Config) {
