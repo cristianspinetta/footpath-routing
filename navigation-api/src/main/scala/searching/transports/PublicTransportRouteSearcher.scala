@@ -67,7 +67,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
               Xor.Right(partialRoutes)
             case (paths, foundPaths) ⇒
 
-              val directPartialRoutes = createRoutes(to, candidatePaths)
+              val directPartialRoutes = createRoutes(to, candidatePaths).sortBy(_.cost)
 
               val allFromCombinations = publicTransportProvider.getCombinationsByMultipleTravelInfoIds(candidatesFrom.map(_.travelInfoId), excludedRadius = List((from, walkRadius), (to, walkRadius)))
               val combinationContext = crateCombinationContext(candidatesFrom, allFromCombinations)

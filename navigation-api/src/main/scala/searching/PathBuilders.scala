@@ -39,7 +39,10 @@ private[searching] object PathBuilders {
       }
     }
 
-    lazy val cost: Double = (stopTo.sequence - stopFrom.sequence) * costs.stop + costs.combination + ((if (stopFrom.isAccessible) 1 else 0) + (if (stopTo.isAccessible) 1 else 0) * costs.inaccessibleStop) + (if (travelInfo.`type` != "SUBWAY") 1 else 0) * costs.bus
+    private lazy val accessibilityStopCost: Int = ((if (stopFrom.isAccessible) 0 else 1) + (if (stopTo.isAccessible) 0 else 1)) * costs.inaccessibleStop
+    private lazy val busCost: Int = (if (travelInfo.`type` != "SUBWAY") 1 else 0) * costs.bus
+
+    lazy val cost: Double = (stopTo.sequence - stopFrom.sequence) * costs.stop + costs.combination + accessibilityStopCost + busCost
 
     private lazy val extractIncidents: List[PedestrianIncident] = {
       List(stopFrom, stopTo)
