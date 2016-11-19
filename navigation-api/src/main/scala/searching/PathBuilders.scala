@@ -23,11 +23,11 @@ private[searching] object PathBuilders {
   case class TransportPathBuilder(travelInfoId: Long, stopFrom: Stop, stopTo: Stop) extends PathBuilder with ApiEnvConfig with LazyLoggerSupport with PublicTransportProviderSupport {
 
     private val costs = configuration.Routing.heuristicCost
+    private lazy val travelInfo = publicTransportProvider.findTravelInfo(stopFrom.travelInfoId)
 
     def build(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
       Future[Xor[SearchRoutingError, Path]] {
         val coordinates = publicTransportProvider.getPathBetweenStops(stopFrom, stopTo)
-        val travelInfo = publicTransportProvider.findTravelInfo(stopFrom.travelInfoId)
         val transportDescription = s"${travelInfo.`type`} - Line ${travelInfo.name} - Branch ${travelInfo.branch} - ${travelInfo.sentido}"
         // FIXME add more info on PathDescription
         Xor.Right(Path(coordinates, PathDescription(BusPath, s"$transportDescription - From", s"$transportDescription - To"),
@@ -39,7 +39,7 @@ private[searching] object PathBuilders {
       }
     }
 
-    lazy val cost: Double = (stopTo.sequence - stopFrom.sequence) * costs.stop + costs.combination + ((if (stopFrom.isAccessible) 1 else 0) + (if (stopTo.isAccessible) 1 else 0) * costs.inaccessibleStop)
+    lazy val cost: Double = (stopTo.sequence - stopFrom.sequence) * costs.stop + costs.combination + ((if (stopFrom.isAccessible) 1 else 0) + (if (stopTo.isAccessible) 1 else 0) * costs.inaccessibleStop) + (if (travelInfo.`type` != "SUBWAY") 1 else 0) * costs.bus
 
     private lazy val extractIncidents: List[PedestrianIncident] = {
       List(stopFrom, stopTo)
