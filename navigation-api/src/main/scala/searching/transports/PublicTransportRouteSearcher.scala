@@ -63,7 +63,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
           (candidatePaths, candidatePaths.size) match {
             case (paths, foundPaths) if foundPaths >= requiredPaths ⇒
-              val partialRoutes = createRoutes(to, candidatePaths).take(requiredPaths)
+              val partialRoutes = createRoutes(to, candidatePaths).sortBy(_.cost).take(requiredPaths)
               Xor.Right(partialRoutes)
             case (paths, foundPaths) ⇒
 

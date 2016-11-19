@@ -69,5 +69,6 @@ case class RoutingConfiguration(private val config: Config) {
     val stop = config.getInt("stop")
     val combination = config.getInt("combination")
     val distanceByKm = config.getInt("distance-by-km")
+    val bus = config.getInt("bus")
   }
 }
