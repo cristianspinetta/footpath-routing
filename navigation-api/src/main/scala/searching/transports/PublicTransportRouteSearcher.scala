@@ -67,7 +67,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
               Xor.Right(partialRoutes)
             case (paths, foundPaths) ⇒
 
-              val directPartialRoutes = createRoutes(to, candidatePaths)
+              val directPartialRoutes = createRoutes(to, candidatePaths).sortBy(_.cost)
 
               val allFromCombinations = publicTransportProvider.getCombinationsByMultipleTravelInfoIds(candidatesFrom.map(_.travelInfoId), excludedRadius = List((from, walkRadius), (to, walkRadius)))
               val combinationContext = crateCombinationContext(candidatesFrom, allFromCombinations)
@@ -114,7 +114,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
     }, (timing: Long) ⇒ logger.info(s"Searching a route with ${attempt - 1} transport combinations took $timing ms."))
 
     val partialRoutes: Xor[SearchRoutingError, List[PartialRoute]] =
-      searchTransportRoute(candidatePTs.from, candidatePTs.to, attempt = 1, requiredPaths = 10)
+      searchTransportRoute(candidatePTs.from, candidatePTs.to, attempt = 1, requiredPaths = 5)
         .map(routes ⇒ routes.sortBy(_.cost))
 
     XorT(Future.successful(partialRoutes)).flatMap { partials ⇒

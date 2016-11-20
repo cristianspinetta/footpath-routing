@@ -114,6 +114,14 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
               complete(response)
             }
           } ~
+          path("stops") {
+            parameters('id.as[Long], 'enabled.as[Boolean]).as(UpdateStopRequest) { request: UpdateStopRequest ⇒
+              val response: Future[ToResponseMarshallable] = Future.successful {
+                mapService.updateStops(request.id, request.enabled) map (_ ⇒ "") get
+              }
+              complete(response)
+            }
+          } ~
           pathPrefix("private") {
             pathPrefix("snapshot") {
               (pathPrefix("reload") & post & withRequestTimeout(configuration.Snapshots.loadingAllTimeout)) {
@@ -201,14 +209,6 @@ trait RoutingModule extends ApiEnvConfig with MapServiceSupport with MapGenerato
                 path("ramp") {
                   val response: Future[ToResponseMarshallable] = Future.successful {
                     mapGeneratorService.associateRamps() map (_ ⇒ "") get
-                  }
-                  complete(response)
-                }
-              } ~
-              path("stops") {
-                parameters('id.as[Long], 'enabled.as[Boolean]).as(UpdateStopRequest) { request: UpdateStopRequest ⇒
-                  val response: Future[ToResponseMarshallable] = Future.successful {
-                    mapService.updateStops(request.id, request.enabled) map (_ ⇒ "") get
                   }
                   complete(response)
                 }
