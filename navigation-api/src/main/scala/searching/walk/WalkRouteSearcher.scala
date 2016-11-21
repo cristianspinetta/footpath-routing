@@ -2,19 +2,20 @@ package searching.walk
 
 import base.LazyLoggerSupport
 import base.conf.ApiEnvConfig
-import cats.data.{ Xor, XorT }
+import cats.data.{Xor, XorT}
 import mapdomain.graph._
 import mapdomain.sidewalk._
 import mapdomain.utils.GraphUtils
 import model._
 import pathgenerator.core.AStar
-import pathgenerator.graph.{ GeoGCost, GeoHeuristic }
-import provider.{ GraphSupport, StreetEdgeSupport, StreetInfoSupport }
+import pathgenerator.graph.{GeoGCost, GeoHeuristic}
+import provider.{GraphSupport, StreetEdgeSupport, StreetInfoSupport}
 import searching.SearchRoutingErrors._
-import searching.{ PedestrianIncident, RampIncidentType, SidewalkIncidentType }
+import searching.{PedestrianIncident, RampIncidentType, SidewalkIncidentType}
 
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Try }
+import scala.collection.immutable.Map
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Try}
 
 trait WalkRouteSearcherSupport {
   protected val walkRouteSearcher = WalkRouteSearcher
@@ -66,9 +67,8 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
 
     vertices match {
       case firstVertex :: secondVertex :: xs ⇒
-        val from = getAddress(firstVertex, secondVertex) // FIXME calculate altitude
-        val beforeLast :: last :: _ = vertices.takeRight(2)
-        val to = getAddress(beforeLast, last)
+        val from = getIntersection(firstVertex)
+        val to = getIntersection(vertices.last)
         Path(path, PathDescription(WalkPath, from, to), incidents)
       case _ ⇒
         Path(path, PathDescription(WalkPath, "-", "-"), incidents)
@@ -88,6 +88,28 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
           position = Some(graphs.sidewalk.findVertex(vertexId).get.coordinate))))
       aggregateIncident(rampStartIdOpt, vertexStartId) ::: aggregateIncident(rampEndIdOpt, vertexEndId)
     case _ ⇒ List.empty
+  }
+
+  private def getIntersection(vertex: SidewalkVertex): String = {
+    vertex.sidewalkEdges.map(_.streetEdgeBelongToId).filter(_.isDefined).distinct match {
+      case Nil => "-"
+      case Some(x) :: Some(y) :: tail => {
+        val builder = StringBuilder.newBuilder
+
+        val firstAddress = streetInfoProvider.findByStreetEdgeId(x).address
+        if(firstAddress.isDefined)
+          builder.append(firstAddress.get)
+
+        val secondAddress = streetInfoProvider.findByStreetEdgeId(y).address
+        if(firstAddress.isDefined && secondAddress.isDefined)
+          builder.append(" y ")
+        if(secondAddress.isDefined)
+          builder.append(secondAddress.get)
+
+        builder.toString()
+      }
+      case Some(x) :: _ => streetInfoProvider.findByStreetEdgeId(x).address.getOrElse("-")
+    }
   }
 
   private def getAddress(vertexFrom: SidewalkVertex, vertexTo: SidewalkVertex): String = {
