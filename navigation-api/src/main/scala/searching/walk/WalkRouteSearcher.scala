@@ -29,9 +29,9 @@ object WalkRouteSearcher extends WalkRouteSearcher {
 
 sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with ApiEnvConfig with StreetEdgeSupport with StreetInfoSupport {
 
-  def search(coordinateFrom: Coordinate, coordinateTo: Coordinate, heuristicType: HeuristicType = AccessibilityHeuristicType)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
+  def search(coordinateFrom: Coordinate, coordinateTo: Coordinate, heuristicType: HeuristicType = AccessibilityHeuristicType, addStartLine: Boolean = false, addEndLine: Boolean = false)(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
     Future(searchPathOnGraph(graphs.sidewalk, coordinateFrom, coordinateTo, heuristicType).get)
-      .map(edges ⇒ Xor.Right(createWalkPath(edges))) recover {
+      .map(edges ⇒ Xor.Right(createWalkPath(edges, coordinateFrom, coordinateTo, addStartLine, addEndLine))) recover {
         case exc: Throwable ⇒
           logger.error(s"Failed trying to find a path between $coordinateFrom and $coordinateTo walking.", exc)
           Xor.Left(NoPath)
@@ -55,7 +55,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
     }
   }
 
-  protected def createWalkPath(edges: List[EdgeReference[PedestrianEdge, SidewalkVertex]]): Path = {
+  protected def createWalkPath(edges: List[EdgeReference[PedestrianEdge, SidewalkVertex]], from: Coordinate, to: Coordinate, addStartLine: Boolean, addEndLine: Boolean): Path = {
     val incidents: List[PedestrianIncident] = extractIncidents(edges.map(_.edge))
 
     val vertices: List[SidewalkVertex] = GraphUtils.edgeReferencesToIds(edges) map (vertexId ⇒ graphs.sidewalk.findVertex(vertexId) match {
@@ -63,7 +63,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
       case None         ⇒ throw new RuntimeException(s"Vertex not found $vertexId while trying to create the path from the edge list.")
     })
 
-    val path: List[PathCoordinate] = getCoordinates(vertices)
+    val path: List[PathCoordinate] = withStopLine(getCoordinates(vertices, to, addEndLine), addStartLine, from)
 
     vertices match {
       case firstVertex :: secondVertex :: xs ⇒
@@ -75,23 +75,25 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
     }
   }
 
-  private def getCoordinates(vertices: List[SidewalkVertex]): List[PathCoordinate] = vertices match {
+  private def getCoordinates(vertices: List[SidewalkVertex], to: Coordinate, addEndLine: Boolean): List[PathCoordinate] = vertices match {
     case Nil            ⇒ List()
-    case x :: Nil       ⇒ List(PathCoordinate(x.coordinate))
-    case x :: y :: tail ⇒ PathCoordinate(x.coordinate, getAddress(x, y)) :: getCoordinates(y :: tail)
+    case x :: Nil       ⇒ if(addEndLine) List(PathCoordinate(x.coordinate), PathCoordinate(to)) else List(PathCoordinate(x.coordinate))
+    case x :: y :: tail ⇒ PathCoordinate(x.coordinate, getAddress(x, y)) :: getCoordinates(y :: tail, to, addEndLine)
   }
 
-  private def getCoordinatesTailRec(vertices: List[SidewalkVertex]): List[PathCoordinate] = {
+  private def getCoordinatesTailRec(vertices: List[SidewalkVertex], addEndLine: Boolean, to: Coordinate): List[PathCoordinate] = {
     @tailrec
     def getCoordinatesAcc(vertices: List[SidewalkVertex], result: List[PathCoordinate]): List[PathCoordinate] =
       vertices match {
         case Nil            ⇒ result
-        case x :: Nil       ⇒ getCoordinatesAcc(Nil, PathCoordinate(x.coordinate) :: result)
+        case x :: Nil       ⇒ withStopLine(PathCoordinate(x.coordinate) :: result, addEndLine, to)
         case x :: y :: tail ⇒ getCoordinatesAcc(y :: tail, PathCoordinate(x.coordinate, getAddress(x, y)) :: result)
       }
 
     getCoordinatesAcc(vertices, List()).reverse
   }
+
+  private def withStopLine(coordinates: List[PathCoordinate], introduceLine: Boolean, coordinate: Coordinate): List[PathCoordinate] = if(introduceLine) PathCoordinate(coordinate) :: coordinates else coordinates
 
   private def getCoordinatesZipped(vertices: List[SidewalkVertex]) = {
     val coord = new ListBuffer[PathCoordinate]
@@ -117,16 +119,16 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
   }
 
   private def getIntersection(vertex: SidewalkVertex): String = {
-    vertex.sidewalkEdges.map(_.streetEdgeBelongToId).filter(_.isDefined).distinct match {
+    vertex.sidewalkEdges.map(se => streetEdgeProvider.findById(se.streetEdgeBelongToId.get).streetInfoId).distinct match {
       case Nil ⇒ "-"
-      case Some(x) :: Some(y) :: tail ⇒ {
+      case x :: y :: tail ⇒ {
         val builder = StringBuilder.newBuilder
 
-        val firstAddress = streetInfoProvider.findByStreetEdgeId(x).address
+        val firstAddress = streetInfoProvider.findById(x).address
         if (firstAddress.isDefined)
           builder.append(firstAddress.get)
 
-        val secondAddress = streetInfoProvider.findByStreetEdgeId(y).address
+        val secondAddress = streetInfoProvider.findById(y).address
         if (firstAddress.isDefined && secondAddress.isDefined)
           builder.append(" y ")
         if (secondAddress.isDefined)
@@ -134,7 +136,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
 
         builder.toString()
       }
-      case Some(x) :: _ ⇒ streetInfoProvider.findByStreetEdgeId(x).address.getOrElse("-")
+      case x :: _ ⇒ streetInfoProvider.findById(x).address.getOrElse("-")
     }
   }
 

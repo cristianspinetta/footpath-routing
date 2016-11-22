@@ -52,10 +52,10 @@ private[searching] object PathBuilders {
     }
   }
 
-  case class WalkPathBuilder(from: Coordinate, to: Coordinate) extends PathBuilder with ApiEnvConfig with WalkRouteSearcherSupport {
+  case class WalkPathBuilder(from: Coordinate, to: Coordinate, addStartLine: Boolean = false, addEndLine: Boolean = false) extends PathBuilder with ApiEnvConfig with WalkRouteSearcherSupport {
     private val costs = configuration.Routing.heuristicCost
     def build(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = {
-      this.walkRouteSearcher.search(from, to)
+      this.walkRouteSearcher.search(coordinateFrom = from, coordinateTo = to, addStartLine = addStartLine, addEndLine = addEndLine)
     }
 
     lazy val cost: Double = from.distanceTo(to) * costs.distanceByKm
@@ -75,7 +75,7 @@ private[searching] object PathBuilders {
       } recoverWith {
         case exc: Throwable ⇒
           logger.error(s"An error occur trying to build the path for combination. [transportFromStopToId = $transportFromStopToId, toTravelInfoId = $toTravelInfoId]", exc)
-          WalkPathBuilder(transportFromStopTo.coordinate, transportToStopFrom.coordinate)
+          WalkPathBuilder(transportFromStopTo.coordinate, transportToStopFrom.coordinate, addStartLine = true, addEndLine = true)
             .build
             .value
       }

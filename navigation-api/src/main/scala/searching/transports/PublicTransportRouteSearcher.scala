@@ -119,7 +119,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
 
     XorT(Future.successful(partialRoutes)).flatMap { partials ⇒
       partials.traverseU { partial ⇒
-        val firstPath = WalkPathBuilder(from, partial.stopFrom.coordinate)
+        val firstPath = WalkPathBuilder(from = from, to = partial.stopFrom.coordinate, addEndLine = true)
         (firstPath :: partial.pathBuilders)
           .traverseU(routeBuilder ⇒ routeBuilder.build)
           .map(paths ⇒ Route(paths))
@@ -131,7 +131,7 @@ sealed trait PublicTransportRouteSearcher extends WalkRouteSearcherSupport
     candidatePaths map { candidate ⇒
       val stopTo = candidate.stopsTo.minBy(stop ⇒ stop.coordinate.distanceTo(to))
       val stopFrom: Stop = candidate.stopsFrom.find(_.sequence < stopTo.sequence).getOrElse(candidate.stopsFrom.head)
-      val pathBuilders = List(TransportPathBuilder(candidate.travelInfoId, stopFrom, stopTo), WalkPathBuilder(stopTo.coordinate, to))
+      val pathBuilders = List(TransportPathBuilder(candidate.travelInfoId, stopFrom, stopTo), WalkPathBuilder(from = stopTo.coordinate, to = to, addStartLine = true))
       PartialRoute(candidate.travelInfoId, stopFrom, pathBuilders)
     }
   }
