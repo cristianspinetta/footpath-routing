@@ -63,7 +63,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
       case None         ⇒ throw new RuntimeException(s"Vertex not found $vertexId while trying to create the path from the edge list.")
     })
 
-    val path: List[PathCoordinate] = withStopLine(getCoordinates(vertices, to, addEndLine), addStartLine, from)
+    val path: List[PathCoordinate] = withStopLine(getCoordinatesTailRec(vertices, addEndLine, to), addStartLine, from)
 
     vertices match {
       case firstVertex :: secondVertex :: xs ⇒
@@ -77,7 +77,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
 
   private def getCoordinates(vertices: List[SidewalkVertex], to: Coordinate, addEndLine: Boolean): List[PathCoordinate] = vertices match {
     case Nil            ⇒ List()
-    case x :: Nil       ⇒ if(addEndLine) List(PathCoordinate(x.coordinate), PathCoordinate(to)) else List(PathCoordinate(x.coordinate))
+    case x :: Nil       ⇒ if (addEndLine) List(PathCoordinate(x.coordinate), PathCoordinate(to)) else List(PathCoordinate(x.coordinate))
     case x :: y :: tail ⇒ PathCoordinate(x.coordinate, getAddress(x, y)) :: getCoordinates(y :: tail, to, addEndLine)
   }
 
@@ -93,7 +93,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
     getCoordinatesAcc(vertices, List()).reverse
   }
 
-  private def withStopLine(coordinates: List[PathCoordinate], introduceLine: Boolean, coordinate: Coordinate): List[PathCoordinate] = if(introduceLine) PathCoordinate(coordinate) :: coordinates else coordinates
+  private def withStopLine(coordinates: List[PathCoordinate], introduceLine: Boolean, coordinate: Coordinate): List[PathCoordinate] = if (introduceLine) PathCoordinate(coordinate) :: coordinates else coordinates
 
   private def getCoordinatesZipped(vertices: List[SidewalkVertex]) = {
     val coord = new ListBuffer[PathCoordinate]
@@ -119,7 +119,7 @@ sealed trait WalkRouteSearcher extends GraphSupport with LazyLoggerSupport with 
   }
 
   private def getIntersection(vertex: SidewalkVertex): String = {
-    vertex.sidewalkEdges.map(se => streetEdgeProvider.findById(se.streetEdgeBelongToId.get).streetInfoId).distinct match {
+    vertex.sidewalkEdges.map(se ⇒ streetEdgeProvider.findById(se.streetEdgeBelongToId.get).streetInfoId).distinct match {
       case Nil ⇒ "-"
       case x :: y :: tail ⇒ {
         val builder = StringBuilder.newBuilder
