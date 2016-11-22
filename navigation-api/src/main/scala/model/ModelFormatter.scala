@@ -4,7 +4,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshaller
 import base.CaseObjectSerializationSupport
 import mapdomain.graph.Coordinate
 import mapdomain.sidewalk.Ramp
-import spray.json.{ DefaultJsonProtocol, DeserializationException, JsNumber, JsObject, JsValue, RootJsonFormat }
+import spray.json.{ DefaultJsonProtocol, DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat }
 
 trait ModelFormatter extends DefaultJsonProtocol with CaseObjectSerializationSupport {
 
@@ -19,6 +19,28 @@ trait ModelFormatter extends DefaultJsonProtocol with CaseObjectSerializationSup
       case _ ⇒ throw DeserializationException("Coordinate expected")
     }
   }
+
+  implicit object PathCoordinateFormat extends RootJsonFormat[PathCoordinate] {
+    def write(pc: PathCoordinate) =
+      if (pc.street.isDefined)
+        JsObject(
+          "lat" -> JsNumber(pc.coordinate.latitude),
+          "lng" -> JsNumber(pc.coordinate.longitude),
+          "street" -> JsString(pc.street.get))
+      else
+        JsObject(
+          "lat" -> JsNumber(pc.coordinate.latitude),
+          "lng" -> JsNumber(pc.coordinate.longitude))
+
+    def read(value: JsValue) = value.asJsObject.getFields("lat", "lng", "street") match {
+      case Seq(JsNumber(latitude), JsNumber(longitude), JsString(street)) ⇒
+        PathCoordinate(Coordinate(latitude.toDouble, longitude.toDouble), Some(street))
+      case Seq(JsNumber(latitude), JsNumber(longitude)) ⇒
+        PathCoordinate(Coordinate(latitude.toDouble, longitude.toDouble))
+      case _ ⇒ throw DeserializationException("PathCoordinate expected")
+    }
+  }
+
   implicit val EdgeTypeFormat = caseObjectJsonFormat[EdgeType](StreetEdgeType, SidewalkEdgeType, StreetCrossingEdgeType)
   implicit val VertexTypeFormat = caseObjectJsonFormat[VertexType](StreetVertexType, SidewalkVertexType)
   implicit val ReportableElementTypeFormat = caseObjectJsonFormat[ReportableElementType](RAMP, SIDEWALK)

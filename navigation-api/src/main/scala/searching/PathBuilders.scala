@@ -5,7 +5,7 @@ import base.conf.ApiEnvConfig
 import cats.data.{ Xor, XorT }
 import mapdomain.graph.Coordinate
 import mapdomain.publictransport.Stop
-import model.{ BusPath, Path, PathDescription }
+import model.{ BusPath, Path, PathCoordinate, PathDescription }
 import provider.PublicTransportProviderSupport
 import searching.SearchRoutingErrors.{ NoPathBetweenStops, SearchRoutingError }
 import searching.walk.WalkRouteSearcherSupport
@@ -27,7 +27,7 @@ private[searching] object PathBuilders {
 
     def build(implicit ec: ExecutionContext): XorT[Future, SearchRoutingError, Path] = XorT {
       Future[Xor[SearchRoutingError, Path]] {
-        val coordinates = publicTransportProvider.getPathBetweenStops(stopFrom, stopTo)
+        val coordinates = publicTransportProvider.getPathBetweenStops(stopFrom, stopTo).map(PathCoordinate(_))
         val transportDescription = s"${travelInfo.`type`} - Line ${travelInfo.name} - Branch ${travelInfo.branch} - ${travelInfo.sentido}"
         // FIXME add more info on PathDescription
         Xor.Right(Path(coordinates, PathDescription(BusPath, s"$transportDescription - From", s"$transportDescription - To"),

@@ -10,7 +10,8 @@ import spray.json.DefaultJsonProtocol
 
 case class Route(path: List[Path])
 
-case class Path(path: List[Coordinate], description: PathDescription, incidents: List[PedestrianIncident] = List.empty)
+case class PathCoordinate(coordinate: Coordinate, street: Option[String] = None)
+case class Path(path: List[PathCoordinate], description: PathDescription, incidents: List[PedestrianIncident] = List.empty)
 
 case class PathDescription(`type`: PathType, from: String, to: String)
 
